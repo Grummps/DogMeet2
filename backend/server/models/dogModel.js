@@ -1,38 +1,25 @@
 const mongoose = require("mongoose");
 
-//user schema/model
+//dog schema/model
 const newUserSchema = new mongoose.Schema(
   {
-    username: {
+    dogName: {
       type: String,
       required: true,
       label: "username",
     },
-    email: {
+    size: {
       type: String,
       required: true,
       label: "email",
     },
-    password: {
+    image: {
       required: true,
       type: String,
       min : 8
     },
-    parkId: {
-      type: Date,
-      default: Date.now,
-    },
-    dogId: {
-
-    },
-    friends: {
-
-    },
-    eventId: {
-
-    },
   },
-  { collection: "users" }
+  { collection: "dogs" }
 );
 
-module.exports = mongoose.model('users', newUserSchema)
+module.exports = mongoose.model('dogs', dogSchema)

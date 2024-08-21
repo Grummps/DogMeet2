@@ -1,38 +1,29 @@
 const mongoose = require("mongoose");
 
-//user schema/model
+//event schema/model
 const newUserSchema = new mongoose.Schema(
   {
-    username: {
+    userId: {
       type: String,
       required: true,
       label: "username",
     },
-    email: {
+    parkId: {
       type: String,
       required: true,
       label: "email",
     },
-    password: {
+    time: {
       required: true,
       type: String,
       min : 8
     },
-    parkId: {
+    date: {
       type: Date,
       default: Date.now,
     },
-    dogId: {
-
-    },
-    friends: {
-
-    },
-    eventId: {
-
-    },
   },
-  { collection: "users" }
+  { collection: "events" }
 );
 
-module.exports = mongoose.model('users', newUserSchema)
+module.exports = mongoose.model('events', eventSchema)

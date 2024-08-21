@@ -1,38 +1,29 @@
 const mongoose = require("mongoose");
 
-//user schema/model
+//park schema/model
 const newUserSchema = new mongoose.Schema(
   {
-    username: {
+    parkName: {
       type: String,
       required: true,
       label: "username",
     },
-    email: {
+    occupants: {
       type: String,
       required: true,
       label: "email",
     },
-    password: {
+    eventId: {
       required: true,
       type: String,
       min : 8
     },
-    parkId: {
+    image: {
       type: Date,
       default: Date.now,
     },
-    dogId: {
-
-    },
-    friends: {
-
-    },
-    eventId: {
-
-    },
   },
-  { collection: "users" }
+  { collection: "parks" }
 );
 
-module.exports = mongoose.model('users', newUserSchema)
+module.exports = mongoose.model('park', parkSchema)
