@@ -1,29 +1,28 @@
 const mongoose = require("mongoose");
+const { Schema } = mongoose;
 
-//park schema/model
-const newUserSchema = new mongoose.Schema(
+// Park schema/model
+const parkSchema = new mongoose.Schema(
   {
     parkName: {
       type: String,
       required: true,
-      label: "username",
     },
     occupants: {
-      type: String,
+      type: String,  // Assuming this is a text field indicating the number or names of occupants
       required: true,
-      label: "email",
     },
     eventId: {
+      type: Schema.Types.ObjectId,  // Reference to a document in the events collection
+      ref: 'events',  // Assuming your events collection is named 'events'
       required: true,
-      type: String,
-      min : 8
     },
     image: {
-      type: Date,
-      default: Date.now,
+      type: String,  // URL or S3 key for the park's image
+      required: false,  // Optional if you don't always have an image
     },
   },
   { collection: "parks" }
 );
 
-module.exports = mongoose.model('park', parkSchema)
+module.exports = mongoose.model('park', parkSchema);

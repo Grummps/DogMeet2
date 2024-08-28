@@ -1,13 +1,13 @@
 const express = require("express");
 const app = express();
 const cors = require('cors')
-const loginRoute = require('./routes/userLogin')
-const getAllUsersRoute = require('./routes/userGetAllUsers')
-const registerRoute = require('./routes/userSignUp')
-const getUserByIdRoute = require('./routes/userGetUserById')
+const loginRoute = require('./routes/userRoutes/userLogin')
+const getAllUsersRoute = require('./routes/userRoutes/userGetAllUsers')
+const registerRoute = require('./routes/userRoutes/userSignUp')
+const getUserByIdRoute = require('./routes/userRoutes/userGetUserById')
 const dbConnection = require('./config/db.config')
-const editUser = require('./routes/userEditUser')
-const deleteUser = require('./routes/userDeleteAll')
+const editUser = require('./routes/userRoutes/userEditUser')
+const deleteUser = require('./routes/userRoutes/userDeleteAll')
 
 require('dotenv').config();
 const SERVER_PORT = 8081

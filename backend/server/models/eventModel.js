@@ -1,29 +1,36 @@
 const mongoose = require("mongoose");
+const { Schema } = mongoose;
 
-//event schema/model
-const newUserSchema = new mongoose.Schema(
+// Event schema/model
+const eventSchema = new mongoose.Schema(
   {
     userId: {
-      type: String,
+      type: Schema.Types.ObjectId,  // Reference to a document in the users collection
+      ref: 'users',  // Assuming your users collection is named 'users'
       required: true,
-      label: "username",
     },
     parkId: {
-      type: String,
+      type: Schema.Types.ObjectId,  // Reference to a document in the parks collection
+      ref: 'parks',  // Assuming your parks collection is named 'parks'
       required: true,
-      label: "email",
     },
     time: {
+      type: String,  // Store time as a string in 12-hour HH:mm format
       required: true,
-      type: String,
-      min : 8
+      validate: {
+        validator: function(v) {
+          return /^(0[1-9]|1[0-2]):([0-5]\d)$/.test(v);
+        },
+        message: props => `${props.value} is not a valid time format! Expected format is HH:mm in 12-hour time.`
+      }
     },
     date: {
-      type: Date,
+      type: Date,  // Store the event's date
+      required: true,
       default: Date.now,
     },
   },
   { collection: "events" }
 );
 
-module.exports = mongoose.model('events', eventSchema)
+module.exports = mongoose.model('events', eventSchema);
