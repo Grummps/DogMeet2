@@ -27,7 +27,7 @@ const newUserSchema = new mongoose.Schema(
     dogId: {
       type: Schema.Types.ObjectId,  // Reference to a document in the dogs collection
       ref: 'dogs',  // Assuming your dogs collection is named 'dogs'
-      required: true,  // Set to true if a user must always have a dog
+      required: false,  // Set to true if a user must always have a dog
     },
     friends: {
       type: [Schema.Types.ObjectId],  // Array of ObjectIds referencing other users

@@ -1,27 +1,29 @@
 const express = require("express");
 const app = express();
-const cors = require('cors')
-const loginRoute = require('./routes/userRoutes/userLogin')
-const getAllUsersRoute = require('./routes/userRoutes/userGetAllUsers')
-const registerRoute = require('./routes/userRoutes/userSignUp')
-const getUserByIdRoute = require('./routes/userRoutes/userGetUserById')
-const dbConnection = require('./config/db.config')
-const editUser = require('./routes/userRoutes/userEditUser')
-const deleteUser = require('./routes/userRoutes/userDeleteAll')
+const cors = require("cors");
+const userRoutes = require("./routes/userRoutes"); // Consolidate all user-related routes in one module
+const authRoutes = require("./routes/userLoginSignup"); // Authentication (login/register)
+const eventRoutes = require("./routes/eventRoutes"); // Event-related CRUD routes
+const parkRoutes = require("./routes/parkRoutes"); // Park CRUD routes
+const dbConnection = require("./config/db.config");
 
-require('dotenv').config();
-const SERVER_PORT = 8081
+require("dotenv").config();
+const SERVER_PORT = process.env.SERVER_PORT || 8081;
 
-dbConnection()
-app.use(cors({origin: '*'}))
-app.use(express.json())
-app.use('/user', loginRoute)
-app.use('/user', registerRoute)
-app.use('/user', getAllUsersRoute)
-app.use('/user', getUserByIdRoute)
-app.use('/user', editUser)
-app.use('/user', deleteUser)
+// Connect to the database
+dbConnection();
 
-app.listen(SERVER_PORT, (req, res) => {
-    console.log(`The backend service is running on port ${SERVER_PORT} and waiting for requests.`);
-})
+// Middleware
+app.use(cors({ origin: "*" }));
+app.use(express.json());
+
+// Routes
+app.use("/user", authRoutes);      // For login and signup
+app.use("/user", userRoutes);      // For user CRUD operations (get, edit, delete, etc.)
+app.use("/events", eventRoutes);   // For event-related CRUD operations
+app.use("/park", parkRoutes);      // For park routes
+
+// Start the server
+app.listen(SERVER_PORT, () => {
+  console.log(`The backend service is running on port ${SERVER_PORT} and waiting for requests.`);
+});
