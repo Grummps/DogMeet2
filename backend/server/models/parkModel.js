@@ -30,4 +30,3 @@ const parkSchema = new mongoose.Schema(
 );
 
 module.exports = mongoose.model('parks', parkSchema);
-

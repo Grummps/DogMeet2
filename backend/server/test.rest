@@ -22,7 +22,6 @@ GET http://localhost:8081/user/getAll
 Content-Type: application/json
 
 ###
-
 POST http://localhost:8081/user/editUser
 Content-Type: application/json 
 
@@ -68,10 +67,10 @@ Content-Type: application/json
 GET http://localhost:8081/events/all
 
 ###
-GET http://localhost:8081/events/{{eventId}}
+GET http://localhost:8081/events/66e0a665d41d9d3f412f23fc
 
 ###
-PUT http://localhost:8081/events/update/66d886ff2dbb9f060b22d550
+PUT http://localhost:8081/events/update/66e0a665d41d9d3f412f23fc
 Content-Type: application/json
 
 {
@@ -82,6 +81,37 @@ Content-Type: application/json
 }
 
 ###
-DELETE http://localhost:8081/events/delete/{{eventId}}
+DELETE http://localhost:8081/events/delete/66e0a665d41d9d3f412f23fc
 
 #################### PARK TESTS ####################
+
+###
+POST http://localhost:8081/parks/create
+Content-Type: application/json
+
+{
+  "parkName": "Central Park", 
+  "occupants": [], 
+  "eventId": [],
+  "image": ""
+}
+
+###
+GET http://localhost:8081/parks/all
+
+###
+GET http://localhost:8081/parks/{{parkId}}
+
+###
+PUT http://localhost:8081/parks/update/{{parkId}}
+Content-Type: application/json
+
+{
+  "parkName": "Updated Park Name", 
+  "occupants": ["64f3a8f9de85720c4b0d6ac1"], 
+  "eventId": ["64f2b9f7d6e6571bc19f8e5b"],
+  "image": "https://example.com/new-image.jpg"
+}
+
+###
+DELETE http://localhost:8081/parks/delete/{{parkId}}
