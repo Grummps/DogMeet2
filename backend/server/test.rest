@@ -1,10 +1,16 @@
+#################### USER TESTS ####################
+
 POST http://localhost:8081/user/signup
 Content-Type: application/json 
 
 {
-    "username" : "tochiamanze",
+    "username" : "tocamnze",
     "email" : "cdon@gmail.com",
-    "password" : "tochi12345"
+    "password" : "tochi12345",
+    "parkId": "635ab8dfc407faf9f73deaf3",
+    "dogId": "635ab8dfc407faf9f73deaf4",
+    "friends": ["635ab8dfc407faf9f73deaf5", "635ab8dfc407faf9f73deaf6"],
+    "eventId": "635ab8dfc407faf9f73deaf7"
 }
 
 ###
@@ -22,30 +28,22 @@ GET http://localhost:8081/user/getAll
 Content-Type: application/json
 
 ###
-POST http://localhost:8081/user/editUser
+PUT http://localhost:8081/user/editUser/66e1c4e8fe69956ee6e46e7e
 Content-Type: application/json 
 
 {
-    "userId" : "635ab8dfc407faf9f73deaf2",
-    "username" : "Tochi Edit",
-    "password" : "dwwrwr"
+    "username" : "TochiEdit",
+    "email": "newemail@example.com",
+    "password" : "dwwrwrdfgdfgdfg",
+    "parkId": "635ab8dfc407faf9f73deaf3",
+    "dogId": "635ab8dfc407faf9f73deaf4",
+    "friends": ["66e0a83fd41d9d3f412f240b", "66e1c26ae57d9cbb80521935"],
+    "eventId": "635ab8dfc407faf9f73deaf7"
 }
 
 ###
-GET  http://localhost:8081/user/getUserById
+GET  http://localhost:8081/user/66e0a83fd41d9d3f412f240b
 Content-Type: application/json 
-
-{
-    "userId" : "635ab8dfc407faf9f73deaf1"
-}
-
-###
-GET  http://localhost:8081/user/getUserById
-Content-Type: application/json 
-
-{
-    "userId" : "634edb2a16710b2cda6fb370"
-}
 
 ###
 POST  http://localhost:8081/user/deleteAll
@@ -67,10 +65,10 @@ Content-Type: application/json
 GET http://localhost:8081/events/all
 
 ###
-GET http://localhost:8081/events/66e0a665d41d9d3f412f23fc
+GET http://localhost:8081/events/66e1d786a1be086b1c90d9f4
 
 ###
-PUT http://localhost:8081/events/update/66e0a665d41d9d3f412f23fc
+PUT http://localhost:8081/events/update/66e1d786a1be086b1c90d9f4
 Content-Type: application/json
 
 {
@@ -81,7 +79,7 @@ Content-Type: application/json
 }
 
 ###
-DELETE http://localhost:8081/events/delete/66e0a665d41d9d3f412f23fc
+DELETE http://localhost:8081/events/delete/66e1d786a1be086b1c90d9f4
 
 #################### PARK TESTS ####################
 
@@ -100,10 +98,10 @@ Content-Type: application/json
 GET http://localhost:8081/parks/all
 
 ###
-GET http://localhost:8081/parks/{{parkId}}
+GET http://localhost:8081/parks/66e1d7c8a1be086b1c90da03
 
 ###
-PUT http://localhost:8081/parks/update/{{parkId}}
+PUT http://localhost:8081/parks/update/66e1d7c8a1be086b1c90da03
 Content-Type: application/json
 
 {
@@ -114,4 +112,35 @@ Content-Type: application/json
 }
 
 ###
-DELETE http://localhost:8081/parks/delete/{{parkId}}
+DELETE http://localhost:8081/parks/delete/66e1d7c8a1be086b1c90da03
+
+#################### DOG TESTS ####################
+
+###
+POST http://localhost:8081/dogs/create
+Content-Type: application/json
+
+{
+  "dogName": "Buddy",
+  "size": "medium",
+  "image": "buddy-image.jpg"
+}
+
+###
+GET http://localhost:8081/dogs/all
+
+###
+GET http://localhost:8081/dogs/66e1d7e4a1be086b1c90da0a
+
+###
+PUT http://localhost:8081/dogs/update/66e1d7e4a1be086b1c90da0a
+Content-Type: application/json
+
+{
+  "dogName": "Max",
+  "size": "large",
+  "image": ""
+}
+
+###
+DELETE http://localhost:8081/dogs/delete/66e1d7e4a1be086b1c90da0a

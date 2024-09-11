@@ -1,23 +1,27 @@
-const z = require('zod')
+const z = require('zod');
 
-//validates when new user creates an account
-const newUserValidation = data => { 
+//validates when new user creates an account or edits their details
+const newUserValidation = data => {
   const registerValidationSchema = z.object({
-    username : z.string().min(6, 'Username must be 6 characters or more'),
-    email: z.string().email('Please Input a valid email'),
+    username: z.string().min(6, 'Username must be 6 characters or more'),
+    email: z.string().email('Please input a valid email'),
     password: z.string().min(8, 'Password must be 8 or more characters').trim(),
+    parkId: z.string().optional(),  // Optional field, validate as string if present
+    dogId: z.string().optional(),   // Optional field, validate as string if present
+    friends: z.array(z.string()).optional(),  // Optional array of strings (ObjectId)
+    eventId: z.string().optional(),  // Optional field, validate as string if present
   });
-  
-  return registerValidationSchema.safeParse(data)
+
+  return registerValidationSchema.safeParse(data);
 };
 
 //validate user request when logging in
 const userLoginValidation = data => {
   const loginValidationSchema = z.object({
-    username : z.string().min(6, 'Username must be 6 characters or more'),
+    username: z.string().min(6, 'Username must be 6 characters or more'),
     password: z.string().min(8, 'Password must be 8 or more characters').trim(),
   });
-  return loginValidationSchema.safeParse(data)
+  return loginValidationSchema.safeParse(data);
 };
 
 module.exports.newUserValidation = newUserValidation;

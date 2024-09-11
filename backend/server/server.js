@@ -5,6 +5,7 @@ const userRoutes = require("./routes/userRoutes"); // Consolidate all user-relat
 const authRoutes = require("./routes/userLoginSignup"); // Authentication (login/register)
 const eventRoutes = require("./routes/eventRoutes"); // Event-related CRUD routes
 const parkRoutes = require("./routes/parkRoutes"); // Park CRUD routes
+const dogRoutes = require("./routes/dogRoutes")    // Dog CRUD routes
 const dbConnection = require("./config/db.config");
 
 require("dotenv").config();
@@ -21,7 +22,8 @@ app.use(express.json());
 app.use("/user", authRoutes);      // For login and signup
 app.use("/user", userRoutes);      // For user CRUD operations (get, edit, delete, etc.)
 app.use("/events", eventRoutes);   // For event-related CRUD operations
-app.use("/park", parkRoutes);      // For park routes
+app.use("/parks", parkRoutes);      // For park routes
+app.use("/dogs", dogRoutes)        // For dog routes
 
 // Start the server
 app.listen(SERVER_PORT, () => {
