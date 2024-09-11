@@ -1,6 +1,6 @@
 const z = require('zod');
 
-//validates when new user creates an account or edits their details
+// Full user validation for registration or complete profile updates
 const newUserValidation = data => {
   const registerValidationSchema = z.object({
     username: z.string().min(6, 'Username must be 6 characters or more'),
@@ -15,7 +15,22 @@ const newUserValidation = data => {
   return registerValidationSchema.safeParse(data);
 };
 
-//validate user request when logging in
+// Partial validation for when updating user details (e.g., only updating dogId)
+const partialUserValidation = data => {
+  const partialValidationSchema = z.object({
+    username: z.string().min(6, 'Username must be 6 characters or more').optional(),
+    email: z.string().email('Please input a valid email').optional(),
+    password: z.string().min(8, 'Password must be 8 or more characters').trim().optional(),
+    parkId: z.string().optional(),
+    dogId: z.string().optional(),
+    friends: z.array(z.string()).optional(),
+    eventId: z.string().optional(),
+  });
+
+  return partialValidationSchema.safeParse(data);
+};
+
+// Login validation
 const userLoginValidation = data => {
   const loginValidationSchema = z.object({
     username: z.string().min(6, 'Username must be 6 characters or more'),
@@ -24,5 +39,9 @@ const userLoginValidation = data => {
   return loginValidationSchema.safeParse(data);
 };
 
-module.exports.newUserValidation = newUserValidation;
-module.exports.userLoginValidation = userLoginValidation;
+module.exports = {
+  newUserValidation,
+  partialUserValidation,
+  userLoginValidation
+};
+

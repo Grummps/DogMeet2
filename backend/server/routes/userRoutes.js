@@ -5,6 +5,7 @@ const mongoose = require('mongoose');
 const newUserModel = require('../models/userModel');
 const { newUserValidation } = require('../models/userValidator');
 const { generateAccessToken } = require('../utilities/generateToken');
+const { partialUserValidation } = require('../models/userValidator');
 
 // Route to delete all users
 router.post('/deleteAll', async (req, res) => {
@@ -12,9 +13,12 @@ router.post('/deleteAll', async (req, res) => {
     return res.json(user);
 });
 
+
+
 // Route to edit a user using the :id parameter in the URL
 router.put('/editUser/:id', async (req, res) => {
-    const { error } = newUserValidation(req.body);
+    // Use partial validation for updating user details
+    const { error } = partialUserValidation(req.body);
 
     // Log the full validation error if it exists
     if (error) {
@@ -25,40 +29,47 @@ router.put('/editUser/:id', async (req, res) => {
     const id = req.params.id;  // Get user ID from the URL parameter
     const { username, email, password, parkId, dogId, friends, eventId } = req.body;
 
-    // Check if username is available (and skip current user)
-    const user = await newUserModel.findOne({ username });
-    if (user && user._id.toString() !== id) {
-        return res.status(409).send({ message: "Username is taken, pick another" });
+    // Check if the username is being updated, and validate its availability
+    if (username) {
+        const user = await newUserModel.findOne({ username });
+        if (user && user._id.toString() !== id) {
+            return res.status(409).send({ message: "Username is taken, pick another" });
+        }
     }
 
-    const generateHash = await bcrypt.genSalt(Number(10));
-    const hashPassword = await bcrypt.hash(password, generateHash);
+    // If password is provided, hash it before updating
+    let hashPassword;
+    if (password) {
+        const generateHash = await bcrypt.genSalt(Number(10));
+        hashPassword = await bcrypt.hash(password, generateHash);
+    }
 
-    // Update the user
+    // Create the update object dynamically based on provided fields
+    const updateFields = {};
+    if (username) updateFields.username = username;
+    if (email) updateFields.email = email;
+    if (password) updateFields.password = hashPassword;  // Use the hashed password if provided
+    if (parkId) updateFields.parkId = parkId;
+    if (dogId) updateFields.dogId = dogId;
+    if (friends) updateFields.friends = friends.map(friendId => mongoose.Types.ObjectId(friendId));
+    if (eventId) updateFields.eventId = eventId;
+
+    // Update the user with only the provided fields
     newUserModel.findByIdAndUpdate(
-        id, 
-        {
-            username,
-            email,
-            password: hashPassword,
-            parkId,
-            dogId,
-            friends: friends ? friends.map(friendId => mongoose.Types.ObjectId(friendId)) : [],
-            eventId
-        },
-        { new: true, runValidators: true }, 
+        id,
+        { $set: updateFields },  // Only update the fields that were passed in
+        { new: true, runValidators: true },
         (err, updatedUser) => {
             if (err) {
                 console.log("Error updating user:", err);  // Log error if update fails
                 return res.status(500).send({ message: 'Error updating user.' });
             } else {
-                const accessToken = generateAccessToken(updatedUser._id, email, username, hashPassword);
+                const accessToken = generateAccessToken(updatedUser._id, updatedUser.email, updatedUser.username, updatedUser.password);
                 res.header('Authorization', accessToken).send({ accessToken });
             }
         }
     );
 });
-
 
 
 // Route to get all users
@@ -95,7 +106,7 @@ router.get("/:id", async (req, res) => {
         if (!user) {
             return res.status(404).send("User ID does not exist.");
         }
-        
+
         res.json(user);
     } catch (error) {
         console.error("Error fetching user:", error);  // Log the full error for debugging

@@ -1,6 +1,6 @@
 #################### USER TESTS ####################
 
-POST http://localhost:8081/user/signup
+POST http://localhost:8081/users/signup
 Content-Type: application/json 
 
 {
@@ -15,7 +15,7 @@ Content-Type: application/json
 
 ###
 
-POST http://localhost:8081/user/login
+POST http://localhost:8081/users/login
 Content-Type: application/json 
 
 {
@@ -24,11 +24,11 @@ Content-Type: application/json
 }
 
 ###
-GET http://localhost:8081/user/getAll
+GET http://localhost:8081/users/getAll
 Content-Type: application/json
 
 ###
-PUT http://localhost:8081/user/editUser/66e1c4e8fe69956ee6e46e7e
+PUT http://localhost:8081/users/editUser/66e1c4e8fe69956ee6e46e7e
 Content-Type: application/json 
 
 {
@@ -42,11 +42,11 @@ Content-Type: application/json
 }
 
 ###
-GET  http://localhost:8081/user/66e0a83fd41d9d3f412f240b
+GET  http://localhost:8081/users/66e0a83fd41d9d3f412f240b
 Content-Type: application/json 
 
 ###
-POST  http://localhost:8081/user/deleteAll
+POST  http://localhost:8081/users/deleteAll
 
 #################### EVENT TESTS ####################
 
@@ -123,7 +123,7 @@ Content-Type: application/json
 {
   "dogName": "Buddy",
   "size": "medium",
-  "image": "buddy-image.jpg"
+  "userId": "66e1dd54a1be086b1c90da12"
 }
 
 ###

@@ -19,8 +19,8 @@ app.use(cors({ origin: "*" }));
 app.use(express.json());
 
 // Routes
-app.use("/user", authRoutes);      // For login and signup
-app.use("/user", userRoutes);      // For user CRUD operations (get, edit, delete, etc.)
+app.use("/users", authRoutes);      // For login and signup
+app.use("/users", userRoutes);      // For user CRUD operations (get, edit, delete, etc.)
 app.use("/events", eventRoutes);   // For event-related CRUD operations
 app.use("/parks", parkRoutes);      // For park routes
 app.use("/dogs", dogRoutes)        // For dog routes

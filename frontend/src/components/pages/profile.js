@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
 import getUserInfo from '../../utilities/decodeJwt';  // Import getUserInfo
+import DogForm from './dogForm';
 
 const Profile = () => {
     const navigate = useNavigate();
@@ -24,7 +25,7 @@ const Profile = () => {
             console.log('User ID from token:', userId);  // Log the user ID
 
             try {
-                const response = await axios.get(`${process.env.REACT_APP_BACKEND_URI}/user/${userId}`, {
+                const response = await axios.get(`${process.env.REACT_APP_BACKEND_URI}/users/${userId}`, {
                     headers: {
                         Authorization: `Bearer ${localStorage.getItem('accessToken')}`
                     }
@@ -42,6 +43,10 @@ const Profile = () => {
         fetchUserData();  // Trigger the request
     }, [navigate]);
 
+    const updateUser = (updatedData) => {
+        setUser({ ...user, ...updatedData });
+    };
+
     if (loading) {
         return <div>Loading...</div>;
     }
@@ -52,12 +57,16 @@ const Profile = () => {
 
     return (
         <div>
-            <h1>{user?.username}'s Profile</h1>
-            <h2>Dog's Name: {user?.dogId?.dogName || 'No dog registered'}</h2>
-            {user?.dogId?.image && (
+            <h1>{user.username}'s Profile</h1>
+            <h2>Dog's Name: {user.dogId ? user.dogId.dogName : 'No dog registered'}</h2>
+
+            {user.dogId && user.dogId.image ? (
                 <img src={user.dogId.image} alt={`${user.dogId.dogName}'s picture`} style={{ width: '200px', height: '200px' }} />
+            ) : (
+                <p>No dog picture available</p>
             )}
-            <button onClick={() => navigate(`/editProfile/${user._id}`)}>Edit Profile</button>
+
+            <DogForm updateUser={updateUser} /> {/* Include the form to add a dog */}
         </div>
     );
 };

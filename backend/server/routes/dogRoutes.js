@@ -2,42 +2,47 @@ const express = require('express');
 const router = express.Router();
 const dogModel = require('../models/dogModel');
 const mongoose = require('mongoose')
+const newUserModel = require('../models/userModel')
+const multer = require('multer');
+const storage = multer.memoryStorage();  // If you're handling image uploads with memoryStorage
+const upload = multer({ storage });
 
-// Create a new dog
-router.post('/create', async (req, res) => {
+// Create a new dog and assign it to the user
+router.post('/create', upload.single('image'), async (req, res) => {
     try {
-        const { dogName, size, image } = req.body;
+        const { dogName, size, userId } = req.body;
 
         // Validate required fields
-        if (!dogName || !size) {
-            return res.status(400).json({ message: 'Dog name and size are required.' });
+        if (!dogName || !size || !userId) {
+            return res.status(400).json({ message: 'Dog name, size, and user ID are required.' });
+        }
+
+        // Validate size
+        const validSizes = ['small', 'medium', 'large'];
+        if (!validSizes.includes(size)) {
+            return res.status(400).json({ message: 'Invalid size. Must be small, medium, or large.' });
         }
 
         // Create a new dog document
         const newDog = new dogModel({
             dogName,
             size,
-            image
+            image: req.file ? req.file.path : null  // Handle image if it's uploaded
         });
 
         const savedDog = await newDog.save();
-        res.status(201).json(savedDog);
+
+        // Update the user's profile with the new dogId
+        await newUserModel.findByIdAndUpdate(userId, { $set: { dogId: savedDog._id } });
+
+
+        res.status(201).json({ message: 'Dog created and assigned to user successfully.', dog: savedDog });
     } catch (error) {
         console.error('Error creating dog:', error);
         res.status(500).json({ message: 'Error creating dog.' });
     }
 });
 
-// Get all dogs
-router.get('/all', async (req, res) => {
-    try {
-        const dogs = await dogModel.find();
-        res.status(200).json(dogs);
-    } catch (error) {
-        console.error('Error fetching dogs:', error);
-        res.status(500).json({ message: 'Error fetching dogs.' });
-    }
-});
 
 // Get a specific dog by ID
 router.get('/:id', async (req, res) => {
