@@ -48,27 +48,80 @@ const Profile = () => {
     };
 
     if (loading) {
-        return <div>Loading...</div>;
+        return <div style={styles.loading}>Loading...</div>;
     }
 
     if (error) {
-        return <div>{error}</div>;
+        return <div style={styles.error}>{error}</div>;
     }
 
     return (
-        <div>
-            <h1>{user.username}'s Profile</h1>
-            <h2>Dog's Name: {user.dogId ? user.dogId.dogName : 'No dog registered'}</h2>
+        <div style={styles.profileContainer}>
+            <h1 style={styles.title}>{user.username}'s Profile</h1>
 
-            {user.dogId && user.dogId.image ? (
-                <img src={user.dogId.image} alt={`${user.dogId.dogName}'s picture`} style={{ width: '200px', height: '200px' }} />
-            ) : (
-                <p>No dog picture available</p>
-            )}
+            <div style={styles.profileDetails}>
+                <h2 style={styles.subTitle}>Dog's Name: {user.dogId ? user.dogId.dogName : 'No dog registered'}</h2>
 
-            <DogForm updateUser={updateUser} /> {/* Include the form to add a dog */}
+                {user.dogId && user.dogId.image ? (
+                    <img src={user.dogId.image} alt={`${user.dogId.dogName}'s picture`} style={styles.dogImage} />
+                ) : (
+                    <p style={styles.noImageText}>No dog picture available</p>
+                )}
+
+                <DogForm updateUser={updateUser} /> {/* Include the form to add a dog */}
+            </div>
         </div>
     );
 };
 
 export default Profile;
+
+// Styling using CSS-in-JS
+const styles = {
+    profileContainer: {
+        maxWidth: '600px',
+        margin: '0 auto',
+        padding: '20px',
+        borderRadius: '8px',
+        boxShadow: '0px 4px 6px rgba(0, 0, 0, 0.1)',
+        backgroundColor: '#f9f9f9',
+    },
+    title: {
+        textAlign: 'center',
+        color: '#333',
+        marginBottom: '20px',
+    },
+    subTitle: {
+        fontSize: '20px',
+        fontWeight: 'bold',
+        marginBottom: '15px',
+        color: '#555',
+    },
+    profileDetails: {
+        marginBottom: '30px',
+        textAlign: 'center',
+    },
+    dogImage: {
+        width: '200px',
+        height: '200px',
+        borderRadius: '50%',
+        objectFit: 'cover',
+        border: '2px solid #ccc',
+        marginBottom: '20px',
+    },
+    noImageText: {
+        fontStyle: 'italic',
+        color: '#888',
+        marginBottom: '20px',
+    },
+    loading: {
+        textAlign: 'center',
+        fontSize: '18px',
+        color: '#666',
+    },
+    error: {
+        textAlign: 'center',
+        fontSize: '18px',
+        color: 'red',
+    },
+};

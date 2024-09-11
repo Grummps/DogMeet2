@@ -70,37 +70,48 @@ const DogForm = ({ updateUser }) => {
     };
 
     return (
-        <div>
-            <h2>Add a Dog</h2>
-            <form onSubmit={handleSubmit} encType="multipart/form-data">
-                <div>
-                    <label>Dog Name:</label>
+        <div style={styles.formContainer}>
+            <h2 style={styles.heading}>Add a Dog</h2>
+            <form onSubmit={handleSubmit} encType="multipart/form-data" style={styles.form}>
+                <div style={styles.formGroup}>
+                    <label style={styles.label}>Dog Name:</label>
                     <input
                         type="text"
                         value={dogName}
                         onChange={(e) => setDogName(e.target.value)}
                         required
+                        style={styles.input}
                     />
                 </div>
 
-                <div>
-                    <label>Size:</label>
-                    <select value={size} onChange={(e) => setSize(e.target.value)} required>
+                <div style={styles.formGroup}>
+                    <label style={styles.label}>Size:</label>
+                    <select
+                        value={size}
+                        onChange={(e) => setSize(e.target.value)}
+                        required
+                        style={styles.select}
+                    >
                         <option value="small">Small</option>
                         <option value="medium">Medium</option>
                         <option value="large">Large</option>
                     </select>
                 </div>
 
-                <div>
-                    <label>Image (optional):</label>
-                    <input type="file" accept="image/*" onChange={handleFileChange} />
+                <div style={styles.formGroup}>
+                    <label style={styles.label}>Image (optional):</label>
+                    <input
+                        type="file"
+                        accept="image/*"
+                        onChange={handleFileChange}
+                        style={styles.inputFile}
+                    />
                 </div>
 
-                {error && <p style={{ color: 'red' }}>{error}</p>}
-                {success && <p style={{ color: 'green' }}>{success}</p>}  {/* Success message */}
+                {error && <p style={styles.error}>{error}</p>}
+                {success && <p style={styles.success}>{success}</p>}  {/* Success message */}
 
-                <button type="submit" disabled={loading}>
+                <button type="submit" disabled={loading} style={styles.button}>
                     {loading ? 'Adding...' : 'Add Dog'}
                 </button>
             </form>
@@ -109,3 +120,75 @@ const DogForm = ({ updateUser }) => {
 };
 
 export default DogForm;
+
+// Styling using CSS-in-JS
+const styles = {
+    formContainer: {
+        maxWidth: '500px',
+        margin: '0 auto',
+        padding: '20px',
+        border: '1px solid #ccc',
+        borderRadius: '8px',
+        boxShadow: '0px 4px 6px rgba(0, 0, 0, 0.1)',
+        backgroundColor: '#f9f9f9',
+    },
+    heading: {
+        textAlign: 'center',
+        color: '#333',
+        marginBottom: '20px',
+    },
+    form: {
+        display: 'flex',
+        flexDirection: 'column',
+    },
+    formGroup: {
+        marginBottom: '15px',
+    },
+    label: {
+        fontWeight: 'bold',
+        marginBottom: '5px',
+        display: 'block',
+    },
+    input: {
+        width: '100%',
+        padding: '10px',
+        borderRadius: '4px',
+        border: '1px solid #ccc',
+        fontSize: '16px',
+        boxSizing: 'border-box',
+    },
+    select: {
+        width: '100%',
+        padding: '10px',
+        borderRadius: '4px',
+        border: '1px solid #ccc',
+        fontSize: '16px',
+        boxSizing: 'border-box',
+    },
+    inputFile: {
+        fontSize: '16px',
+    },
+    button: {
+        padding: '10px 15px',
+        backgroundColor: '#4CAF50',
+        color: '#fff',
+        border: 'none',
+        borderRadius: '4px',
+        fontSize: '16px',
+        cursor: 'pointer',
+        marginTop: '10px',
+    },
+    buttonHover: {
+        backgroundColor: '#45a049',
+    },
+    error: {
+        color: 'red',
+        fontSize: '14px',
+        marginTop: '10px',
+    },
+    success: {
+        color: 'green',
+        fontSize: '14px',
+        marginTop: '10px',
+    },
+};
