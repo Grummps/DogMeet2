@@ -1,4 +1,5 @@
 const express = require("express");
+const multer = require('multer');
 const app = express();
 const cors = require("cors");
 const userRoutes = require("./routes/userRoutes"); // Consolidate all user-related routes in one module
@@ -7,6 +8,9 @@ const eventRoutes = require("./routes/eventRoutes"); // Event-related CRUD route
 const parkRoutes = require("./routes/parkRoutes"); // Park CRUD routes
 const dogRoutes = require("./routes/dogRoutes")    // Dog CRUD routes
 const dbConnection = require("./config/db.config");
+
+// Middleware to handle URL-encoded form data
+app.use(express.urlencoded({ extended: true }));
 
 require("dotenv").config();
 const SERVER_PORT = process.env.SERVER_PORT || 8081;

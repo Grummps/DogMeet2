@@ -116,15 +116,13 @@ DELETE http://localhost:8081/parks/delete/66e1d7c8a1be086b1c90da03
 
 #################### DOG TESTS ####################
 
-###
+### Create a new dog without an image
 POST http://localhost:8081/dogs/create
-Content-Type: application/json
+Content-Type: application/x-www-form-urlencoded
 
-{
-  "dogName": "Buddy",
-  "size": "medium",
-  "userId": "66e1dd54a1be086b1c90da12"
-}
+dogName=Buddy&size=medium&userId=66e1dd54a1be086b1c90da12
+
+
 
 ###
 GET http://localhost:8081/dogs/all
