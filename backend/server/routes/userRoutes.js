@@ -83,12 +83,22 @@ router.get("/:id", async (req, res) => {
     const userId = req.params.id;
 
     try {
-        const user = await newUserModel.findById(userId).populate('parkId').populate('dogId').populate('friends').populate('eventId');
+        const user = await newUserModel.findById(userId)
+            .populate({
+                path: 'dogId',  // Populate the dog details
+                select: 'dogName image',  // Fetch only the dog's name and image
+            })
+            .populate('parkId')
+            .populate('friends')
+            .populate('eventId');
+
         if (!user) {
-            return res.status(404).send("userId does not exist.");
+            return res.status(404).send("User ID does not exist.");
         }
+        
         res.json(user);
     } catch (error) {
+        console.error("Error fetching user:", error);  // Log the full error for debugging
         res.status(500).send({ message: 'Error fetching user.' });
     }
 });

@@ -6,9 +6,9 @@ import { Route, Routes } from "react-router-dom";
 import Navbar from "./components/navbar";
 import LandingPage from "./components/pages/landingPage";
 import HomePage from "./components/pages/homePage";
-import Login from "./components/pages/loginPage";
-import Signup from "./components/pages/registerPage";
-import PrivateUserProfile from "./components/pages/privateUserProfilePage";
+import Login from "./components/pages/login";
+import Signup from "./components/pages/register";
+import Profile from "./components/pages/profile";
 import { createContext, useState, useEffect } from "react";
 import getUserInfo from "./utilities/decodeJwt";
 
@@ -31,13 +31,11 @@ const App = () => {
           <Route exact path="/home" element={<HomePage />} />
           <Route exact path="/login" element={<Login />} />
           <Route exact path="/signup" element={<Signup />} />
-          <Route path="/privateUserProfile" element={<PrivateUserProfile />} />
+          <Route path="/profile" element={<Profile />} />
         </Routes>
       </UserContext.Provider>
     </>
   );
 };
-
-
 
 export default App

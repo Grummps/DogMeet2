@@ -1,22 +1,34 @@
 import React, { useState, useEffect } from "react";
-import { useNavigate, Link } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import axios from "axios";
 import Button from "react-bootstrap/Button";
 import Form from "react-bootstrap/Form";
-import getUserInfo from "../../utilities/decodeJwt";
 
 const PRIMARY_COLOR = "#cc5c99";
-const SECONDARY_COLOR = '#0c0c1f'
-const url = "http://localhost:8081/user/login";
+const SECONDARY_COLOR = "#0c0c1f";
+const url = "http://localhost:8081/user/signup";
 
-const Login = () => {
-  const [user, setUser] = useState(null)
-  const [data, setData] = useState({ username: "", password: "" });
+const Register = () => {
+  const [data, setData] = useState({ username: "", email: "", password: "" });
   const [error, setError] = useState("");
+  const navigate = useNavigate();
   const [light, setLight] = useState(false);
   const [bgColor, setBgColor] = useState(SECONDARY_COLOR);
-  const [bgText, setBgText] = useState('Light Mode')
-  const navigate = useNavigate();
+  const [bgText, setBgText] = useState("Light Mode");
+
+  const handleChange = ({ currentTarget: input }) => {
+    setData({ ...data, [input.name]: input.value });
+  };
+
+  useEffect(() => {
+    if (light) {
+      setBgColor("white");
+      setBgText("Dark mode");
+    } else {
+      setBgColor(SECONDARY_COLOR);
+      setBgText("Light mode");
+    }
+  }, [light]);
 
   let labelStyling = {
     color: PRIMARY_COLOR,
@@ -30,32 +42,11 @@ const Login = () => {
     color: bgColor,
   };
 
-  const handleChange = ({ currentTarget: input }) => {
-    setData({ ...data, [input.name]: input.value });
-  };
-
-  useEffect(() => {
-
-    const obj = getUserInfo(user)
-    setUser(obj)
-
-    if (light) {
-      setBgColor("white");
-      setBgText('Dark mode')
-    } else {
-      setBgColor(SECONDARY_COLOR);
-      setBgText('Light mode')
-    }
-  }, [light]);
-
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      const { data: res } = await axios.post(url, data);
-      const { accessToken } = res;
-      //store token in localStorage
-      localStorage.setItem("accessToken", accessToken);
-      navigate("/home");
+      const { data: response } = await axios.post(url, data);  // Avoid name conflict with 'data'
+      navigate("/login");
     } catch (error) {
       if (
         error.response &&
@@ -67,27 +58,37 @@ const Login = () => {
     }
   };
 
-  if(user) {
-    navigate('/home')
-    return
-  }
-
   return (
     <>
       <section className="vh-100">
         <div className="container-fluid h-custom vh-100">
           <div
-            className="row d-flex justify-content-center align-items-center h-100 "
-            style={backgroundStyling}>
+            className="row d-flex justify-content-center align-items-center h-100"
+            style={backgroundStyling}
+          >
             <div className="col-md-8 col-lg-6 col-xl-4 offset-xl-1">
-              <Form>
-                <Form.Group className="mb-3" controlId="formBasicEmail">
+              <Form onSubmit={handleSubmit}>  {/* Add onSubmit to Form */}
+                <Form.Group className="mb-3" controlId="formBasicUsername">
                   <Form.Label style={labelStyling}>Username</Form.Label>
                   <Form.Control
                     type="username"
                     name="username"
                     onChange={handleChange}
                     placeholder="Enter username"
+                    value={data.username}  
+                  />
+                  <Form.Text className="text-muted">
+                    We just might sell your data
+                  </Form.Text>
+                </Form.Group>
+                <Form.Group className="mb-3" controlId="formBasicEmail">
+                  <Form.Label style={labelStyling}>Email</Form.Label>
+                  <Form.Control
+                    type="email"
+                    name="email"
+                    onChange={handleChange}
+                    placeholder="Enter Email Please"
+                    value={data.email}  
                   />
                   <Form.Text className="text-muted">
                     We just might sell your data
@@ -100,37 +101,35 @@ const Login = () => {
                     name="password"
                     placeholder="Password"
                     onChange={handleChange}
+                    value={data.password} 
                   />
                 </Form.Group>
-                <Form.Group className="mb-3" controlId="formBasicCheckbox">
-                  <Form.Text className="text-muted pt-1">
-                    Dont have an account?
-                    <span>
-                      <Link to="/signup" style={labelStyling}> Sign up
-                      </Link>
-                    </span>
-                  </Form.Text>
-                </Form.Group>
-                <div class="form-check form-switch">
+                <div className="form-check form-switch">
                   <input
-                    class="form-check-input"
+                    className="form-check-input"
                     type="checkbox"
                     id="flexSwitchCheckDefault"
-                    onChange={() => { setLight(!light) }}
+                    onChange={() => setLight(!light)}
                   />
-                  <label class="form-check-label" for="flexSwitchCheckDefault" className='text-muted'>
+                  <label
+                    className="form-check-label text-muted"
+                    htmlFor="flexSwitchCheckDefault"
+                  >
                     {bgText}
                   </label>
                 </div>
-                {error && <div style={labelStyling} className='pt-3'>{error}</div>}
+                {error && (
+                  <div style={labelStyling} className="pt-3">
+                    {error}
+                  </div>
+                )}
                 <Button
                   variant="primary"
                   type="submit"
-                  onClick={handleSubmit}
                   style={buttonStyling}
-                  className='mt-2'
+                  className="mt-2"
                 >
-                  Log In
+                  Register
                 </Button>
               </Form>
             </div>
@@ -141,4 +140,4 @@ const Login = () => {
   );
 };
 
-export default Login;
+export default Register;
