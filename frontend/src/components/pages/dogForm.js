@@ -1,16 +1,49 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
 import getUserInfo from '../../utilities/decodeJwt';
 
-const DogForm = ({ updateUser }) => {
+const DogForm = ({ updateUser, userId }) => {
     const [dogName, setDogName] = useState('');
     const [size, setSize] = useState('small');
     const [image, setImage] = useState(null);  // Keep image handling for future
     const [error, setError] = useState(null);
     const [loading, setLoading] = useState(false);
     const [success, setSuccess] = useState(null);  // For success message
-    const navigate = useNavigate();
+    const [dogs, setDogs] = useState([]); // State for user's dogs
+
+    // Fetch user's dogs when the component mounts
+    useEffect(() => {
+
+        const userInfo = getUserInfo();  // Get the logged-in user's info from the JWT
+
+        const fetchDogs = async () => {
+            try {
+                const response = await axios.get(`${process.env.REACT_APP_BACKEND_URI}/users/${userInfo.id}`); // Adjust API endpoint as needed
+                setDogs(response.data.dogId); // Assuming dogId contains an array of dog IDs
+            } catch (error) {
+                console.error('Error fetching dogs:', error);
+                setError('Failed to fetch dogs.');
+            }
+        };
+
+        fetchDogs();
+    }, [userId]);
+
+    // Function to handle deleting a dog
+    const handleDeleteDog = async (dogId) => {
+        try {
+            
+            const userInfo = getUserInfo();  // Get the logged-in user's info from the JWT
+
+            await axios.delete(`${process.env.REACT_APP_BACKEND_URI}/users/removeDog/${userInfo.id}/${dogId}`); // Adjust API endpoint as needed
+            await axios.delete(`${process.env.REACT_APP_BACKEND_URI}/dogs/delete/${dogId}`); // Delete dog from dogs collection
+            setDogs(prevDogs => prevDogs.filter(dog => dog._id.toString() !== dogId.toString())); // Ensure both are strings
+        } catch (error) {
+            console.error('Error deleting dog:', error);
+            setError('Failed to delete dog.');
+        }
+    };
 
     const handleFileChange = (e) => {
         setImage(e.target.files[0]);
@@ -42,6 +75,9 @@ const DogForm = ({ updateUser }) => {
                     'Content-Type': 'multipart/form-data',  // Keep multipart/form-data for file uploads
                 },
             });
+
+            const newDog = response.data.dog; // Assuming the response contains the new dog's data
+            setDogs(prevDogs => [...prevDogs, newDog]); // Add the new dog to the state
 
             // Optional: Update the user profile with the new dogId
             const dogId = response.data.dog._id;  // Assuming the response contains the new dog's ID
@@ -115,7 +151,28 @@ const DogForm = ({ updateUser }) => {
                     {loading ? 'Adding...' : 'Add Dog'}
                 </button>
             </form>
+
+
+
+            <div>
+                <h2>Your Dogs</h2>
+                {error && <p className="text-red-500">{error}</p>} {/* Display error message if any */}
+                <ul>
+                    {dogs.map(dog => (
+                        <li key={dog._id}>
+                            <span>{dog.dogName}</span> {/* Adjust according to your dog model */}
+                            <button
+                                onClick={() => handleDeleteDog(dog._id)}
+                                className="ml-2 bg-red-500 text-white px-2 py-1 rounded"
+                            >
+                                Delete
+                            </button>
+                        </li>
+                    ))}
+                </ul>
+            </div>
         </div>
+
     );
 };
 

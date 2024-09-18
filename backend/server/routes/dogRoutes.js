@@ -33,7 +33,7 @@ router.post('/create', upload.single('image'), async (req, res) => {
         const savedDog = await newDog.save();
 
         // Update the user's profile with the new dogId
-        await newUserModel.findByIdAndUpdate(userId, { $set: { dogId: savedDog._id } });
+        await newUserModel.findByIdAndUpdate(userId, { $push: { dogId: savedDog._id } });
 
 
         res.status(201).json({ message: 'Dog created and assigned to user successfully.', dog: savedDog });

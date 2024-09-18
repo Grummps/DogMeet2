@@ -14,22 +14,18 @@ router.post('/deleteAll', async (req, res) => {
 });
 
 
-
 // Route to edit a user using the :id parameter in the URL
 router.put('/editUser/:id', async (req, res) => {
-    // Use partial validation for updating user details
     const { error } = partialUserValidation(req.body);
 
-    // Log the full validation error if it exists
     if (error) {
-        console.log("Validation error:", error);  // Log the full error to the console
+        console.log("Validation error:", error);
         return res.status(400).send({ message: error.errors[0].message });
     }
 
-    const id = req.params.id;  // Get user ID from the URL parameter
+    const id = req.params.id;
     const { username, email, password, parkId, dogId, friends, eventId } = req.body;
 
-    // Check if the username is being updated, and validate its availability
     if (username) {
         const user = await newUserModel.findOne({ username });
         if (user && user._id.toString() !== id) {
@@ -37,31 +33,38 @@ router.put('/editUser/:id', async (req, res) => {
         }
     }
 
-    // If password is provided, hash it before updating
     let hashPassword;
     if (password) {
         const generateHash = await bcrypt.genSalt(Number(10));
         hashPassword = await bcrypt.hash(password, generateHash);
     }
 
-    // Create the update object dynamically based on provided fields
     const updateFields = {};
     if (username) updateFields.username = username;
     if (email) updateFields.email = email;
-    if (password) updateFields.password = hashPassword;  // Use the hashed password if provided
+    if (password) updateFields.password = hashPassword;
     if (parkId) updateFields.parkId = parkId;
-    if (dogId) updateFields.dogId = dogId;
-    if (friends) updateFields.friends = friends.map(friendId => mongoose.Types.ObjectId(friendId));
     if (eventId) updateFields.eventId = eventId;
 
-    // Update the user with only the provided fields
+    // Update dogId array
+    if (Array.isArray(dogId)) {
+        const dogIds = dogId.map(dog => mongoose.Types.ObjectId(dog));
+        updateFields.dogId = { $addToSet: { $each: dogIds } }; // Add multiple dog IDs
+    }
+
+    // Update friends array
+    if (Array.isArray(friends)) {
+        const friendIds = friends.map(friend => mongoose.Types.ObjectId(friend)); // Convert to ObjectId
+        updateFields.friends = { $addToSet: { $each: friendIds } }; // Add multiple friend IDs
+    }
+
     newUserModel.findByIdAndUpdate(
         id,
-        { $set: updateFields },  // Only update the fields that were passed in
+        { $set: updateFields },
         { new: true, runValidators: true },
         (err, updatedUser) => {
             if (err) {
-                console.log("Error updating user:", err);  // Log error if update fails
+                console.log("Error updating user:", err);
                 return res.status(500).send({ message: 'Error updating user.' });
             } else {
                 const accessToken = generateAccessToken(updatedUser._id, updatedUser.email, updatedUser.username, updatedUser.password);
@@ -70,6 +73,8 @@ router.put('/editUser/:id', async (req, res) => {
         }
     );
 });
+
+
 
 
 // Route to get all users
@@ -113,5 +118,32 @@ router.get("/:id", async (req, res) => {
         res.status(500).send({ message: 'Error fetching user.' });
     }
 });
+
+// Route to remove a dog from the user's dogId array
+router.delete('/removeDog/:id/:dogId', async (req, res) => {
+    const { id, dogId } = req.params;
+
+    try {
+        // Ensure dogId is a valid ObjectId
+        const dogObjectId = mongoose.Types.ObjectId(dogId);
+
+        // Update the user's dogId array by pulling the specified dogId
+        const updatedUser = await newUserModel.findByIdAndUpdate(
+            id,
+            { $pull: { dogId: dogObjectId } },  // Remove the dogId from the array
+            { new: true, runValidators: true }  // Return the updated user document
+        );
+
+        if (!updatedUser) {
+            return res.status(404).send({ message: "User not found." });
+        }
+
+        res.status(200).json({ message: "Dog removed successfully.", user: updatedUser });
+    } catch (error) {
+        console.error('Error removing dog:', error);
+        res.status(500).json({ message: 'Error removing dog.' });
+    }
+});
+
 
 module.exports = router;

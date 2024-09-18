@@ -25,7 +25,7 @@ const newUserSchema = new mongoose.Schema(
       required: false,  // Set to true if a user must always be linked to a park
     },
     dogId: {
-      type: Schema.Types.ObjectId,  // Reference to a document in the dogs collection
+      type: [Schema.Types.ObjectId],  // Reference to a document in the dogs collection
       ref: 'dogs',  // Assuming your dogs collection is named 'dogs'
       required: false,  // Set to true if a user must always have a dog
     },
