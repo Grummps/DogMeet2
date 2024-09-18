@@ -1,8 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
-import Button from "react-bootstrap/Button";
-import Form from "react-bootstrap/Form";
 
 const PRIMARY_COLOR = "#cc5c99";
 const SECONDARY_COLOR = "#0c0c1f";
@@ -30,22 +28,10 @@ const Register = () => {
     }
   }, [light]);
 
-  let labelStyling = {
-    color: PRIMARY_COLOR,
-    fontWeight: "bold",
-    textDecoration: "none",
-  };
-  let backgroundStyling = { background: bgColor };
-  let buttonStyling = {
-    background: PRIMARY_COLOR,
-    borderStyle: "none",
-    color: bgColor,
-  };
-
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      const { data: response } = await axios.post(url, data);  // Avoid name conflict with 'data'
+      const { data: response } = await axios.post(url, data);
       navigate("/login");
     } catch (error) {
       if (
@@ -60,80 +46,80 @@ const Register = () => {
 
   return (
     <>
-      <section className="vh-100">
-        <div className="container-fluid h-custom vh-100">
-          <div
-            className="row d-flex justify-content-center align-items-center h-100"
-            style={backgroundStyling}
-          >
-            <div className="col-md-8 col-lg-6 col-xl-4 offset-xl-1">
-              <Form onSubmit={handleSubmit}>  {/* Add onSubmit to Form */}
-                <Form.Group className="mb-3" controlId="formBasicUsername">
-                  <Form.Label style={labelStyling}>Username</Form.Label>
-                  <Form.Control
-                    type="username"
-                    name="username"
-                    onChange={handleChange}
-                    placeholder="Enter username"
-                    value={data.username}  
-                  />
-                  <Form.Text className="text-muted">
-                    We just might sell your data
-                  </Form.Text>
-                </Form.Group>
-                <Form.Group className="mb-3" controlId="formBasicEmail">
-                  <Form.Label style={labelStyling}>Email</Form.Label>
-                  <Form.Control
-                    type="email"
-                    name="email"
-                    onChange={handleChange}
-                    placeholder="Enter Email Please"
-                    value={data.email}  
-                  />
-                  <Form.Text className="text-muted">
-                    We just might sell your data
-                  </Form.Text>
-                </Form.Group>
-                <Form.Group className="mb-3" controlId="formBasicPassword">
-                  <Form.Label style={labelStyling}>Password</Form.Label>
-                  <Form.Control
-                    type="password"
-                    name="password"
-                    placeholder="Password"
-                    onChange={handleChange}
-                    value={data.password} 
-                  />
-                </Form.Group>
-                <div className="form-check form-switch">
-                  <input
-                    className="form-check-input"
-                    type="checkbox"
-                    id="flexSwitchCheckDefault"
-                    onChange={() => setLight(!light)}
-                  />
-                  <label
-                    className="form-check-label text-muted"
-                    htmlFor="flexSwitchCheckDefault"
-                  >
-                    {bgText}
-                  </label>
-                </div>
-                {error && (
-                  <div style={labelStyling} className="pt-3">
-                    {error}
-                  </div>
-                )}
-                <Button
-                  variant="primary"
-                  type="submit"
-                  style={buttonStyling}
-                  className="mt-2"
-                >
-                  Register
-                </Button>
-              </Form>
+      <section className="min-h-screen flex justify-center items-center" style={{ backgroundColor: bgColor }}>
+        <div className="bg-white p-8 rounded-lg shadow-lg w-full max-w-md">
+          <h2 className="text-2xl font-bold mb-6 text-center" style={{ color: PRIMARY_COLOR }}>
+            Register
+          </h2>
+          <form onSubmit={handleSubmit}>
+            <div className="mb-4">
+              <label className="block text-sm font-bold mb-2" style={{ color: PRIMARY_COLOR }}>
+                Username
+              </label>
+              <input
+                type="text"
+                name="username"
+                value={data.username}
+                onChange={handleChange}
+                placeholder="Enter username"
+                className="w-full p-3 border border-gray-300 rounded-lg focus:ring focus:ring-indigo-500"
+                required
+              />
+              <p className="text-sm text-gray-500 mt-2">We just might sell your data</p>
             </div>
-          </div>
+            <div className="mb-4">
+              <label className="block text-sm font-bold mb-2" style={{ color: PRIMARY_COLOR }}>
+                Email
+              </label>
+              <input
+                type="email"
+                name="email"
+                value={data.email}
+                onChange={handleChange}
+                placeholder="Enter your email"
+                className="w-full p-3 border border-gray-300 rounded-lg focus:ring focus:ring-indigo-500"
+                required
+              />
+              <p className="text-sm text-gray-500 mt-2">We just might sell your data</p>
+            </div>
+            <div className="mb-4">
+              <label className="block text-sm font-bold mb-2" style={{ color: PRIMARY_COLOR }}>
+                Password
+              </label>
+              <input
+                type="password"
+                name="password"
+                value={data.password}
+                onChange={handleChange}
+                placeholder="Enter your password"
+                className="w-full p-3 border border-gray-300 rounded-lg focus:ring focus:ring-indigo-500"
+                required
+              />
+            </div>
+            <div className="flex items-center mb-4">
+              <input
+                type="checkbox"
+                className="form-checkbox text-indigo-600"
+                id="flexSwitchCheckDefault"
+                onChange={() => setLight(!light)}
+              />
+              <label htmlFor="flexSwitchCheckDefault" className="ml-2 text-gray-600">
+                {bgText}
+              </label>
+            </div>
+            {error && (
+              <div className="text-red-500 text-sm mb-4">
+                {error}
+              </div>
+            )}
+            <button
+              type="submit"
+              className="w-full py-3 text-white rounded-lg"
+              style={{ backgroundColor: PRIMARY_COLOR }}
+            >
+              Register
+            </button>
+          </form>
         </div>
       </section>
     </>

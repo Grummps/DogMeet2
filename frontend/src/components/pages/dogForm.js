@@ -1,7 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
-import { useNavigate } from 'react-router-dom';
-import getUserInfo from '../../utilities/decodeJwt';
+import getUserInfo from '../../utilities/decodeJwt';  // Import getUserInfo
 
 const DogForm = ({ updateUser, userId }) => {
     const [dogName, setDogName] = useState('');
@@ -11,16 +10,16 @@ const DogForm = ({ updateUser, userId }) => {
     const [loading, setLoading] = useState(false);
     const [success, setSuccess] = useState(null);  // For success message
     const [dogs, setDogs] = useState([]); // State for user's dogs
+    const [showForm, setShowForm] = useState(false);  // State to toggle form visibility
 
     // Fetch user's dogs when the component mounts
     useEffect(() => {
-
         const userInfo = getUserInfo();  // Get the logged-in user's info from the JWT
 
         const fetchDogs = async () => {
             try {
-                const response = await axios.get(`${process.env.REACT_APP_BACKEND_URI}/users/${userInfo.id}`); // Adjust API endpoint as needed
-                setDogs(response.data.dogId); // Assuming dogId contains an array of dog IDs
+                const response = await axios.get(`${process.env.REACT_APP_BACKEND_URI}/users/${userInfo.id}`);
+                setDogs(response.data.dogId);  // Assuming dogId contains an array of dog IDs
             } catch (error) {
                 console.error('Error fetching dogs:', error);
                 setError('Failed to fetch dogs.');
@@ -33,12 +32,11 @@ const DogForm = ({ updateUser, userId }) => {
     // Function to handle deleting a dog
     const handleDeleteDog = async (dogId) => {
         try {
-            
             const userInfo = getUserInfo();  // Get the logged-in user's info from the JWT
 
-            await axios.delete(`${process.env.REACT_APP_BACKEND_URI}/users/removeDog/${userInfo.id}/${dogId}`); // Adjust API endpoint as needed
-            await axios.delete(`${process.env.REACT_APP_BACKEND_URI}/dogs/delete/${dogId}`); // Delete dog from dogs collection
-            setDogs(prevDogs => prevDogs.filter(dog => dog._id.toString() !== dogId.toString())); // Ensure both are strings
+            await axios.delete(`${process.env.REACT_APP_BACKEND_URI}/users/removeDog/${userInfo.id}/${dogId}`);
+            await axios.delete(`${process.env.REACT_APP_BACKEND_URI}/dogs/delete/${dogId}`);  // Delete dog from dogs collection
+            setDogs(prevDogs => prevDogs.filter(dog => dog._id.toString() !== dogId.toString()));  // Ensure both are strings
         } catch (error) {
             console.error('Error deleting dog:', error);
             setError('Failed to delete dog.');
@@ -76,8 +74,8 @@ const DogForm = ({ updateUser, userId }) => {
                 },
             });
 
-            const newDog = response.data.dog; // Assuming the response contains the new dog's data
-            setDogs(prevDogs => [...prevDogs, newDog]); // Add the new dog to the state
+            const newDog = response.data.dog;  // Assuming the response contains the new dog's data
+            setDogs(prevDogs => [...prevDogs, newDog]);  // Add the new dog to the state
 
             // Optional: Update the user profile with the new dogId
             const dogId = response.data.dog._id;  // Assuming the response contains the new dog's ID
@@ -105,65 +103,90 @@ const DogForm = ({ updateUser, userId }) => {
         }
     };
 
+    // Function to toggle form visibility
+    const toggleForm = () => {
+        setShowForm(!showForm);
+    };
+
     return (
-        <div style={styles.formContainer}>
-            <h2 style={styles.heading}>Add a Dog</h2>
-            <form onSubmit={handleSubmit} encType="multipart/form-data" style={styles.form}>
-                <div style={styles.formGroup}>
-                    <label style={styles.label}>Dog Name:</label>
-                    <input
-                        type="text"
-                        value={dogName}
-                        onChange={(e) => setDogName(e.target.value)}
-                        required
-                        style={styles.input}
-                    />
-                </div>
-
-                <div style={styles.formGroup}>
-                    <label style={styles.label}>Size:</label>
-                    <select
-                        value={size}
-                        onChange={(e) => setSize(e.target.value)}
-                        required
-                        style={styles.select}
+        <div className="max-w-2xl mx-auto p-6">
+            {/* Container for the Add a Dog form */}
+            <div className="border p-6 mb-6 rounded-lg shadow-lg bg-gray-100">
+                {/* Button to show/hide the form */}
+                <div className="flex justify-center mb-6">
+                    <button
+                        onClick={toggleForm}
+                        className="bg-blue-500 text-white px-4 py-2 rounded-md hover:bg-blue-600 transition"
                     >
-                        <option value="small">Small</option>
-                        <option value="medium">Medium</option>
-                        <option value="large">Large</option>
-                    </select>
+                        {showForm ? 'Cancel' : 'Add Your Dog'}
+                    </button>
                 </div>
 
-                <div style={styles.formGroup}>
-                    <label style={styles.label}>Image (optional):</label>
-                    <input
-                        type="file"
-                        accept="image/*"
-                        onChange={handleFileChange}
-                        style={styles.inputFile}
-                    />
-                </div>
+                {/* Conditionally render the form based on showForm state */}
+                {showForm && (
+                    <form onSubmit={handleSubmit} encType="multipart/form-data" className="mt-6">
+                        <div className="mb-4">
+                            <label className="block text-sm font-medium text-gray-700 mb-2">Dog Name:</label>
+                            <input
+                                type="text"
+                                value={dogName}
+                                onChange={(e) => setDogName(e.target.value)}
+                                required
+                                className="w-full px-4 py-2 border border-gray-300 rounded-md text-gray-900 focus:outline-none focus:ring focus:ring-green-500"
+                            />
+                        </div>
 
-                {error && <p style={styles.error}>{error}</p>}
-                {success && <p style={styles.success}>{success}</p>}  {/* Success message */}
+                        <div className="mb-4">
+                            <label className="block text-sm font-medium text-gray-700 mb-2">Size:</label>
+                            <select
+                                value={size}
+                                onChange={(e) => setSize(e.target.value)}
+                                required
+                                className="w-full px-4 py-2 border border-gray-300 rounded-md text-gray-900 focus:outline-none focus:ring focus:ring-green-500"
+                            >
+                                <option value="small">Small</option>
+                                <option value="medium">Medium</option>
+                                <option value="large">Large</option>
+                            </select>
+                        </div>
 
-                <button type="submit" disabled={loading} style={styles.button}>
-                    {loading ? 'Adding...' : 'Add Dog'}
-                </button>
-            </form>
+                        <div className="mb-4">
+                            <label className="block text-sm font-medium text-gray-700 mb-2">Image (optional):</label>
+                            <input
+                                type="file"
+                                accept="image/*"
+                                onChange={handleFileChange}
+                                className="w-full px-4 py-2 border border-gray-300 rounded-md text-gray-900 focus:outline-none"
+                            />
+                        </div>
 
+                        {error && <p className="text-red-500 mb-4">{error}</p>}
+                        {success && <p className="text-green-500 mb-4">{success}</p>}  {/* Success message */}
 
+                        <div className="flex justify-center">
+                            <button
+                                type="submit"
+                                disabled={loading}
+                                className="w-full px-4 py-2 bg-green-500 text-white font-medium rounded-md hover:bg-green-600 transition"
+                            >
+                                {loading ? 'Adding...' : 'Add Dog'}
+                            </button>
+                        </div>
+                    </form>
+                )}
+            </div>
 
-            <div>
-                <h2>Your Dogs</h2>
+            {/* Container for the list of user's dogs */}
+            <div className="border p-6 rounded-lg shadow-lg bg-gray-100">
+                <h2 className="text-xl font-bold text-gray-800 mb-4">Your Dogs</h2>
                 {error && <p className="text-red-500">{error}</p>} {/* Display error message if any */}
                 <ul>
                     {dogs.map(dog => (
-                        <li key={dog._id}>
+                        <li key={dog._id} className="flex justify-between items-center mb-2">
                             <span>{dog.dogName}</span> {/* Adjust according to your dog model */}
                             <button
                                 onClick={() => handleDeleteDog(dog._id)}
-                                className="ml-2 bg-red-500 text-white px-2 py-1 rounded"
+                                className="ml-2 bg-red-500 text-white px-3 py-1 rounded-md hover:bg-red-600 transition"
                             >
                                 Delete
                             </button>
@@ -172,80 +195,7 @@ const DogForm = ({ updateUser, userId }) => {
                 </ul>
             </div>
         </div>
-
     );
 };
 
 export default DogForm;
-
-// Styling using CSS-in-JS
-const styles = {
-    formContainer: {
-        maxWidth: '500px',
-        margin: '0 auto',
-        padding: '20px',
-        border: '1px solid #ccc',
-        borderRadius: '8px',
-        boxShadow: '0px 4px 6px rgba(0, 0, 0, 0.1)',
-        backgroundColor: '#f9f9f9',
-    },
-    heading: {
-        textAlign: 'center',
-        color: '#333',
-        marginBottom: '20px',
-    },
-    form: {
-        display: 'flex',
-        flexDirection: 'column',
-    },
-    formGroup: {
-        marginBottom: '15px',
-    },
-    label: {
-        fontWeight: 'bold',
-        marginBottom: '5px',
-        display: 'block',
-    },
-    input: {
-        width: '100%',
-        padding: '10px',
-        borderRadius: '4px',
-        border: '1px solid #ccc',
-        fontSize: '16px',
-        boxSizing: 'border-box',
-    },
-    select: {
-        width: '100%',
-        padding: '10px',
-        borderRadius: '4px',
-        border: '1px solid #ccc',
-        fontSize: '16px',
-        boxSizing: 'border-box',
-    },
-    inputFile: {
-        fontSize: '16px',
-    },
-    button: {
-        padding: '10px 15px',
-        backgroundColor: '#4CAF50',
-        color: '#fff',
-        border: 'none',
-        borderRadius: '4px',
-        fontSize: '16px',
-        cursor: 'pointer',
-        marginTop: '10px',
-    },
-    buttonHover: {
-        backgroundColor: '#45a049',
-    },
-    error: {
-        color: 'red',
-        fontSize: '14px',
-        marginTop: '10px',
-    },
-    success: {
-        color: 'green',
-        fontSize: '14px',
-        marginTop: '10px',
-    },
-};
