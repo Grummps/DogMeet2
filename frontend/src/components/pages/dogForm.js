@@ -111,7 +111,7 @@ const DogForm = ({ updateUser, userId }) => {
     return (
         <div className="max-w-2xl mx-auto p-6">
             {/* Container for the Add a Dog form */}
-            <div className="border p-6 mb-6 rounded-lg shadow-lg bg-gray-100">
+            <div className="border p-6 mb-6 rounded-lg shadow-lg bg-gray-100 w-[400px]">  {/* Fixed width */}
                 {/* Button to show/hide the form */}
                 <div className="flex justify-center mb-6">
                     <button
@@ -177,7 +177,7 @@ const DogForm = ({ updateUser, userId }) => {
             </div>
 
             {/* Container for the list of user's dogs */}
-            <div className="border p-6 rounded-lg shadow-lg bg-gray-100">
+            <div className="border p-6 rounded-lg shadow-lg bg-gray-100 w-[400px]">  {/* Fixed width */}
                 <h2 className="text-xl font-bold text-gray-800 mb-4">Your Dogs</h2>
                 {error && <p className="text-red-500">{error}</p>} {/* Display error message if any */}
                 <ul>
