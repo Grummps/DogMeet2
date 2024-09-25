@@ -88,7 +88,7 @@ const DogForm = ({ updateUser, userId }) => {
             setSize('small');
             setImage(null);
 
-            // Show success message
+            // Show success message and close modal
             setSuccess('Dog added successfully!');
             setShowModal(false);  // Close modal after successful form submission
         } catch (error) {
@@ -100,32 +100,74 @@ const DogForm = ({ updateUser, userId }) => {
     };
 
     return (
-        <div className="max-w-5xl mx-auto p-6 flex space-x-10 relative">
-            
-            {/* Separate Container for the List of Dogs */}
-            <div className="border p-6 rounded-lg shadow-md bg-white w-[400px] h-[400px] overflow-auto relative">  {/* Fixed height with scroll */}
-                <h2 className="text-2xl font-semibold text-gray-900 mb-6">Your Dogs</h2>
-                {error && <p className="text-red-500">{error}</p>} {/* Display error message if any */}
-                <ul className="space-y-3">
-                    {dogs.map(dog => (
-                        <li key={dog._id} className="flex justify-between items-center">
-                            <span className="text-gray-700 font-medium">{dog.dogName}</span> {/* Adjust according to your dog model */}
-                            <button
-                                onClick={() => handleDeleteDog(dog._id)}
-                                className="ml-2 bg-red-500 text-white px-4 py-2 rounded-full hover:bg-red-600 transition duration-300 shadow-md"
-                            >
-                                Delete
-                            </button>
-                        </li>
-                    ))}
-                </ul>
+        <div className="max-w-6xl mx-auto p-6 relative">
 
-                {/* Add a Dog Button positioned absolutely in the top right corner */}
-                <div className="absolute top-2 right-2 flex items-center space-x-2 cursor-pointer" onClick={() => setShowModal(true)}>
+            {/* "Your Dogs" title and Add Button on the top left */}
+            <div className="absolute top-4 left-6 z-10">
+                <div className="flex items-center space-x-4">
+                    <h2 className="text-2xl font-semibold text-gray-900">Your Dogs</h2>
+
+                    {/* Display success message next to "Your Dogs" */}
+                    {success && <p className="text-green-500 text-sm font-semibold mt-2">{success}</p>}
+                </div>
+
+                {/* Horizontal line under "Your Dogs" */}
+                <div className="absolute left-0 mt-1 w-[calc(1800%-1.5rem)] border-t border-gray-300"></div>
+
+                <div
+                    className="mt-3 flex items-center space-x-2 cursor-pointer"  // Add Button below "Your Dogs"
+                    onClick={() => setShowModal(true)}
+                >
                     <div className="flex items-center justify-center w-10 h-10 rounded-full border-2 border-blue-500 text-blue-500 hover:bg-blue-500 hover:text-white transition duration-300 shadow-md">
-                        <span className="text-2xl font-bold leading-none mb-1.5">+</span>
+                        <span className="text-2xl font-bold leading-none ">+</span>
                     </div>
                 </div>
+            </div>
+
+            {/* Container for dogs, with min-height when no dogs are present */}
+            <div className={`relative mt-20 ${dogs.length === 0 ? 'min-h-[200px]' : ''}`}>
+                {error && <p className="text-red-500">{error}</p>} {/* Display error message if any */}
+
+                {dogs.length === 0 ? (
+                    <div className="text-center text-gray-500 p-10">
+                        <p>No dogs have been added yet.</p>
+                    </div>
+                ) : (
+                    <div className="overflow-x-auto py-6 scrollbar-hide">
+                        <div className="grid grid-flow-col grid-rows-2 gap-6">
+                            {dogs.map(dog => (
+                                <div key={dog._id} className="bg-gray-50 rounded-lg shadow-md p-4 w-[300px] mb-2">
+                                    {/* Dog Image with nicer border */}
+                                    {dog.image ? (
+                                        <img
+                                            src={dog.image}
+                                            alt={dog.dogName}
+                                            className="w-full h-40 rounded-lg object-cover mb-2 border-4 border-gray-200"
+                                        />
+                                    ) : (
+                                        <div className="w-full h-40 bg-gray-300 rounded-lg flex items-center justify-center mb-4 border-4 border-gray-200">
+                                            <span className="text-gray-500 text-sm">No Image</span>
+                                        </div>
+                                    )}
+                                    {/* Dog Info */}
+                                    <div className="text-center mb-4">
+                                        <h3 className="text-lg font-semibold break-words">{dog.dogName}</h3>
+                                        <p className="text-sm text-gray-500">Size: {dog.size}</p>
+                                    </div>
+                                    {/* Delete Button */}
+                                    <div className="text-center">
+                                        <button
+                                            onClick={() => handleDeleteDog(dog._id)}
+                                            className="bg-red-500 text-white p-1 w-6 h-6 rounded-full flex items-center justify-center hover:bg-red-600 transition duration-300 shadow-md"
+                                        >
+                                            <span className="text-sm font-bold">&times;</span>
+                                        </button>
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+                )}
             </div>
 
             {/* Modal */}
@@ -174,7 +216,7 @@ const DogForm = ({ updateUser, userId }) => {
                             </div>
 
                             {error && <p className="text-red-500 mb-4">{error}</p>}
-                            {success && <p className="text-green-500 mb-4">{success}</p>}
+                            {/* Remove success message from here */}
 
                             <div className="flex justify-center">
                                 <button
