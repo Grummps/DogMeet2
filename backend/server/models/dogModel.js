@@ -23,10 +23,4 @@ const dogSchema = new mongoose.Schema(
   { collection: "dogs" }
 );
 
-// This function can be used to generate the full S3 URL for the image
-dogSchema.methods.getImageUrl = function () {
-  const s3BaseUrl = process.env.S3_BASE_URL;  // Base URL for your S3 bucket, stored in an environment variable
-  return `${s3BaseUrl}/${this.image}`;
-};
-
 module.exports = mongoose.model('dogs', dogSchema);

@@ -1,11 +1,11 @@
 const express = require('express');
+const mongoose = require('mongoose');
 const router = express.Router();
 const dogModel = require('../models/dogModel');
-const mongoose = require('mongoose')
-const newUserModel = require('../models/userModel')
-const multer = require('multer');
-const storage = multer.memoryStorage();  // If you're handling image uploads with memoryStorage
-const upload = multer({ storage });
+const newUserModel = require('../models/userModel');
+const upload = require('../config/multerConfig');  // Import the Multer configuration
+const s3 = require('../config/s3Config');  // Import the S3 configuration
+const { v4: uuidv4 } = require('uuid');  // For generating unique file names
 
 // Create a new dog and assign it to the user
 router.post('/create', upload.single('image'), async (req, res) => {
@@ -23,18 +23,37 @@ router.post('/create', upload.single('image'), async (req, res) => {
             return res.status(400).json({ message: 'Invalid size. Must be small, medium, or large.' });
         }
 
+        // Prepare for S3 upload if an image is provided
+        let imageUrl = null;
+        if (req.file) {
+            const fileContent = req.file.buffer;  // Get the file content from memory (Multer memoryStorage)
+            const fileExt = req.file.originalname.split('.').pop();  // Extract file extension
+            const fileName = `${uuidv4()}.${fileExt}`;  // Generate a unique file name
+
+            // Define S3 upload parameters
+            const params = {
+                Bucket: 'dogmeet',  // Replace with your actual bucket name
+                Key: `dogs/${fileName}`,     // Save the file in a 'dogs/' folder in S3
+                Body: fileContent,
+                ContentType: req.file.mimetype,  // Set the correct MIME type
+            };
+
+            // Upload the file to S3
+            const s3Response = await s3.upload(params).promise();
+            imageUrl = s3Response.Location;  // Get the public URL of the uploaded file
+        }
+
         // Create a new dog document
         const newDog = new dogModel({
             dogName,
             size,
-            image: req.file ? req.file.path : null  // Handle image if it's uploaded
+            image: imageUrl  // Save the image URL if it was uploaded
         });
 
         const savedDog = await newDog.save();
 
         // Update the user's profile with the new dogId
         await newUserModel.findByIdAndUpdate(userId, { $push: { dogId: savedDog._id } });
-
 
         res.status(201).json({ message: 'Dog created and assigned to user successfully.', dog: savedDog });
     } catch (error) {
