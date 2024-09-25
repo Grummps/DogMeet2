@@ -56,17 +56,46 @@ const Profile = () => {
     }
 
     return (
-        <div className="flex h-screen relative">
-            {/* Adjust the left position for DogForm to be halfway between left and center */}
-            <div className="absolute left-1/4 top-1/2 transform -translate-y-1/2 flex flex-col items-center z-10">
-                <DogForm updateUser={updateUser} />
+        <div className="flex flex-col items-start justify-start h-screen relative overflow-hidden p-10 bg-gray-100">
+            {/* Background placeholder */}
+            <div className="w-full h-32 bg-gradient-to-r from-gray-200 via-gray-300 to-gray-200 mb-6">
+                <div className="text-center py-10">
+                    <p className="text-gray-600 italic">Add a background picture here in the future</p>
+                </div>
             </div>
 
-            {/* Center for the user's name, 3/4ths up the screen */}
-            <div className="absolute inset-0 flex items-start justify-center" style={{ top: '26%' }}>
-                <h1 className="text-4xl font-bold text-center text-gray-800">
-                    {user.username}'s Profile
-                </h1>
+            {/* Horizontal line separator */}
+            <hr className="border-t-2 border-gray-300 w-full mb-10" />
+
+            {/* Profile image and username in a row */}
+            <div className="flex items-center space-x-6 ml-56">
+                {/* Profile Image */}
+                <div>
+                    {user.profileImage ? (
+                        <img
+                            src={user.profileImage}
+                            alt={`${user.username}'s profile`}
+                            className="w-32 h-32 rounded-full object-cover border-4 border-white shadow-lg"
+                        />
+                    ) : (
+                        <div className="w-32 h-32 bg-gray-300 rounded-full flex items-center justify-center border-4 border-white shadow-lg">
+                            <span className="text-gray-500 text-xl">No Image</span>
+                        </div>
+                    )}
+                </div>
+
+                {/* User's name */}
+                <div>
+                    <h1 className="text-4xl font-bold text-gray-800">
+                        {user.username}'s Profile
+                    </h1>
+                    <p className="text-gray-600 mt-2 text-lg">Member since: {new Date(user.createdAt).toLocaleDateString()}</p>
+                </div>
+            </div>
+
+            {/* Dog Form */}
+            <div className="mt-10 ml-56">
+                <DogForm updateUser={updateUser} />
             </div>
         </div>
     );

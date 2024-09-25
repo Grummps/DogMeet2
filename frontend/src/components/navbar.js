@@ -1,34 +1,20 @@
 import React, { useEffect, useState } from "react";
 import getUserInfo from '../utilities/decodeJwt';
-import Container from 'react-bootstrap/Container';
-import Nav from 'react-bootstrap/Nav';
-import ReactNavbar from 'react-bootstrap/Navbar';
 
-
-// Here, we display our Navbar
+// Here, we display our Tailwind-only Navbar
 export default function Navbar() {
-  // We are pulling in the user's info but not using it for now.
-  // Warning disabled: 
-  // eslint-disable-next-line
-  const [user, setUser] = useState({})
+  const [user, setUser] = useState({});
 
   useEffect(() => {
-    setUser(getUserInfo())
-  }, [])
+    setUser(getUserInfo());
+  }, []);
 
-  // if (!user) return null   - for now, let's show the bar even not logged in.
-  // we have an issue with getUserInfo() returning null after a few minutes
-  // it seems.
   return (
-    <ReactNavbar bg="dark" variant="dark">
-      <Container>
-        <Nav className="me-auto">
-          <Nav.Link href="/">Start</Nav.Link>
-          <Nav.Link href="/home">Home</Nav.Link>
-          <Nav.Link href="/profile">Profile</Nav.Link>
-        </Nav>
-      </Container>
-    </ReactNavbar>
-
+    <div className="fixed top-0 left-0 h-screen w-48 bg-gray-900 text-white flex flex-col p-4 z-10">
+      {/* Nav links arranged vertically */}
+      <a href="/" className="text-white py-2 px-4 hover:bg-gray-700 rounded mb-2">Start</a>
+      <a href="/home" className="text-white py-2 px-4 hover:bg-gray-700 rounded mb-2">Home</a>
+      <a href="/profile" className="text-white py-2 px-4 hover:bg-gray-700 rounded mb-2">Profile</a>
+    </div>
   );
 }
