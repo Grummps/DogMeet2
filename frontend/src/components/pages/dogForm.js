@@ -105,10 +105,10 @@ const DogForm = ({ updateUser, userId }) => {
             {/* "Your Dogs" title and Add Button on the top left */}
             <div className="absolute top-4 left-6 z-10">
                 <div className="flex items-center space-x-4">
-                    <h2 className="text-2xl font-semibold text-gray-900">Your Dogs</h2>
+                    <h2 className="text-2xl font-semibold text-gray-900 mt-.5 mb-2.5">Your Dogs</h2>
 
                     {/* Display success message next to "Your Dogs" */}
-                    {success && <p className="text-green-500 text-sm font-semibold mt-2">{success}</p>}
+                    {success && <p className="text-green-500 text-sm font-semibold mt-2.5 mb-3">{success}</p>}
                 </div>
 
                 {/* Horizontal line under "Your Dogs" */}
