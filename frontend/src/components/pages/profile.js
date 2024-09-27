@@ -68,17 +68,17 @@ const Profile = () => {
             <hr className="border-t-2 border-gray-300 w-full mb-8" />
 
             {/* Profile image and username in a row */}
-            <div className="flex items-center space-x-6 ml-56">
+            <div className="flex items-center space-x-6 px-4 md:px-0 md:ml-56">
                 {/* Profile Image */}
                 <div>
                     {user.profileImage ? (
                         <img
                             src={user.profileImage}
                             alt={`${user.username}'s profile`}
-                            className="w-52 h-52 rounded-full object-cover border-4 border-white shadow-lg"
+                            className="w-40 h-40 qhd:w-52 qhd:h-52 rounded-full object-cover border-4 border-white shadow-lg"
                         />
                     ) : (
-                        <div className="w-52 h-52 bg-gray-300 rounded-full flex items-center justify-center border-4 border-white shadow-lg">
+                        <div className="w-40 h-40 qhd:w-52 qhd:h-52 bg-gray-300 rounded-full flex items-center justify-center border-4 border-white shadow-lg">
                             <span className="text-gray-500 text-xl">No Image</span>
                         </div>
                     )}
@@ -86,15 +86,15 @@ const Profile = () => {
 
                 {/* User's name */}
                 <div>
-                    <h1 className="text-4xl font-bold text-gray-800 mt-10 ml-4">
-                        {user.username}'s Profile
+                    <h1 className="text-2xl qhd:text-4xl font-bold text-gray-800 mt-10 ml-4">
+                        {user.username}
                     </h1>
                     <p className="text-gray-600 mt-2 ml-6 text-sm">Member since: {new Date(user.createdAt).toLocaleDateString()}</p>
                 </div>
             </div>
 
             {/* Dog Form */}
-            <div className="mt-4 ml-56">
+            <div className="mt-4 px-4 md:px-0 md:ml-56">
                 <DogForm updateUser={updateUser} />
             </div>
         </div>
