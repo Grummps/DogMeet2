@@ -4,7 +4,6 @@ import axios from "axios";
 
 const PRIMARY_COLOR = "#cc5c99";
 const SECONDARY_COLOR = "#0c0c1f";
-const url = "http://localhost:8081/users/signup";
 
 const Register = () => {
   const [data, setData] = useState({ username: "", email: "", password: "" });
@@ -31,7 +30,7 @@ const Register = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      const { data: response } = await axios.post(url, data);
+      const { data: response } = await axios.post(`${process.env.REACT_APP_BACKEND_URI}/users/signup`, data);
       navigate("/login");
     } catch (error) {
       if (

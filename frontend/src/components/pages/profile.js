@@ -56,21 +56,18 @@ const Profile = () => {
     }
 
     return (
-        <div className="flex flex-col items-start justify-start h-screen relative overflow-hidden p-10 bg-gray-100">
+        <div className="flex flex-col items-start justify-start h-screen relative overflow-visible pt-0  bg-gray-100">
             {/* Background placeholder */}
-            <div className="w-full h-32 bg-gradient-to-r from-gray-200 via-gray-300 to-gray-200 mb-6">
+            <div className="w-full bg-gradient-to-r from-gray-200 via-gray-300 to-gray-200 -mb-24 h-full">
                 <div className="text-center py-10">
                     <p className="text-gray-600 italic">Add a background picture here in the future</p>
                 </div>
             </div>
-
-            {/* Horizontal line separator */}
-            <hr className="border-t-2 border-gray-300 w-full mb-8" />
-
+            
             {/* Profile image and username in a row */}
-            <div className="flex items-center space-x-6 px-4 md:px-0 md:ml-56">
+            <div className="flex items-center relative -mt-7 -mb-10 ml-56">
                 {/* Profile Image */}
-                <div>
+                <div className="flex-shrink-0 relative z-10">
                     {user.profileImage ? (
                         <img
                             src={user.profileImage}
@@ -85,16 +82,16 @@ const Profile = () => {
                 </div>
 
                 {/* User's name */}
-                <div>
-                    <h1 className="text-2xl qhd:text-4xl font-bold text-gray-800 mt-10 ml-4">
+                <div className="bg-gray-100 relative rounded-lg pr-5 -ml-14 -mb-16 mt-5 flex-shrink-0 ">
+                    <h1 className="pl-20 text-2xl qhd:text-4xl font-bold text-gray-800 mt-2 ">
                         {user.username}
                     </h1>
-                    <p className="text-gray-600 mt-2 ml-6 text-sm">Member since: {new Date(user.createdAt).toLocaleDateString()}</p>
+                    <p className="pl-20 text-gray-600 mt-2 text-sm">Member since: {new Date(user.createdAt).toLocaleDateString()}</p>
                 </div>
             </div>
 
             {/* Dog Form */}
-            <div className="mt-4 px-4 md:px-0 md:ml-56">
+            <div className="mt-10 px-4 ml-56">
                 <DogForm updateUser={updateUser} />
             </div>
         </div>
