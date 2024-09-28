@@ -23,7 +23,7 @@ const App = () => {
   }, []);
 
   return (
-    <>
+    <div className="bg-blue-50">
       <Navbar />
       <UserContext.Provider value={user}>
         <Routes>
@@ -34,7 +34,7 @@ const App = () => {
           <Route path="/profile" element={<Profile />} />
         </Routes>
       </UserContext.Provider>
-    </>
+    </div>
   );
 };
 

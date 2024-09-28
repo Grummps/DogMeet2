@@ -103,7 +103,7 @@ const DogForm = ({ updateUser, userId }) => {
         <div className="max-w-6xl mx-auto p-6 relative">
 
             {/* "Your Dogs" title and Add Button on the top left */}
-            <div className="absolute top-4 left-6 z-10">
+            <div className="absolute top-10 left-6 z-10">
                 <div className="flex items-center space-x-4">
                     <h2 className="text-lg mt-2 mb-3 font-semibold text-gray-900 qhd:text-2xl qhd:mt-0.5 qhd:mb-2.5">Your Dogs</h2>
 
@@ -112,14 +112,14 @@ const DogForm = ({ updateUser, userId }) => {
                 </div>
 
                 {/* Horizontal line under "Your Dogs" */}
-                <div className="mb-1.5 -mt-3 w-[calc(1700%-1.5rem)] qhd:mb-1.5 qhd:-mt-2 qhd:w-[calc(1800%-1.5rem)] border-t border-gray-300"></div>
+                <div className="mb-1.5 -mt-3 w-[calc(1250%-1.5rem)] qhd:mb-1.5 qhd:-mt-2 qhd:w-[calc(1800%-1.5rem)] border-t border-gray-300"></div>
 
                 <div
                     className="qhd:mt-3 mt-1 flex items-center space-x-2 cursor-pointer"  // Add Button below "Your Dogs"
                     onClick={() => setShowModal(true)}
                 >
                     <div className="flex items-center justify-center w-8 h-8 qhd:w-10 qhd:h-10 rounded-full border-2 border-blue-500 text-blue-500 hover:bg-blue-500 hover:text-white transition duration-300 shadow-md">
-                        <span className="text-2xl font-bold leading-none ">+</span>
+                        <span className="text-2xl -mt-0.5 font-bold leading-none ">+</span>
                     </div>
                 </div>
             </div>
@@ -136,7 +136,7 @@ const DogForm = ({ updateUser, userId }) => {
                     <div className="overflow-x-auto py-6 scrollbar-hide">
                         <div className="grid grid-flow-col qhd:grid-rows-2 gap-6">
                             {dogs.map(dog => (
-                                <div key={dog._id} className="bg-gray-50 rounded-lg shadow-md p-4 w-64 qhd:w-[300px] mb-2">
+                                <div key={dog._id} className="bg-gray-300 rounded-lg shadow-md p-4 w-64 qhd:w-[300px] mb-2">
                                     {/* Dog Image with nicer border */}
                                     {dog.image ? (
                                         <img
@@ -158,9 +158,9 @@ const DogForm = ({ updateUser, userId }) => {
                                     <div className="text-center">
                                         <button
                                             onClick={() => handleDeleteDog(dog._id)}
-                                            className="bg-red-500 text-white p-1 w-6 h-6 rounded-full flex items-center justify-center hover:bg-red-600 transition duration-300 shadow-md"
+                                            className="bg-red-400 text-white -mt-5 p-1 w-6 h-6 rounded-full flex items-center justify-center hover:bg-red-600 transition duration-300 shadow-md"
                                         >
-                                            <span className="text-sm font-bold">&times;</span>
+                                            <span className="text-sm -mt-0.5 font-bold">&times;</span>
                                         </button>
                                     </div>
                                 </div>
@@ -199,9 +199,9 @@ const DogForm = ({ updateUser, userId }) => {
                                     required
                                     className="w-full px-4 py-2 border border-gray-300 rounded-lg text-gray-900 focus:outline-none focus:ring focus:ring-green-500"
                                 >
-                                    <option value="small">Small</option>
-                                    <option value="medium">Medium</option>
-                                    <option value="large">Large</option>
+                                    <option value="small">Small ( &lt; 20lbs )</option>
+                                    <option value="medium">Medium ( &gt; 21lbs &lt; 55lbs )</option>
+                                    <option value="large">Large ( &gt; 56lbs )</option>
                                 </select>
                             </div>
 
