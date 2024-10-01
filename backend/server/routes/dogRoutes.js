@@ -6,6 +6,7 @@ const newUserModel = require('../models/userModel');
 const upload = require('../config/multerConfig');  // Import the Multer configuration
 const s3 = require('../config/s3Config');  // Import the S3 configuration
 const { v4: uuidv4 } = require('uuid');  // For generating unique file names
+const { URL } = require('url');
 
 // Create a new dog and assign it to the user
 router.post('/create', upload.single('image'), async (req, res) => {
@@ -124,12 +125,37 @@ router.delete('/delete/:id', async (req, res) => {
             return res.status(400).json({ message: 'Invalid dog ID.' });
         }
 
-        const deletedDog = await dogModel.findByIdAndDelete(dogId);
-        if (!deletedDog) {
+        // Find the dog first to get the image URL
+        const dog = await dogModel.findById(dogId);
+        if (!dog) {
             return res.status(404).json({ message: 'Dog not found.' });
         }
 
-        res.status(200).json({ message: 'Dog deleted successfully.' });
+        // If there is an image, delete it from S3
+        if (dog.image) {
+            try {
+                const imageUrl = dog.image;
+                const url = new URL(imageUrl);
+                const key = decodeURIComponent(url.pathname.substring(1));  // Remove leading '/'
+
+                // Define S3 delete parameters
+                const params = {
+                    Bucket: 'dogmeet',  // Replace with your actual bucket name
+                    Key: key
+                };
+
+                // Delete the object from S3
+                await s3.deleteObject(params).promise();
+            } catch (s3Error) {
+                console.error('Error deleting image from S3:', s3Error);
+                // You might want to handle this error separately or continue
+            }
+        }
+
+        // Now delete the dog from the database
+        await dogModel.findByIdAndDelete(dogId);
+
+        res.status(200).json({ message: 'Dog and associated image deleted successfully.' });
     } catch (error) {
         console.error('Error deleting dog:', error);
         res.status(500).json({ message: 'Error deleting dog.' });

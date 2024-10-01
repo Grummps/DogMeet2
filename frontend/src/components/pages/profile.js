@@ -58,7 +58,7 @@ const Profile = () => {
     return (
         <div className="flex flex-col items-start justify-start h-screen relative overflow-visible pt-0 bg-blue-50">
             {/* Background placeholder */}
-            <div className="w-full bg-gradient-to-r from-gray-200 via-gray-300 to-gray-200 -mb-32 h-full bg-no-repeat bg-right bg-profile-bg">
+            <div className="w-full from-gray-200 via-gray-300 to-gray-200 -mb-32 h-full bg-right bg-profile-bg">
                 <div className="text-center py-10">
                 </div>
             </div>

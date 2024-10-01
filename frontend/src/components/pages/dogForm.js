@@ -111,21 +111,21 @@ const DogForm = ({ updateUser, userId }) => {
                     {success && <p className="text-green-500 text-sm font-semibold mt-2.5 mb-3">{success}</p>}
                 </div>
 
-                {/* Horizontal line under "Your Dogs" */}
-                <div className="mb-1.5 -mt-3 w-[calc(1250%-1.5rem)] qhd:mb-1.5 qhd:-mt-2 qhd:w-[calc(1800%-1.5rem)] border-t border-gray-300"></div>
-
                 <div
-                    className="qhd:mt-3 mt-1 flex items-center space-x-2 cursor-pointer"  // Add Button below "Your Dogs"
+                    className="qhd:mt-3 mt-1 flex items-center space-x-2 "  // Add Button below "Your Dogs"
                     onClick={() => setShowModal(true)}
                 >
-                    <div className="flex items-center justify-center w-8 h-8 qhd:w-10 qhd:h-10 rounded-full border-2 border-blue-500 text-blue-500 hover:bg-blue-500 hover:text-white transition duration-300 shadow-md">
+                    <div className="flex items-center justify-center cursor-pointer w-8 h-8 qhd:w-10 qhd:h-10 rounded-full border-2 border-blue-500 text-blue-500 hover:bg-blue-500 hover:text-white transition duration-300 shadow-md">
                         <span className="text-2xl -mt-0.5 font-bold leading-none ">+</span>
                     </div>
                 </div>
             </div>
 
+            {/* Horizontal line under "Your Dogs" */}
+            <div className="mb-1.5 mt-16 w-full qhd:mb-1.5 qhd:mt-16 border-t border-gray-300"></div>
+
             {/* Container for dogs, with min-height when no dogs are present */}
-            <div className={`relative mt-20 ${dogs.length === 0 ? 'min-h-[200px]' : ''}`}>
+            <div className={`relative mt-20 ${dogs.length === 0 ? 'min-h-[720px]' : ''}`}>
                 {error && <p className="text-red-500">{error}</p>} {/* Display error message if any */}
 
                 {dogs.length === 0 ? (
