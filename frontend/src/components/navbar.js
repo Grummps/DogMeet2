@@ -1,8 +1,11 @@
+// src/components/Navbar.jsx
+
 import React, { useEffect, useState } from "react";
 import {
   HomeIcon,
   UserIcon,
   PlayCircleIcon,
+  MapPinIcon, // Import MapPinIcon for Parks
   ArrowLeftOnRectangleIcon, // Import logout icon
 } from "@heroicons/react/24/solid";
 import getUserInfo from "../utilities/decodeJwt";
@@ -49,6 +52,14 @@ export default function Navbar() {
           <UserIcon className="h-12 w-12 fill-white hover:fill-blue-500 cursor-pointer" />
           <span className="absolute left-16 top-1/2 transform -translate-y-1/2 -mt-1 bg-gray-800 text-white text-xs rounded px-2 py-1 opacity-0 group-hover:opacity-100 transition-opacity duration-300 z-20">
             Profile
+          </span>
+        </a>
+
+        {/* Parks Icon */}
+        <a href="/parks" className="relative group flex items-center justify-center">
+          <MapPinIcon className="h-12 w-12 fill-white hover:fill-blue-500 cursor-pointer" />
+          <span className="absolute left-16 top-1/2 transform -translate-y-1/2 -mt-1 bg-gray-800 text-white text-xs rounded px-2 py-1 opacity-0 group-hover:opacity-100 transition-opacity duration-300 z-20">
+            Parks
           </span>
         </a>
       </div>

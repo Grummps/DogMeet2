@@ -15,6 +15,7 @@ import 'leaflet/dist/leaflet.css';
 import AdminDashboard from "./components/pages/adminDashboard";
 import Unauthorized from "./components/unauthorized";
 import ProtectedRoute from "./components/protectedRoute";
+import ParksList from "./components/pages/parkList";
 
 import L from 'leaflet';
 import markerIcon2x from 'leaflet/dist/images/marker-icon-2x.png';
@@ -64,6 +65,7 @@ const App = () => {
           <Route exact path="/login" element={<Login />} />
           <Route exact path="/signup" element={<Signup />} />
           <Route path="/profile" element={<Profile />} />
+          <Route path="/parks" element={<ParksList />} />
 
           {/* AddPark Route - Protected and Admin Only */}
           <Route

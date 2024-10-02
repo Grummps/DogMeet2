@@ -10,7 +10,7 @@ const authenticate = (req, res, next) => {
   }
 
   try {
-    const decoded = jwt.verify(token, process.env.JWT_SECRET); // Ensure JWT_SECRET is set in your environment variables
+    const decoded = jwt.verify(token, process.env.ACCESS_TOKEN_SECRET); 
     req.user = decoded; // Attach user info to request
     next();
   } catch (error) {
