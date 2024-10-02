@@ -2,32 +2,35 @@ const express = require('express');
 const router = express.Router();
 const mongoose = require('mongoose');
 const Park = require('../models/parkModel');
+const authenticate = require('../middleware/auth');
+const authorizeAdmin = require('../middleware/authAdmin');
 
-// Create a new park
-router.post('/create', async (req, res) => {
-    try {
-      const { parkName, occupants, eventId, image } = req.body;
-  
-      // Validate required fields
-      if (!parkName) {
-        return res.status(400).json({ message: 'Park name is required.' });
-      }
-  
-      // Create a new park
-      const newPark = new Park({
-        parkName,
-        occupants: occupants ? occupants.map(id => mongoose.Types.ObjectId(id)) : [],
-        eventId: eventId ? eventId.map(id => mongoose.Types.ObjectId(id)) : [],
-        image
-      });
-  
-      const savedPark = await newPark.save();
-      res.status(201).json(savedPark);
-    } catch (error) {
-      console.error(error);
-      res.status(500).json({ message: 'Error creating park.' });
+// Create a new park (Admin Only)
+router.post('/create', authenticate, authorizeAdmin, async (req, res) => {
+  try {
+    const { parkName, occupants, eventId, image, location } = req.body;
+
+    // Validate required fields
+    if (!parkName || !location) { // Assuming location is required now
+      return res.status(400).json({ message: 'Park name and location are required.' });
     }
-  });  
+
+    // Create a new park
+    const newPark = new Park({
+      parkName,
+      occupants: occupants ? occupants.map(id => mongoose.Types.ObjectId(id)) : [],
+      eventId: eventId ? eventId.map(id => mongoose.Types.ObjectId(id)) : [],
+      image,
+      location, // Add location field
+    });
+
+    const savedPark = await newPark.save();
+    res.status(201).json(savedPark);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: 'Error creating park.' });
+  }
+});
   
   // Get all parks
   router.get('/all', async (req, res) => {

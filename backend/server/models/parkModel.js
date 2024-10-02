@@ -1,6 +1,20 @@
 const mongoose = require("mongoose");
 const { Schema } = mongoose;
 
+// GeoJSON Point Schema
+const pointSchema = new Schema({
+  type: {
+    type: String,
+    enum: ["Point"],
+    required: true,
+    default: "Point",
+  },
+  coordinates: {
+    type: [Number], // [longitude, latitude]
+    required: true,
+  },
+});
+
 // Park schema/model
 const parkSchema = new mongoose.Schema(
   {
@@ -10,23 +24,26 @@ const parkSchema = new mongoose.Schema(
     },
     occupants: [
       {
-        type: Schema.Types.ObjectId,  // Array of ObjectIds referencing the users collection
-        ref: 'users',  // Assuming your users collection is named 'users'
+        type: Schema.Types.ObjectId, // Array of ObjectIds referencing the users collection
+        ref: 'users', // Assuming your users collection is named 'users'
       }
     ],
     eventId: [
       {
-      type: Schema.Types.ObjectId,  // Array of ObjectIds referencing events for this park
-      ref: 'events',  // Assuming your events collection is named 'events'
-      required: false,
+        type: Schema.Types.ObjectId, // Array of ObjectIds referencing events for this park
+        ref: 'events', // Assuming your events collection is named 'events'
+        required: false,
       }
-  ],
-    image: {
-      type: String,  // URL or S3 key for the park's image
-      required: false,  // Optional if you don't always have an image
+    ],
+    location: {
+      type: pointSchema,
+      required: true,
     },
   },
   { collection: "parks" }
 );
+
+// Create a 2dsphere index for geospatial queries (optional but recommended)
+parkSchema.index({ location: "2dsphere" });
 
 module.exports = mongoose.model('parks', parkSchema);
