@@ -43,7 +43,7 @@ const ParkDetail = () => {
     const [longitude, latitude] = location.coordinates;
 
     return (
-        <div className="p-6">
+        <div className="p-6 ml-36">
             <h1 className="text-3xl font-bold mb-4">{parkName}</h1>
             <div className="mb-6">
                 <h2 className="text-xl font-semibold">Location:</h2>

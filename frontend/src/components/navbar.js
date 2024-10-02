@@ -30,7 +30,7 @@ export default function Navbar() {
   return (
     <div className="fixed top-0 left-0 h-screen w-28 qhd:w-36 bg-gray-900 flex flex-col items-center py-4 z-50">
       {/* Icons Container */}
-      <div className="flex flex-col items-center space-y-6 flex-1">
+      <div className="flex flex-col mt-24 items-center space-y-6 flex-1">
         {/* Play Icon */}
         <a href="/" className="relative group flex items-center justify-center">
           <PlayCircleIcon className="h-12 w-12 fill-white hover:fill-blue-500 cursor-pointer" />
