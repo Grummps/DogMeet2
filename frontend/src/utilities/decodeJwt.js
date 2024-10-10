@@ -4,18 +4,31 @@ const getUserInfo = () => {
     const token = localStorage.getItem('accessToken');
     if (!token) return null;
 
+    let decodedToken;
+
     try {
-        const decoded = jwtDecode(token);
-        return {
-            id: decoded.id,
-            email: decoded.email,
-            username: decoded.username,
-            isAdmin: decoded.isAdmin,
-        };
+        decodedToken = jwtDecode(token);
     } catch (error) {
         console.error('Error decoding JWT:', error);
+        localStorage.removeItem('accessToken'); // Remove invalid token
         return null;
     }
+
+    const { exp, id, email, username, isAdmin } = decodedToken;
+
+    // Check if token has expired
+    if (exp * 1000 < Date.now()) {
+        console.warn('Token has expired');
+        localStorage.removeItem('accessToken');
+        return null;
+    }
+
+    return {
+        id,
+        email,
+        username,
+        isAdmin,
+    };
 };
 
 export default getUserInfo;

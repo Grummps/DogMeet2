@@ -5,6 +5,7 @@ const fs = require('fs'); // Needed to read files from local temp storage
 const upload = require('./config/multerConfig');  // Import Multer config
 const s3 = require('./config/s3Config');  // Import AWS S3 config
 const dbConnection = require("./config/db.config");
+const cookieParser = require('cookie-parser');
 
 // Import routes
 const userRoutes = require("./routes/userRoutes");
@@ -12,12 +13,12 @@ const authRoutes = require("./routes/userLoginSignup");
 const eventRoutes = require("./routes/eventRoutes");
 const parkRoutes = require("./routes/parkRoutes");
 const dogRoutes = require("./routes/dogRoutes");
+const refreshToken = require("./routes/refreshToken");
 
 // Load environment variables
 require("dotenv").config();
 
-// Middleware to handle URL-encoded form data
-app.use(express.urlencoded({ extended: true }));
+
 
 const SERVER_PORT = process.env.SERVER_PORT || 8081;
 
@@ -25,15 +26,27 @@ const SERVER_PORT = process.env.SERVER_PORT || 8081;
 dbConnection();
 
 // Middleware
-app.use(cors({ origin: "*" }));
+app.use(
+  cors({
+    origin: process.env.CLIENT_URL || 'http://localhost:8096', // Update with your frontend URL
+    credentials: true, // Allow cookies to be sent
+  })
+);
 app.use(express.json());
-
+// For cookies
+app.use(cookieParser());
+// Middleware to handle URL-encoded form data
+app.use(express.urlencoded({ extended: true }));
 // Routes
 app.use("/users", authRoutes);      // For login and signup
 app.use("/users", userRoutes);      // For user CRUD operations (get, edit, delete, etc.)
 app.use("/events", eventRoutes);    // For event-related CRUD operations
 app.use("/parks", parkRoutes);      // For park routes
 app.use("/dogs", dogRoutes);        // For dog routes
+app.use("/auth", refreshToken);     // Refresh token route
+
+
+
 
 // S3 Upload Route using Multer
 app.post('/upload', upload.single('file'), (req, res) => {

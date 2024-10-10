@@ -3,6 +3,8 @@ import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
 import getUserInfo from '../../utilities/decodeJwt';  // Import getUserInfo
 import DogForm from './dogForm';  // Corrected to dogForm
+import { getUserInfoAsync } from '../../utilities/decodeJwtAsync';
+import apiClient from '../../utilities/apiClient';
 
 const Profile = () => {
     const navigate = useNavigate();
@@ -25,11 +27,7 @@ const Profile = () => {
             console.log('User ID from token:', userId);  // Log the user ID
 
             try {
-                const response = await axios.get(`${process.env.REACT_APP_BACKEND_URI}/users/${userId}`, {
-                    headers: {
-                        Authorization: `Bearer ${localStorage.getItem('accessToken')}`
-                    }
-                });
+                const response = await apiClient.get(`/users/${userId}`);
                 setUser(response.data);
                 setError(null);
             } catch (error) {

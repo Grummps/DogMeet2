@@ -3,6 +3,7 @@ import { useNavigate, Link } from "react-router-dom";
 import axios from "axios";
 import getUserInfo from "../../utilities/decodeJwt";
 import { SunIcon, MoonIcon } from "@heroicons/react/24/solid"; // Optional: Icons for light/dark mode toggle
+import apiClient from "../../utilities/apiClient";
 
 const PRIMARY_COLOR = "bg-pink-600";  // Tailwind CSS color classes
 const SECONDARY_COLOR = "bg-gray-900";  // For dark background color
@@ -47,7 +48,7 @@ const Login = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      const { data: res } = await axios.post(url, data);
+      const { data: res } = await apiClient.post(url, data);
       const { accessToken } = res;
       localStorage.setItem("accessToken", accessToken); // Store token in localStorage
       setUser(getUserInfo(accessToken));  // Set user state after login

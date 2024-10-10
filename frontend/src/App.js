@@ -45,6 +45,7 @@ const App = () => {
     if (token) {
       const info = getUserInfo(token); // Pass the token to getUserInfo
       console.log('User info:', info); // Debugging
+      
       setUser(info);
     } else {
       console.log('No access token found.');

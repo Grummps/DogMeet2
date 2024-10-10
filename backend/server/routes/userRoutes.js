@@ -75,8 +75,6 @@ router.put('/editUser/:id', async (req, res) => {
 });
 
 
-
-
 // Route to get all users
 router.get('/getAll', async (req, res) => {
     try {
