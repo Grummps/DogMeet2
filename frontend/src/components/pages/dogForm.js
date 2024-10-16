@@ -125,7 +125,7 @@ const DogForm = ({ updateUser, userId }) => {
             <div className="mb-1.5 mt-16 w-full qhd:mb-1.5 qhd:mt-16 border-t border-gray-300"></div>
 
             {/* Container for dogs, with min-height when no dogs are present */}
-            <div className={`relative mt-20 ${dogs.length === 0 ? 'min-h-[720px]' : ''}`}>
+            <div className={`relative mt-20 ${dogs.length === 0 ? '' : ''}`}>
                 {error && <p className="text-red-500">{error}</p>} {/* Display error message if any */}
 
                 {dogs.length === 0 ? (
@@ -145,7 +145,7 @@ const DogForm = ({ updateUser, userId }) => {
                                             className="w-full h-40 rounded-lg object-cover mb-2 border-4 border-gray-200"
                                         />
                                     ) : (
-                                        <div className="w-full h-40 bg-gray-300 rounded-lg flex items-center justify-center mb-4 border-4 border-gray-200">
+                                        <div className="w-full h-40 bg-gray-300 rounded-lg flex items-center justify-center mb-2 border-4 border-gray-200">
                                             <span className="text-gray-500 text-sm">No Image</span>
                                         </div>
                                     )}

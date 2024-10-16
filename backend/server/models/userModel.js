@@ -13,8 +13,8 @@ const newUserSchema = new mongoose.Schema(
       type: String,
       required: true,
       label: "email",
-      unique: true, // Ensure emails are unique
-      lowercase: true, // Normalize email
+      unique: true,
+      lowercase: true,
       trim: true,
     },
     password: {
@@ -24,28 +24,31 @@ const newUserSchema = new mongoose.Schema(
     },
     isAdmin: {
       type: Boolean,
-      default: false, // Default to non-admin
+      default: false,
     },
     parkId: {
-      type: Schema.Types.ObjectId, // Reference to a document in the parks collection
-      ref: 'parks', // Assuming your parks collection is named 'parks'
-      required: false, // Set to true if a user must always be linked to a park
+      type: Schema.Types.ObjectId,
+      ref: 'parks',
+      required: false,
     },
-    dogId: {
-      type: [Schema.Types.ObjectId], // Reference to a document in the dogs collection
-      ref: 'dogs', // Assuming your dogs collection is named 'dogs'
-      required: false, // Set to true if a user must always have a dog
-    },
-    friends: {
-      type: [Schema.Types.ObjectId], // Array of ObjectIds referencing other users
-      ref: 'users', // Self-referencing the same collection
-      required: false, // Set to true if a user must have friends
-    },
-    eventId: {
-      type: [Schema.Types.ObjectId], // Reference to a document in the events collection
-      ref: 'events', // Assuming your events collection is named 'events'
-      required: false, // Set to true if a user must be linked to an event
-    },
+    dogId: [
+      {
+        type: Schema.Types.ObjectId,
+        ref: 'dogs',
+      }
+    ],
+    friends: [
+      {
+        type: Schema.Types.ObjectId,
+        ref: 'users',
+      }
+    ],
+    eventId: [
+      {
+        type: Schema.Types.ObjectId,
+        ref: 'events',
+      }
+    ],
   },
   { collection: "users" }
 );

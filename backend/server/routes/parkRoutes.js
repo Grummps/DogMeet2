@@ -80,4 +80,41 @@ router.delete('/delete/:id', authenticate, authorizeAdmin, getPark, async (req, 
   }
 });
 
+// Get users checked in to a specific park
+router.get('/:id/checked-in-users', getPark, async (req, res) => {
+  try {
+    const park = await Park.findById(req.params.id).populate('occupants'); // Populate occupants with user details
+
+    if (!park) {
+      return res.status(404).json({ message: 'Park not found' });
+    }
+
+    res.status(200).json(park.occupants); // Return the list of checked-in users
+  } catch (error) {
+    console.error('Error fetching checked-in users:', error);
+    res.status(500).json({ message: 'Error fetching checked-in users.' });
+  }
+});
+
+// Get upcoming events for a specific park
+router.get('/:id/events/upcoming', async (req, res) => {
+  try {
+    const park = await Park.findById(req.params.id).populate('eventId'); // Populate events
+
+    if (!park) {
+      return res.status(404).json({ message: 'Park not found' });
+    }
+
+    const now = new Date();
+
+    // Filter out past events and return only upcoming events
+    const upcomingEvents = park.eventId.filter(event => new Date(event.date) > now);
+
+    res.status(200).json(upcomingEvents);
+  } catch (error) {
+    console.error('Error fetching upcoming events:', error);
+    res.status(500).json({ message: 'Error fetching upcoming events.' });
+  }
+});
+
 module.exports = router;

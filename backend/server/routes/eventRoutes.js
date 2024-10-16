@@ -2,6 +2,8 @@ const express = require("express");
 const router = express.Router();
 const Event = require("../models/eventModel");
 const authenticate = require("../middleware/auth");
+const User = require('../models/userModel');  // Import User model
+const Park = require('../models/parkModel');  // Import Park model
 
 // POST route to create a new event
 router.post("/create", async (req, res) => {
@@ -23,6 +25,15 @@ router.post("/create", async (req, res) => {
 
         // Save the new event to the database
         const savedEvent = await newEvent.save();
+
+        // Update user and park documents
+        await User.findByIdAndUpdate(userId, {
+            $addToSet: { eventId: savedEvent._id }
+        });
+
+        await Park.findByIdAndUpdate(parkId, {
+            $addToSet: { eventId: savedEvent._id }
+        });
 
         // Respond with the saved event
         res.status(201).json(savedEvent);
@@ -126,6 +137,15 @@ router.delete("/delete/:id", async (req, res) => {
         if (!deletedEvent) {
             return res.status(404).json({ message: "Event not found." });
         }
+
+        // Remove the event ID from user and park documents
+        await User.findByIdAndUpdate(deletedEvent.userId, {
+            $pull: { eventId: deletedEvent._id }
+        });
+
+        await Park.findByIdAndUpdate(deletedEvent.parkId, {
+            $pull: { eventId: deletedEvent._id }
+        });
 
         // Respond with a success message
         res.status(200).json({ message: "Event deleted successfully." });

@@ -1,3 +1,14 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@import 'tailwindcss/base';
+@import 'tailwindcss/components';
+@import 'tailwindcss/utilities';
+
+html,
+body,
+#root {
+    min-height: 100%;
+}
+
+.body {
+    @apply bg-blue-50;
+    /* Replace 'bg-blue-50' with your desired color */
+}

@@ -15,13 +15,13 @@ const eventSchema = new mongoose.Schema(
       required: true,
     },
     time: {
-      type: String,  // Store time as a string in 12-hour HH:mm format
+      type: String,  // Store time as a string in 24-hour HH:mm format
       required: true,
       validate: {
         validator: function(v) {
-          return /^(0[1-9]|1[0-2]):([0-5]\d) (AM|PM)$/.test(v);
+          return /^([01]\d|2[0-3]):([0-5]\d)$/.test(v);
         },
-        message: props => `${props.value} is not a valid time format! Expected format is HH:mm in 12-hour time.`
+        message: props => `${props.value} is not a valid time format! Expected format is HH:mm in 24-hour time.`
       }
     },
     date: {
