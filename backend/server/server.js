@@ -18,8 +18,6 @@ const refreshToken = require("./routes/refreshToken");
 // Load environment variables
 require("dotenv").config();
 
-
-
 const SERVER_PORT = process.env.SERVER_PORT || 8081;
 
 // Connect to the database

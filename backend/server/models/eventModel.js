@@ -19,7 +19,7 @@ const eventSchema = new mongoose.Schema(
       required: true,
       validate: {
         validator: function(v) {
-          return /^(0[1-9]|1[0-2]):([0-5]\d)$/.test(v);
+          return /^(0[1-9]|1[0-2]):([0-5]\d) (AM|PM)$/.test(v);
         },
         message: props => `${props.value} is not a valid time format! Expected format is HH:mm in 12-hour time.`
       }

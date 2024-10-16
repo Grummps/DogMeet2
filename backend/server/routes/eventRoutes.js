@@ -1,6 +1,7 @@
 const express = require("express");
 const router = express.Router();
 const Event = require("../models/eventModel");
+const authenticate = require("../middleware/auth");
 
 // POST route to create a new event
 router.post("/create", async (req, res) => {
@@ -58,6 +59,27 @@ router.get("/:id", async (req, res) => {
     } catch (error) {
         console.error(error);
         res.status(500).json({ message: "Server error. Could not retrieve event." });
+    }
+});
+
+// GET route to fetch all events for a single user
+router.get('/user/:userId', authenticate, async (req, res) => {
+    const { userId } = req.params; // Extract the userId from the URL parameter
+
+    try {
+        // Find all events that match the provided userId
+        const events = await Event.find({ userId }).populate('parkId');
+
+        // If no events are found, return a 404 response
+        if (!events.length) {
+            return res.status(404).json({ message: 'No events found for this user.' });
+        }
+
+        // Respond with the events found
+        res.status(200).json(events);
+    } catch (error) {
+        console.error('Error fetching events for user:', error);
+        res.status(500).json({ message: 'Server error. Could not retrieve events.' });
     }
 });
 

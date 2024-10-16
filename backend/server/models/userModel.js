@@ -42,7 +42,7 @@ const newUserSchema = new mongoose.Schema(
       required: false, // Set to true if a user must have friends
     },
     eventId: {
-      type: Schema.Types.ObjectId, // Reference to a document in the events collection
+      type: [Schema.Types.ObjectId], // Reference to a document in the events collection
       ref: 'events', // Assuming your events collection is named 'events'
       required: false, // Set to true if a user must be linked to an event
     },

@@ -61,7 +61,7 @@ const ParkDetail = () => {
                 <p>{latitude}, {longitude}</p>
             </div>
 
-            <MapContainer center={[latitude, longitude]} zoom={15} style={{ height: "400px", width: "100%" }}>
+            <MapContainer center={[latitude, longitude]} zoom={15} style={{ height: "400px", width: "100%", zIndex: 10 }}>
                 <TileLayer
                     attribution='&copy; <a href="https://osm.org/copyright">OpenStreetMap</a>'
                     url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"

@@ -1,5 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import axios from 'axios';
+import getUserInfo from '../../utilities/decodeJwt';
 
 const CreateEventForm = ({ userId, parkId }) => {
   const [time, setTime] = useState('');
@@ -7,11 +8,15 @@ const CreateEventForm = ({ userId, parkId }) => {
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
 
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
     setSuccess('');
 
+    const userInfo = getUserInfo();
+    userId = userInfo.id;
+    
     try {
       const response = await axios.post(`${process.env.REACT_APP_BACKEND_URI}/events/create`, {
         userId,

@@ -1,10 +1,10 @@
 import React, { useEffect, useState } from 'react';
-import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
 import getUserInfo from '../../utilities/decodeJwt';  // Import getUserInfo
 import DogForm from './dogForm';  // Corrected to dogForm
 import { getUserInfoAsync } from '../../utilities/decodeJwtAsync';
 import apiClient from '../../utilities/apiClient';
+import EventList from '../eventProfile';
 
 const Profile = () => {
     const navigate = useNavigate();
@@ -54,13 +54,14 @@ const Profile = () => {
     }
 
     return (
+
         <div className="flex flex-col items-start justify-start h-screen relative overflow-visible pt-0 bg-blue-50">
             {/* Background placeholder */}
             <div className="w-full from-gray-200 via-gray-300 to-gray-200 -mb-32 h-full bg-right bg-profile-bg">
                 <div className="text-center py-10">
                 </div>
             </div>
-            
+
             {/* Profile image and username in a row */}
             <div className="flex items-center relative -mb-16 ml-56">
                 {/* Profile Image */}
@@ -84,6 +85,11 @@ const Profile = () => {
                         {user.username}
                     </h1>
                     <p className="pl-16 -ml-12 text-gray-600 mt-2 text-sm">Member since: {new Date(user.createdAt).toLocaleDateString()}</p>
+                </div>
+
+                {/* EventList */}
+                <div className="ml-auto mt-20">
+                    <EventList updateUser={updateUser} />
                 </div>
             </div>
 
