@@ -2,7 +2,6 @@ import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import getUserInfo from '../../utilities/decodeJwt';  // Import getUserInfo
 import DogForm from './dogForm';  // Corrected to dogForm
-import { getUserInfoAsync } from '../../utilities/decodeJwtAsync';
 import apiClient from '../../utilities/apiClient';
 import EventList from '../eventProfile';
 
