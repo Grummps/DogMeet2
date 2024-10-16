@@ -1,4 +1,5 @@
 const mongoose = require("mongoose");
+const { Schema } = mongoose;
 
 // Dog schema/model
 const dogSchema = new mongoose.Schema(
@@ -6,18 +7,20 @@ const dogSchema = new mongoose.Schema(
     dogName: {
       type: String,
       required: true,
-      label: "dogName",
     },
     size: {
       type: String,
       required: true,
-      enum: ["small", "medium", "large"],  // Restrict size to specific options
-      label: "size",
+      enum: ["small", "medium", "large"], // Restrict size to specific options
     },
     image: {
-      type: String,  // URL of the image stored in S3
+      type: String, // URL of the image stored in S3
       required: false,
-      label: "image",
+    },
+    ownerId: {
+      type: Schema.Types.ObjectId, // Reference to the user who owns the dog
+      ref: 'users', // Assuming your users collection is named 'users'
+      required: true,
     },
   },
   { collection: "dogs" }

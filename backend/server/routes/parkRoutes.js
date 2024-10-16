@@ -5,6 +5,8 @@ const Park = require('../models/parkModel');
 const authenticate = require('../middleware/auth');
 const authorizeAdmin = require('../middleware/authAdmin');
 const getPark = require('../middleware/getPark');
+const User = require('../models/userModel');
+const Event = require('../models/eventModel');
 
 // Create a new park (Admin Only)
 router.post('/create', authenticate, authorizeAdmin, async (req, res) => {
@@ -80,35 +82,22 @@ router.delete('/delete/:id', authenticate, authorizeAdmin, getPark, async (req, 
   }
 });
 
-// Get users checked in to a specific park
-router.get('/:id/checked-in-users', getPark, async (req, res) => {
-  try {
-    const park = await Park.findById(req.params.id).populate('occupants'); // Populate occupants with user details
-
-    if (!park) {
-      return res.status(404).json({ message: 'Park not found' });
-    }
-
-    res.status(200).json(park.occupants); // Return the list of checked-in users
-  } catch (error) {
-    console.error('Error fetching checked-in users:', error);
-    res.status(500).json({ message: 'Error fetching checked-in users.' });
-  }
-});
-
 // Get upcoming events for a specific park
 router.get('/:id/events/upcoming', async (req, res) => {
   try {
-    const park = await Park.findById(req.params.id).populate('eventId'); // Populate events
-
-    if (!park) {
-      return res.status(404).json({ message: 'Park not found' });
-    }
-
+    const parkId = req.params.id;
     const now = new Date();
 
-    // Filter out past events and return only upcoming events
-    const upcomingEvents = park.eventId.filter(event => new Date(event.date) > now);
+    // Find upcoming events for this park
+    const upcomingEvents = await Event.find({
+      parkId: parkId,
+      date: { $gte: now },
+    })
+      .populate({
+        path: 'dogs',
+        select: 'dogName size',
+      })
+      .sort({ date: 1, time: 1 }); // Optional: sort events by date and time
 
     res.status(200).json(upcomingEvents);
   } catch (error) {
@@ -116,5 +105,58 @@ router.get('/:id/events/upcoming', async (req, res) => {
     res.status(500).json({ message: 'Error fetching upcoming events.' });
   }
 });
+
+// POST /parks/:id/check-in
+router.post('/:id/check-in', authenticate, async (req, res) => {
+  try {
+    const parkId = req.params.id;
+    const { dogIds } = req.body; // Array of dog IDs the user wants to check in
+    const userId = req.user.id; // From the authenticate middleware
+
+    // Verify that the dogs belong to the user
+    const user = await User.findById(userId).select('dogId');
+    const userDogIds = user.dogId.map(id => id.toString());
+    const invalidDogs = dogIds.filter(dogId => !userDogIds.includes(dogId));
+
+    if (invalidDogs.length > 0) {
+      return res.status(400).json({ message: "You can only check in your own dogs." });
+    }
+
+    // Update the park's occupants
+    await Park.findByIdAndUpdate(parkId, {
+      $addToSet: { occupants: { $each: dogIds } },
+    });
+
+    res.status(200).json({ message: 'Dogs checked in successfully.' });
+  } catch (error) {
+    console.error('Error checking in dogs:', error);
+    res.status(500).json({ message: 'Error checking in dogs.' });
+  }
+});
+
+// GET /parks/:id/checked-in-dogs
+router.get('/:id/checked-in-dogs', async (req, res) => {
+  try {
+    const park = await Park.findById(req.params.id).populate({
+      path: 'occupants',
+      select: 'dogName size ownerId',
+      populate: {
+        path: 'ownerId',
+        select: 'username',
+      },
+    });
+
+    if (!park) {
+      return res.status(404).json({ message: 'Park not found' });
+    }
+
+    res.status(200).json(park.occupants);
+  } catch (error) {
+    console.error('Error fetching checked-in dogs:', error);
+    res.status(500).json({ message: 'Error fetching checked-in dogs.' });
+  }
+});
+
+
 
 module.exports = router;

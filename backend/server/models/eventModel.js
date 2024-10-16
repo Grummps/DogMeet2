@@ -1,8 +1,6 @@
-// models/eventModel.js
 const mongoose = require("mongoose");
 const { Schema } = mongoose;
 
-// Event schema/model
 const eventSchema = new mongoose.Schema(
   {
     userId: {

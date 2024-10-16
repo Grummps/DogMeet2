@@ -5,145 +5,219 @@ import jwt_decode from 'jwt-decode';
 import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
 import L from 'leaflet';
 import CreateEventForm from './eventForm';
+import CheckInForm from '../checkInForm'; // Import the CheckInForm component
+import getUserInfo from '../../utilities/decodeJwt';
 
 // Fix Leaflet's default icon paths if not already done
 delete L.Icon.Default.prototype._getIconUrl;
 L.Icon.Default.mergeOptions({
-  iconRetinaUrl: require('leaflet/dist/images/marker-icon-2x.png'),
-  iconUrl: require('leaflet/dist/images/marker-icon.png'),
-  shadowUrl: require('leaflet/dist/images/marker-shadow.png'),
+    iconRetinaUrl: require('leaflet/dist/images/marker-icon-2x.png'),
+    iconUrl: require('leaflet/dist/images/marker-icon.png'),
+    shadowUrl: require('leaflet/dist/images/marker-shadow.png'),
 });
 
 const ParkDetail = () => {
-  const { id } = useParams();
-  const [park, setPark] = useState(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
-  const [showModal, setShowModal] = useState(false);
-  const [currentUserId, setCurrentUserId] = useState(null);
-  const [upcomingEvents, setUpcomingEvents] = useState([]); // Store upcoming events
-  const [checkedInUsers, setCheckedInUsers] = useState([]); // Store checked-in users
+    const { id } = useParams();
+    const [park, setPark] = useState(null);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState('');
+    const [showModal, setShowModal] = useState(false);
+    const [showCheckInModal, setShowCheckInModal] = useState(false); // State for Check-in modal
+    const [currentUserId, setCurrentUserId] = useState(null);
+    const [upcomingEvents, setUpcomingEvents] = useState([]); // Store upcoming events
+    const [checkedInDogs, setCheckedInDogs] = useState([]); // Store checked-in dogs
 
-  useEffect(() => {
+
+    useEffect(() => {
+        fetchParkDetails();
+        fetchUpcomingEvents();
+        fetchCheckedInDogs();
+
+        const userInfo = getUserInfo();
+        if (userInfo) {
+          setCurrentUserId(userInfo.id); // Use the correct property from userInfo
+        } else {
+          console.error('User info not found');
+        }
+        
+    }, []);
+
+    // Fetch park details
     const fetchParkDetails = async () => {
-      try {
-        const parkResponse = await axios.get(`${process.env.REACT_APP_BACKEND_URI}/parks/${id}`);
-        setPark(parkResponse.data);
-
-        // Fetch upcoming events for this park
-        const eventsResponse = await axios.get(`${process.env.REACT_APP_BACKEND_URI}/parks/${id}/events/upcoming`);
-        setUpcomingEvents(eventsResponse.data);
-
-        // Fetch checked-in users for this park
-        const usersResponse = await axios.get(`${process.env.REACT_APP_BACKEND_URI}/parks/${id}/checked-in-users`);
-        setCheckedInUsers(usersResponse.data);
-
-      } catch (err) {
-        console.error('Error fetching park details:', err);
-        setError('Failed to load park details.');
-      } finally {
-        setLoading(false);
-      }
+        try {
+            const parkResponse = await axios.get(`${process.env.REACT_APP_BACKEND_URI}/parks/${id}`);
+            setPark(parkResponse.data);
+        } catch (err) {
+            console.error('Error fetching park details:', err);
+            setError('Failed to load park details.');
+        } finally {
+            setLoading(false);
+        }
     };
 
-    fetchParkDetails();
+    // Fetch upcoming events
+    const fetchUpcomingEvents = async () => {
+        try {
+            const eventsResponse = await axios.get(`${process.env.REACT_APP_BACKEND_URI}/parks/${id}/events/upcoming`);
+            setUpcomingEvents(eventsResponse.data);
+        } catch (err) {
+            console.error('Error fetching upcoming events:', err);
+        }
+    };
 
-    // Decode the JWT token to get the user ID
-    const token = localStorage.getItem('token');
-    if (token) {
-      const decoded = jwt_decode(token);
-      setCurrentUserId(decoded.userId); // Assuming userId is stored in the token
-    }
-  }, [id]);
+    // Fetch checked-in dogs
+    const fetchCheckedInDogs = async () => {
+        try {
+            const dogsResponse = await axios.get(`${process.env.REACT_APP_BACKEND_URI}/parks/${id}/checked-in-dogs`);
+            setCheckedInDogs(dogsResponse.data);
+        } catch (err) {
+            console.error('Error fetching checked-in dogs:', err);
+        }
+    };
 
-  if (loading) return <div>Loading park details...</div>;
-  if (error) return <div className="text-red-500">{error}</div>;
-  if (!park) return <div>No park found.</div>;
+    if (loading) return <div>Loading park details...</div>;
+    if (error) return <div className="text-red-500">{error}</div>;
+    if (!park) return <div>No park found.</div>;
 
-  const { parkName, location } = park;
-  const [longitude, latitude] = location.coordinates;
+    const { parkName, location } = park;
+    const [longitude, latitude] = location.coordinates;
 
-  return (
-    <div className="p-6 ml-36">
-      <h1 className="text-3xl font-bold mb-4">{parkName}</h1>
-      <div className="mb-6">
-        <h2 className="text-xl font-semibold">Location:</h2>
-        <p>{latitude}, {longitude}</p>
-      </div>
+    return (
+        <div className="p-6 ml-36">
+            <h1 className="text-3xl font-bold mb-4">{parkName}</h1>
+            <div className="mb-6">
+                <h2 className="text-xl font-semibold">Location:</h2>
+                <p>{latitude}, {longitude}</p>
+            </div>
 
-      {/* Map displaying the park location */}
-      <MapContainer center={[latitude, longitude]} zoom={15} style={{ height: "400px", width: "100%", zIndex: 10 }}>
-        <TileLayer
-          attribution='&copy; <a href="https://osm.org/copyright">OpenStreetMap</a>'
-          url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-        />
-        <Marker position={[latitude, longitude]}>
-          <Popup>{parkName} is located here.</Popup>
-        </Marker>
-      </MapContainer>
-      
-      {/* Button to trigger the modal for creating an event */}
-      <button
-        className="mt-4 px-6 py-2 bg-blue-500 text-white rounded-md"
-        onClick={() => setShowModal(true)}
-      >
-        Create Event
-      </button>
+            {/* Map displaying the park location */}
+            <MapContainer center={[latitude, longitude]} zoom={15} style={{ height: "400px", width: "100%", zIndex: 10 }}>
+                <TileLayer
+                    attribution='&copy; <a href="https://osm.org/copyright">OpenStreetMap</a>'
+                    url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+                />
+                <Marker position={[latitude, longitude]}>
+                    <Popup>{parkName} is located here.</Popup>
+                </Marker>
+            </MapContainer>
 
-      {/* Upcoming Events Section */}
-      <div className="mt-8">
-        <h2 className="text-2xl font-bold mb-4">Upcoming Events</h2>
-        {upcomingEvents.length === 0 ? (
-          <p>No upcoming events for this park.</p>
-        ) : (
-          <ul>
-            {upcomingEvents.map(event => (
-              <li key={event._id} className="mb-2">
-                <p><strong>Event Name:</strong> {event.eventName}</p>
-                <p><strong>Date:</strong> {new Date(event.date).toLocaleDateString()}</p>
-                <p><strong>Time:</strong> {event.time}</p>
-              </li>
-            ))}
-          </ul>
-        )}
-      </div>
+            {/* Buttons to trigger the modals */}
+            <div className="mt-4 flex space-x-4">
+                <button
+                    className="px-6 py-2 bg-blue-500 text-white rounded-md"
+                    onClick={() => setShowModal(true)}
+                >
+                    Create Event
+                </button>
 
-      {/* Checked-in Users Section */}
-      <div className="mt-8">
-        <h2 className="text-2xl font-bold mb-4">Checked-in Users</h2>
-        {checkedInUsers.length === 0 ? (
-          <p>No users are currently checked in to this park.</p>
-        ) : (
-          <ul>
-            {checkedInUsers.map(user => (
-              <li key={user._id} className="mb-2">
-                <p><strong>Username:</strong> {user.username}</p>
-              </li>
-            ))}
-          </ul>
-        )}
-      </div>
+                <button
+                    className="px-6 py-2 bg-green-500 text-white rounded-md"
+                    onClick={() => setShowCheckInModal(true)}
+                >
+                    Check-in
+                </button>
+            </div>
 
-      {/* Modal for Event Creation */}
-      {showModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
-          <div className="bg-white p-6 rounded-md w-full max-w-md relative">
-            <button
-              className="absolute top-2 right-2 text-gray-500"
-              onClick={() => setShowModal(false)}
-            >
-              &times;
-            </button>
-            <h2 className="text-2xl font-semibold mb-4">Create Event for {parkName}</h2>
-            <CreateEventForm
-              userId={currentUserId}
-              parkId={id}
-            />
-          </div>
+            {/* Main content area */}
+            <div className="mt-8 flex">
+                {/* Checked-in Dogs Section */}
+                <div className="w-1/2">
+                    <h2 className="text-2xl font-bold mb-4">Checked-in Dogs</h2>
+                    {checkedInDogs.length === 0 ? (
+                        <p>No dogs are currently checked in to this park.</p>
+                    ) : (
+                        <div className="flex">
+                            {['small', 'medium', 'large'].map(size => (
+                                <div key={size} className="w-1/3 px-2">
+                                    <h3 className="text-xl font-semibold mb-2 capitalize">{size}</h3>
+                                    <ul>
+                                        {checkedInDogs.filter(dog => dog.size === size).map(dog => (
+                                            <li key={dog._id} className="mb-2">
+                                                <p><strong>{dog.dogName}</strong></p>
+                                                <p>Owner: {dog.ownerId.username}</p>
+                                            </li>
+                                        ))}
+                                    </ul>
+                                </div>
+                            ))}
+                        </div>
+                    )}
+                </div>
+
+                {/* Upcoming Events Section */}
+                <div className="w-1/2 ml-4">
+                    <h2 className="text-2xl font-bold mb-4">Upcoming Events</h2>
+                    {upcomingEvents.length === 0 ? (
+                        <p>No upcoming events for this park.</p>
+                    ) : (
+                        <ul>
+                            {upcomingEvents.map(event => (
+                                <li key={event._id} className="mb-4 border-b pb-2">
+                                    <p><strong>Date:</strong> {new Date(event.date).toLocaleDateString()}</p>
+                                    <p><strong>Time:</strong> {event.time}</p>
+                                    {event.dogs && event.dogs.length > 0 && (
+                                        <div>
+                                            <p><strong>Dogs Attending:</strong></p>
+                                            <ul className="ml-4">
+                                                {event.dogs.map(dog => (
+                                                    <li key={dog._id}>
+                                                        {dog.dogName} ({dog.size})
+                                                    </li>
+                                                ))}
+                                            </ul>
+                                        </div>
+                                    )}
+                                </li>
+                            ))}
+                        </ul>
+                    )}
+                </div>
+            </div>
+
+            {/* Modal for Event Creation */}
+            {showModal && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
+                    <div className="bg-white p-6 rounded-md w-full max-w-md relative">
+                        <button
+                            className="absolute top-2 right-2 text-gray-500"
+                            onClick={() => setShowModal(false)}
+                        >
+                            &times;
+                        </button>
+                        <h2 className="text-2xl font-semibold mb-4">Create Event for {parkName}</h2>
+                        <CreateEventForm
+                            userId={currentUserId}
+                            parkId={id}
+                        />
+                    </div>
+                </div>
+            )}
+
+            {/* Modal for Check-in */}
+            {showCheckInModal && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
+                    <div className="bg-white p-6 rounded-md w-full max-w-md relative">
+                        <button
+                            className="absolute top-2 right-2 text-gray-500"
+                            onClick={() => setShowCheckInModal(false)}
+                        >
+                            &times;
+                        </button>
+                        <h2 className="text-2xl font-semibold mb-4">Check-in at {parkName}</h2>
+                        <CheckInForm
+                            userId={currentUserId}
+                            parkId={id}
+                            onSuccess={() => {
+                                setShowCheckInModal(false);
+                                // Refresh the checked-in dogs list
+                                fetchCheckedInDogs();
+                            }}
+                        />
+                    </div>
+                </div>
+            )}
         </div>
-      )}
-    </div>
-  );
+    );
 };
 
 export default ParkDetail;

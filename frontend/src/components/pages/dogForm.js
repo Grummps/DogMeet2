@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
 import getUserInfo from '../../utilities/decodeJwt';  // Import getUserInfo
+import apiClient from '../../utilities/apiClient';
 
 const DogForm = ({ updateUser, userId }) => {
     const [dogName, setDogName] = useState('');
@@ -64,9 +65,8 @@ const DogForm = ({ updateUser, userId }) => {
         }
 
         try {
-            const response = await axios.post(`${process.env.REACT_APP_BACKEND_URI}/dogs/create`, formData, {
+            const response = await apiClient.post(`/dogs/create`, formData, {
                 headers: {
-                    Authorization: `Bearer ${token}`,
                     'Content-Type': 'multipart/form-data',  // Keep multipart/form-data for file uploads
                 },
             });
@@ -75,11 +75,7 @@ const DogForm = ({ updateUser, userId }) => {
             setDogs(prevDogs => [...prevDogs, newDog]);  // Add the new dog to the state
 
             const dogId = response.data.dog._id;  // Assuming the response contains the new dog's ID
-            await axios.put(`${process.env.REACT_APP_BACKEND_URI}/users/editUser/${userInfo.id}`, { dogId }, {
-                headers: {
-                    Authorization: `Bearer ${token}`
-                }
-            });
+            await apiClient.put(`/users/editUser/${userInfo.id}`, { dogId });
 
             updateUser({ dogId });
 

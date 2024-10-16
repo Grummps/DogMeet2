@@ -7,15 +7,17 @@ const upload = require('../config/multerConfig');  // Import the Multer configur
 const s3 = require('../config/s3Config');  // Import the S3 configuration
 const { v4: uuidv4 } = require('uuid');  // For generating unique file names
 const { URL } = require('url');
+const authenticate = require('../middleware/auth');
 
 // Create a new dog and assign it to the user
-router.post('/create', upload.single('image'), async (req, res) => {
+router.post('/create', authenticate, upload.single('image'), async (req, res) => {
     try {
-        const { dogName, size, userId } = req.body;
+        const { dogName, size } = req.body;
+        const userId = req.user.id; // Get userId from authenticated user
 
         // Validate required fields
-        if (!dogName || !size || !userId) {
-            return res.status(400).json({ message: 'Dog name, size, and user ID are required.' });
+        if (!dogName || !size) {
+            return res.status(400).json({ message: 'Dog name and size are required.' });
         }
 
         // Validate size
@@ -27,28 +29,29 @@ router.post('/create', upload.single('image'), async (req, res) => {
         // Prepare for S3 upload if an image is provided
         let imageUrl = null;
         if (req.file) {
-            const fileContent = req.file.buffer;  // Get the file content from memory (Multer memoryStorage)
-            const fileExt = req.file.originalname.split('.').pop();  // Extract file extension
-            const fileName = `${uuidv4()}.${fileExt}`;  // Generate a unique file name
+            const fileContent = req.file.buffer;
+            const fileExt = req.file.originalname.split('.').pop();
+            const fileName = `${uuidv4()}.${fileExt}`;
 
             // Define S3 upload parameters
             const params = {
-                Bucket: 'dogmeet',  // Replace with your actual bucket name
-                Key: `dogs/${fileName}`,     // Save the file in a 'dogs/' folder in S3
+                Bucket: 'dogmeet', // Replace with your actual bucket name
+                Key: `dogs/${fileName}`,
                 Body: fileContent,
-                ContentType: req.file.mimetype,  // Set the correct MIME type
+                ContentType: req.file.mimetype,
             };
 
             // Upload the file to S3
             const s3Response = await s3.upload(params).promise();
-            imageUrl = s3Response.Location;  // Get the public URL of the uploaded file
+            imageUrl = s3Response.Location; // Get the public URL of the uploaded file
         }
 
-        // Create a new dog document
+        // Create a new dog document with ownerId
         const newDog = new dogModel({
             dogName,
             size,
-            image: imageUrl  // Save the image URL if it was uploaded
+            image: imageUrl,
+            ownerId: userId, // Set the ownerId to the authenticated user's ID
         });
 
         const savedDog = await newDog.save();
@@ -62,7 +65,6 @@ router.post('/create', upload.single('image'), async (req, res) => {
         res.status(500).json({ message: 'Error creating dog.' });
     }
 });
-
 
 // Get a specific dog by ID
 router.get('/:id', async (req, res) => {

@@ -6,6 +6,7 @@ const newUserModel = require('../models/userModel');
 const { newUserValidation } = require('../models/userValidator');
 const { generateAccessToken } = require('../utilities/generateToken');
 const { partialUserValidation } = require('../models/userValidator');
+const authenticate = require("../middleware/auth");
 
 // Route to delete all users
 router.post('/deleteAll', async (req, res) => {
@@ -15,7 +16,7 @@ router.post('/deleteAll', async (req, res) => {
 
 
 // Route to edit a user using the :id parameter in the URL
-router.put('/editUser/:id', async (req, res) => {
+router.put('/editUser/:id', authenticate , async (req, res) => {
     const { error } = partialUserValidation(req.body);
 
     if (error) {
