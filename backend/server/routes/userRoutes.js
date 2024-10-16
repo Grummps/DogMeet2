@@ -100,7 +100,7 @@ router.get("/:id", async (req, res) => {
         const user = await newUserModel.findById(userId)
             .populate({
                 path: 'dogId',  // Populate the dog details
-                select: 'dogName image',  // Fetch only the dog's name and image
+                select: 'dogName image size',  // Fetch only the dog's name and image
             })
             .populate('parkId')
             .populate('friends')

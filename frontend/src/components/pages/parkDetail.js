@@ -81,6 +81,14 @@ const ParkDetail = () => {
           <Popup>{parkName} is located here.</Popup>
         </Marker>
       </MapContainer>
+      
+      {/* Button to trigger the modal for creating an event */}
+      <button
+        className="mt-4 px-6 py-2 bg-blue-500 text-white rounded-md"
+        onClick={() => setShowModal(true)}
+      >
+        Create Event
+      </button>
 
       {/* Upcoming Events Section */}
       <div className="mt-8">
@@ -115,14 +123,6 @@ const ParkDetail = () => {
           </ul>
         )}
       </div>
-
-      {/* Button to trigger the modal for creating an event */}
-      <button
-        className="mt-4 px-6 py-2 bg-blue-500 text-white rounded-md"
-        onClick={() => setShowModal(true)}
-      >
-        Create Event
-      </button>
 
       {/* Modal for Event Creation */}
       {showModal && (

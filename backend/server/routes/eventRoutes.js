@@ -6,19 +6,31 @@ const User = require('../models/userModel');  // Import User model
 const Park = require('../models/parkModel');  // Import Park model
 
 // POST route to create a new event
-router.post("/create", async (req, res) => {
+// routes/eventRoutes.js
+router.post("/create", authenticate, async (req, res) => {
     try {
-        const { userId, parkId, time, date } = req.body;
+        const { userId, parkId, dogs, time, date } = req.body;
 
-        // Validate the input (you can add additional validation logic if needed)
-        if (!userId || !parkId || !time || !date) {
-            return res.status(400).json({ message: "All fields are required." });
+        // Validate the input
+        if (!userId || !parkId || !dogs || !dogs.length || !time || !date) {
+            return res.status(400).json({ message: "All fields are required, including at least one dog." });
+        }
+
+        // Verify that the dogs belong to the user
+        const userDogs = await User.findById(userId).select('dogId');
+        const userDogIds = userDogs.dogId.map((id) => id.toString());
+
+        const invalidDogs = dogs.filter((dogId) => !userDogIds.includes(dogId));
+
+        if (invalidDogs.length > 0) {
+            return res.status(400).json({ message: "You can only add your own dogs to the event." });
         }
 
         // Create a new event instance
         const newEvent = new Event({
             userId,
             parkId,
+            dogs,
             time,
             date,
         });
@@ -28,11 +40,11 @@ router.post("/create", async (req, res) => {
 
         // Update user and park documents
         await User.findByIdAndUpdate(userId, {
-            $addToSet: { eventId: savedEvent._id }
+            $addToSet: { eventId: savedEvent._id },
         });
 
         await Park.findByIdAndUpdate(parkId, {
-            $addToSet: { eventId: savedEvent._id }
+            $addToSet: { eventId: savedEvent._id },
         });
 
         // Respond with the saved event
@@ -43,10 +55,11 @@ router.post("/create", async (req, res) => {
     }
 });
 
+
 // GET route to fetch all events
 router.get("/all", async (req, res) => {
     try {
-        const events = await Event.find().populate('userId').populate('parkId');
+        const events = await Event.find().populate('userId').populate('parkId').populate('dogs');
         res.status(200).json(events);
     } catch (error) {
         console.error(error);
@@ -60,7 +73,7 @@ router.get("/:id", async (req, res) => {
         const eventId = req.params.id;
 
         // Find the event by ID and populate the referenced user and park
-        const event = await Event.findById(eventId).populate('userId').populate('parkId');
+        const event = await Event.findById(eventId).populate('userId').populate('parkId').populate('dogs');
 
         if (!event) {
             return res.status(404).json({ message: "Event not found." });

@@ -1,3 +1,4 @@
+// models/eventModel.js
 const mongoose = require("mongoose");
 const { Schema } = mongoose;
 
@@ -5,29 +6,35 @@ const { Schema } = mongoose;
 const eventSchema = new mongoose.Schema(
   {
     userId: {
-      type: Schema.Types.ObjectId,  // Reference to a document in the users collection
-      ref: 'users',  // Assuming your users collection is named 'users'
+      type: Schema.Types.ObjectId,
+      ref: 'users',
       required: true,
     },
     parkId: {
-      type: Schema.Types.ObjectId,  // Reference to a document in the parks collection
-      ref: 'parks',  // Assuming your parks collection is named 'parks'
+      type: Schema.Types.ObjectId,
+      ref: 'parks',
       required: true,
     },
+    dogs: [
+      {
+        type: Schema.Types.ObjectId,
+        ref: 'dogs',
+        required: true,
+      }
+    ],
     time: {
-      type: String,  // Store time as a string in 24-hour HH:mm format
+      type: String,
       required: true,
       validate: {
-        validator: function(v) {
+        validator: function (v) {
           return /^([01]\d|2[0-3]):([0-5]\d)$/.test(v);
         },
-        message: props => `${props.value} is not a valid time format! Expected format is HH:mm in 24-hour time.`
-      }
+        message: (props) => `${props.value} is not a valid time format! Expected format is HH:mm in 24-hour time.`,
+      },
     },
     date: {
-      type: Date,  // Store the event's date
+      type: Date,
       required: true,
-      default: Date.now,
     },
   },
   { collection: "events" }
