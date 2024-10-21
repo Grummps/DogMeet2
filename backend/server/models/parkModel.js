@@ -22,12 +22,6 @@ const parkSchema = new mongoose.Schema(
       type: String,
       required: true,
     },
-    occupants: [
-      {
-        type: Schema.Types.ObjectId, // Array of ObjectIds referencing the users collection
-        ref: 'dogs', 
-      }
-    ],
     eventId: [
       {
         type: Schema.Types.ObjectId, // Array of ObjectIds referencing events for this park

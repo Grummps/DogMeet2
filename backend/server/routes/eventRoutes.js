@@ -6,10 +6,9 @@ const User = require('../models/userModel');  // Import User model
 const Park = require('../models/parkModel');  // Import Park model
 
 // POST route to create a new event
-// routes/eventRoutes.js
 router.post("/create", authenticate, async (req, res) => {
     try {
-        const { userId, parkId, dogs, time, date } = req.body;
+        const { userId, parkId, dogs, time, date, duration } = req.body;
 
         // Validate the input
         if (!userId || !parkId || !dogs || !dogs.length || !time || !date) {
@@ -26,13 +25,24 @@ router.post("/create", authenticate, async (req, res) => {
             return res.status(400).json({ message: "You can only add your own dogs to the event." });
         }
 
+        // Parse the date and time into a Date object
+        const eventStartTime = new Date(`${date}T${time}:00`);
+
+        // Calculate the duration (default to 60 minutes if not provided)
+        const eventDuration = duration || 60;
+
+        // Calculate the expiration time
+        const expiresAt = new Date(eventStartTime.getTime() + eventDuration * 60000); // Convert minutes to milliseconds
+
         // Create a new event instance
         const newEvent = new Event({
             userId,
             parkId,
             dogs,
             time,
-            date,
+            date: eventStartTime,
+            duration: eventDuration,
+            expiresAt,
         });
 
         // Save the new event to the database

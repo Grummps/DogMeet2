@@ -10,6 +10,7 @@ const CreateEventForm = ({ parkId }) => {
   const [selectedDogs, setSelectedDogs] = useState([]);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
+  const [duration, setDuration] = useState(60); // Default duration to 60 minutes
 
   const userInfo = getUserInfo();
   const userId = userInfo.id;
@@ -54,6 +55,7 @@ const CreateEventForm = ({ parkId }) => {
         dogs: selectedDogs,
         time,
         date,
+        duration,
       });
 
       if (response.status === 201) {
@@ -91,6 +93,17 @@ const CreateEventForm = ({ parkId }) => {
             type="date"
             value={date}
             onChange={(e) => setDate(e.target.value)}
+            required
+            className="border rounded px-2 py-1"
+          />
+        </div>
+        <div className="form-group">
+          <label>Duration in minutes (defaults to 60):</label>
+          <input
+            type="number"
+            min="1"
+            value={duration}
+            onChange={(e) => setDuration(e.target.value)}
             required
             className="border rounded px-2 py-1"
           />

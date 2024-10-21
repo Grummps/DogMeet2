@@ -20,7 +20,7 @@ router.post('/create', authenticate, authorizeAdmin, async (req, res) => {
     const newPark = new Park({
       parkName,
       location,
-      // occupants and eventId are handled automatically or later
+      // eventId is handled automatically or later
     });
 
     await newPark.save();
@@ -34,7 +34,7 @@ router.post('/create', authenticate, authorizeAdmin, async (req, res) => {
 // Get all parks
 router.get('/all', async (req, res) => {
   try {
-    const parks = await Park.find().populate('occupants').populate('eventId');
+    const parks = await Park.find().populate('eventId');
     res.status(200).json(parks);
   } catch (error) {
     console.error('Error fetching parks:', error);
@@ -50,19 +50,16 @@ router.get('/:id', getPark, (req, res) => {
 // Update a park by ID (Admin Only)
 router.put('/update/:id', authenticate, authorizeAdmin, getPark, async (req, res) => {
   try {
-    const { parkName, occupants, eventId, image } = req.body;
+    const { parkName, eventId, image } = req.body;
 
     // Update fields if they are provided in the request
     if (parkName !== undefined) req.park.parkName = parkName;
-    if (occupants !== undefined) {
-      req.park.occupants = occupants.map(id => mongoose.Types.ObjectId(id));
-    }
     if (eventId !== undefined) {
       req.park.eventId = eventId.map(id => mongoose.Types.ObjectId(id));
     }
     if (image !== undefined) req.park.image = image;
 
-    const updatedPark = await req.park.save().populate('occupants').populate('eventId');
+    const updatedPark = await req.park.save().populate('eventId');
 
     res.status(200).json(updatedPark);
   } catch (error) {
@@ -106,57 +103,94 @@ router.get('/:id/events/upcoming', async (req, res) => {
   }
 });
 
+// Get active (checked-in) events for a specific park
+router.get('/:id/events/active', async (req, res) => {
+  try {
+    const parkId = req.params.id;
+    const now = new Date();
+
+    // Find events that have started but not yet expired
+    const activeEvents = await Event.find({
+      parkId,
+      date: { $lte: now },
+      expiresAt: { $gt: now },
+    })
+      .populate({
+        path: 'dogs',
+        select: 'dogName size ownerId',
+        populate: {
+          path: 'ownerId',
+          select: 'username',
+        },
+      })
+      .sort({ date: 1, time: 1 });
+
+    res.status(200).json(activeEvents);
+  } catch (error) {
+    console.error('Error fetching active events:', error);
+    res.status(500).json({ message: 'Error fetching active events.' });
+  }
+});
+
 // POST /parks/:id/check-in
 router.post('/:id/check-in', authenticate, async (req, res) => {
   try {
     const parkId = req.params.id;
-    const { dogIds } = req.body; // Array of dog IDs the user wants to check in
-    const userId = req.user.id; // From the authenticate middleware
+    const { dogIds, duration } = req.body;
+    const userId = req.user.id;
+
+    // Validate inputs
+    if (!dogIds || !dogIds.length) {
+      return res.status(400).json({ message: 'Please select at least one dog.' });
+    }
 
     // Verify that the dogs belong to the user
-    const user = await User.findById(userId).select('dogId');
-    const userDogIds = user.dogId.map(id => id.toString());
-    const invalidDogs = dogIds.filter(dogId => !userDogIds.includes(dogId));
+    const userDogs = await User.findById(userId).select('dogId');
+    const userDogIds = userDogs.dogId.map((id) => id.toString());
+
+    const invalidDogs = dogIds.filter((dogId) => !userDogIds.includes(dogId));
 
     if (invalidDogs.length > 0) {
-      return res.status(400).json({ message: "You can only check in your own dogs." });
+      return res.status(400).json({ message: 'You can only check in your own dogs.' });
     }
 
-    // Update the park's occupants
+    // Use the current time as the start time
+    const eventStartTime = new Date();
+
+    // Calculate the duration (default to 60 minutes if not provided)
+    const eventDuration = duration || 60;
+
+    // Calculate the expiration time
+    const expiresAt = new Date(eventStartTime.getTime() + eventDuration * 60000);
+
+    // Create a new event instance
+    const newEvent = new Event({
+      userId,
+      parkId,
+      dogs: dogIds,
+      time: eventStartTime.toTimeString().substr(0, 5),
+      date: eventStartTime,
+      duration: eventDuration,
+      expiresAt,
+    });
+
+    // Save the new event to the database
+    const savedEvent = await newEvent.save();
+
+    // Update user and park documents
+    await User.findByIdAndUpdate(userId, {
+      $addToSet: { eventId: savedEvent._id },
+    });
+
     await Park.findByIdAndUpdate(parkId, {
-      $addToSet: { occupants: { $each: dogIds } },
+      $addToSet: { eventId: savedEvent._id },
     });
 
-    res.status(200).json({ message: 'Dogs checked in successfully.' });
+    res.status(200).json({ message: 'Checked in successfully.', event: savedEvent });
   } catch (error) {
-    console.error('Error checking in dogs:', error);
-    res.status(500).json({ message: 'Error checking in dogs.' });
+    console.error('Error during check-in:', error);
+    res.status(500).json({ message: 'Error during check-in.' });
   }
 });
-
-// GET /parks/:id/checked-in-dogs
-router.get('/:id/checked-in-dogs', async (req, res) => {
-  try {
-    const park = await Park.findById(req.params.id).populate({
-      path: 'occupants',
-      select: 'dogName size ownerId',
-      populate: {
-        path: 'ownerId',
-        select: 'username',
-      },
-    });
-
-    if (!park) {
-      return res.status(404).json({ message: 'Park not found' });
-    }
-
-    res.status(200).json(park.occupants);
-  } catch (error) {
-    console.error('Error fetching checked-in dogs:', error);
-    res.status(500).json({ message: 'Error fetching checked-in dogs.' });
-  }
-});
-
-
 
 module.exports = router;

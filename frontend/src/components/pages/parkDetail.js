@@ -1,7 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
 import { useParams } from 'react-router-dom';
-import jwt_decode from 'jwt-decode';
 import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
 import L from 'leaflet';
 import CreateEventForm from './eventForm';
@@ -35,11 +34,11 @@ const ParkDetail = () => {
 
         const userInfo = getUserInfo();
         if (userInfo) {
-          setCurrentUserId(userInfo.id); // Use the correct property from userInfo
+            setCurrentUserId(userInfo.id);
         } else {
-          console.error('User info not found');
+            console.error('User info not found');
         }
-        
+
     }, []);
 
     // Fetch park details
@@ -65,11 +64,21 @@ const ParkDetail = () => {
         }
     };
 
-    // Fetch checked-in dogs
+    // Fetch checked-in dogs (active events)
     const fetchCheckedInDogs = async () => {
         try {
-            const dogsResponse = await axios.get(`${process.env.REACT_APP_BACKEND_URI}/parks/${id}/checked-in-dogs`);
-            setCheckedInDogs(dogsResponse.data);
+            const eventsResponse = await axios.get(`${process.env.REACT_APP_BACKEND_URI}/parks/${id}/events/active`);
+            const activeEvents = eventsResponse.data;
+
+            // Extract dogs from active events
+            const dogs = activeEvents.reduce((acc, event) => {
+                return acc.concat(event.dogs.map(dog => ({
+                    ...dog,
+                    expiresAt: event.expiresAt,
+                })));
+            }, []);
+
+            setCheckedInDogs(dogs);
         } catch (err) {
             console.error('Error fetching checked-in dogs:', err);
         }
@@ -135,6 +144,7 @@ const ParkDetail = () => {
                                             <li key={dog._id} className="mb-2">
                                                 <p><strong>{dog.dogName}</strong></p>
                                                 <p>Owner: {dog.ownerId.username}</p>
+                                                <p></p>
                                             </li>
                                         ))}
                                     </ul>

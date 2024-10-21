@@ -34,8 +34,19 @@ const eventSchema = new mongoose.Schema(
       type: Date,
       required: true,
     },
+    duration: {
+      type: Number, // Duration in minutes
+      default: 60,  // Default to 60 minutes if not specified
+    },
+    expiresAt: {
+      type: Date,
+      required: true,
+    },
   },
   { collection: "events" }
 );
+
+// TTL index to automatically delete documents after `expiresAt`
+eventSchema.index({ expiresAt: 1 }, { expireAfterSeconds: 0 });
 
 module.exports = mongoose.model('events', eventSchema);

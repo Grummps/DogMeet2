@@ -6,6 +6,7 @@ const CheckInForm = ({ userId, parkId, onSuccess }) => {
   const [dogs, setDogs] = useState([]);
   const [selectedDogs, setSelectedDogs] = useState([]);
   const [error, setError] = useState('');
+  const [duration, setDuration] = useState(60); // Default duration to 60 minutes
 
   useEffect(() => {
     // Fetch the user's dogs
@@ -42,6 +43,7 @@ const CheckInForm = ({ userId, parkId, onSuccess }) => {
     try {
       await apiClient.post(`/parks/${parkId}/check-in`, {
         dogIds: selectedDogs,
+        duration,
       });
 
       // Success
@@ -55,6 +57,17 @@ const CheckInForm = ({ userId, parkId, onSuccess }) => {
   return (
     <form onSubmit={handleSubmit}>
       {error && <p className="text-red-500">{error}</p>}
+      <div className="form-group mt-4">
+        <label className="font-semibold">Durationb in minutes (defaults to 60):</label>
+        <input
+          type="number"
+          min="1"
+          value={duration}
+          onChange={(e) => setDuration(e.target.value)}
+          className="border rounded px-2 py-1 w-full"
+          required
+        />
+      </div>
       <div className="form-group">
         <label>Select Dogs:</label>
         {dogs.map((dog) => (

@@ -9,7 +9,7 @@ const getPark = async (req, res, next) => {
   }
 
   try {
-    const park = await Park.findById(id).populate('occupants').populate('eventId');
+    const park = await Park.findById(id).populate('eventId');
     if (!park) {
       return res.status(404).json({ message: 'Park not found.' });
     }
