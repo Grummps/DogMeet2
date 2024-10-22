@@ -1,5 +1,3 @@
-// src/components/Navbar.jsx
-
 import React, { useEffect, useState } from "react";
 import {
   HomeIcon,
@@ -28,39 +26,31 @@ export default function Navbar() {
   }, []);
 
   return (
-    <div className="fixed top-0 left-0 h-screen w-28 qhd:w-36 bg-gray-900 flex flex-col items-center py-4 z-50">
+    <div className="fixed top-0 left-0 h-screen w-36 qhd:w-36 bg-gray-900 flex flex-col items-center py-4 z-50">
       {/* Icons Container */}
-      <div className="flex flex-col mt-24 items-center space-y-6 flex-1">
+      <div className="flex flex-col mt-24 items-start space-y-6 flex-1">
         {/* Play Icon */}
-        <a href="/" className="relative group flex items-center justify-center">
-          <PlayCircleIcon className="h-12 w-12 fill-white hover:fill-blue-500 cursor-pointer" />
-          <span className="absolute left-16 top-1/2 transform -translate-y-1/2 -mt-1 bg-gray-800 text-white text-xs rounded px-2 py-1 opacity-0 group-hover:opacity-100 transition-opacity duration-300 z-20">
-            Start
-          </span>
+        <a href="/" className="flex items-center">
+          <PlayCircleIcon className="h-6 w-6 fill-white hover:fill-blue-500 cursor-pointer" />
+          <span className="ml-4 text-white text-lg hover:fill-blue-500 cursor-pointer hidden md:inline">Start</span>
         </a>
 
         {/* Home Icon */}
-        <a href="/home" className="relative group flex items-center justify-center">
-          <HomeIcon className="h-12 w-12 fill-white hover:fill-blue-500 cursor-pointer" />
-          <span className="absolute left-16 top-1/2 transform -translate-y-1/2 -mt-1 bg-gray-800 text-white text-xs rounded px-2 py-1 opacity-0 group-hover:opacity-100 transition-opacity duration-300 z-20">
-            Home
-          </span>
+        <a href="/home" className="flex items-center">
+          <HomeIcon className="h-6 w-6 fill-white hover:fill-blue-500 cursor-pointer" />
+          <span className="ml-4 text-white text-lg hover:fill-blue-500 cursor-pointer hidden md:inline">Home</span>
         </a>
 
         {/* Profile Icon */}
-        <a href="/profile" className="relative group flex items-center justify-center">
-          <UserIcon className="h-12 w-12 fill-white hover:fill-blue-500 cursor-pointer" />
-          <span className="absolute left-16 top-1/2 transform -translate-y-1/2 -mt-1 bg-gray-800 text-white text-xs rounded px-2 py-1 opacity-0 group-hover:opacity-100 transition-opacity duration-300 z-20">
-            Profile
-          </span>
+        <a href="/profile" className="flex items-center">
+          <UserIcon className="h-6 w-6 fill-white hover:fill-blue-500 cursor-pointer" />
+          <span className="ml-4 text-white text-lg hover:fill-blue-500 cursor-pointer hidden md:inline">Profile</span>
         </a>
 
         {/* Parks Icon */}
-        <a href="/parks" className="relative group flex items-center justify-center">
-          <MapPinIcon className="h-12 w-12 fill-white hover:fill-blue-500 cursor-pointer" />
-          <span className="absolute left-16 top-1/2 transform -translate-y-1/2 -mt-1 bg-gray-800 text-white text-xs rounded px-2 py-1 opacity-0 group-hover:opacity-100 transition-opacity duration-300 z-20">
-            Parks
-          </span>
+        <a href="/parks" className="flex items-center">
+          <MapPinIcon className="h-6 w-6 fill-white hover:fill-blue-500 cursor-pointer" />
+          <span className="ml-4 text-white text-lg hover:fill-blue-500 cursor-pointer hidden md:inline">Parks</span>
         </a>
       </div>
 
@@ -68,12 +58,10 @@ export default function Navbar() {
       <div className="mb-4">
         <button
           onClick={handleClick}
-          className="relative group flex items-center justify-center"
+          className="flex items-center"
         >
-          <ArrowLeftOnRectangleIcon className="h-12 w-12 fill-white hover:fill-red-500 cursor-pointer" />
-          <span className="absolute left-16 top-1/2 transform -translate-y-1/2 -mt-1 bg-gray-800 text-white text-xs rounded px-2 py-1 opacity-0 group-hover:opacity-100 transition-opacity duration-300 z-20">
-            Log Out
-          </span>
+          <ArrowLeftOnRectangleIcon className="h-6 w-6 fill-white hover:fill-red-500 cursor-pointer" />
+        
         </button>
       </div>
     </div>
