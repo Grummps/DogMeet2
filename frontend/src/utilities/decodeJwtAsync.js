@@ -1,6 +1,6 @@
 import jwtDecode from 'jwt-decode';
 
-const backendRefreshTokenURL = `${process.env.REACT_APP_BACKEND_URI}/refresh-token`;
+const backendRefreshTokenURL = `${process.env.REACT_APP_BACKEND_URI}/auth/refresh-token`;
 
 const refreshAccessToken = async () => {
     try {
