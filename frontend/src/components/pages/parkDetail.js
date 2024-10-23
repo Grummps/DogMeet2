@@ -25,8 +25,9 @@ const ParkDetail = () => {
     const [currentUserId, setCurrentUserId] = useState(null);
     const [upcomingEvents, setUpcomingEvents] = useState([]); // Store upcoming events
     const [checkedInDogs, setCheckedInDogs] = useState([]); // Store checked-in dogs
+    const [dogsWithTimeLeft, setDogsWithTimeLeft] = useState([]);
 
-
+    // Fetch data on component mount
     useEffect(() => {
         fetchParkDetails();
         fetchUpcomingEvents();
@@ -38,8 +39,38 @@ const ParkDetail = () => {
         } else {
             console.error('User info not found');
         }
+    }, []); // Runs once on mount
 
-    }, []);
+    // Update remaining time whenever `checkedInDogs` changes
+    useEffect(() => {
+        const updateDogsWithRemainingTime = () => {
+            const updatedDogs = updateRemainingTime(checkedInDogs);
+            setDogsWithTimeLeft(updatedDogs);
+        };
+
+        updateDogsWithRemainingTime();  // Initial call
+
+        const intervalId = setInterval(updateDogsWithRemainingTime, 60000);  // Update every minute
+
+        return () => clearInterval(intervalId);  // Cleanup interval on unmount
+    }, [checkedInDogs]); // Dependency on `checkedInDogs`
+
+    // Function to calculate remaining time
+    const updateRemainingTime = (dogs) => {
+        const now = new Date();
+        const updatedDogs = dogs
+            .map(dog => {
+                const expiresAt = new Date(dog.expiresAt);
+                const remainingTimeMs = expiresAt - now;
+                if (remainingTimeMs <= 0) {
+                    return null; // Dog's time has expired
+                }
+                const remainingTime = Math.ceil(remainingTimeMs / 60000); // in minutes
+                return { ...dog, remainingTime };
+            })
+            .filter(dog => dog !== null); // Remove expired dogs
+        return updatedDogs;
+    };
 
     // Fetch park details
     const fetchParkDetails = async () => {
@@ -75,6 +106,7 @@ const ParkDetail = () => {
                 return acc.concat(event.dogs.map(dog => ({
                     ...dog,
                     expiresAt: event.expiresAt,
+                    duration: event.duration,
                 })));
             }, []);
 
@@ -132,35 +164,32 @@ const ParkDetail = () => {
                 {/* Checked-in Dogs Section */}
                 <div className="w-1/2">
                     <h2 className="text-2xl font-bold mb-4">Checked-in Dogs</h2>
-                    {checkedInDogs.length === 0 ? (
+                    {dogsWithTimeLeft.length === 0 ? (
                         <p>No dogs are currently checked in to this park.</p>
                     ) : (
                         <ul>
-                            {checkedInDogs.map(dog => (
+                            {dogsWithTimeLeft.map(dog => (
                                 <li key={dog._id} className="mb-4 flex items-center">
                                     {dog.image ? (
                                         <img
                                             src={dog.image}
                                             alt={dog.dogName}
-                                            className="w-20 h-20 rounded-lg object-cover mr-4 border-2 border-gray-300"
+                                            className="w-20 h-20 rounded-full object-cover mr-4 border-2 border-gray-300"
                                         />
                                     ) : (
-                                        <div className="w-20 h-20 bg-gray-300 rounded-lg flex items-center justify-center mr-4 border-2 border-gray-300">
+                                        <div className="w-20 h-20 bg-gray-300 rounded-full flex items-center justify-center mr-4 border-2 border-gray-300">
                                             <span className="text-gray-500 text-xs">No Image</span>
                                         </div>
                                     )}
                                     <div>
-                                        <p className="font-bold">{dog.dogName}</p>
-                                        <p>Owner: {dog.ownerId.username}</p>
+                                        <p><strong>Size:</strong> {dog.size} <strong>Name:</strong> {dog.dogName} <strong>Owner:</strong> {dog.ownerId.username}</p>
+                                        <p>Here for another: {dog.remainingTime} minute(s)</p>
                                     </div>
                                 </li>
                             ))}
                         </ul>
                     )}
                 </div>
-
-
-
 
                 {/* Upcoming Events Section */}
                 <div className="w-1/2 ml-4">
@@ -172,17 +201,18 @@ const ParkDetail = () => {
                             {upcomingEvents.map(event => (
                                 <li key={event._id} className="mb-4 border-b pb-2">
                                     <p><strong>Date:</strong> {new Date(event.date).toLocaleDateString()}</p>
-                                    <p><strong>Time:</strong> {event.time}</p>
+                                    <p><strong>Time:</strong> {new Date(event.date).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })}</p>
                                     {event.dogs && event.dogs.length > 0 && (
                                         <div>
-                                            <p><strong>Dogs Attending:</strong></p>
-                                            <ul className="ml-4">
-                                                {event.dogs.map(dog => (
-                                                    <li key={dog._id}>
-                                                        {dog.dogName} ({dog.size})
-                                                    </li>
-                                                ))}
-                                            </ul>
+                                            <p><strong>Dogs Attending:</strong>
+                                                <ul className="ml-4">
+                                                    {event.dogs.map(dog => (
+                                                        <li key={dog._id}>
+                                                            {dog.dogName} ({dog.size})
+                                                        </li>
+                                                    ))}
+                                                </ul>
+                                            </p>
                                         </div>
                                     )}
                                 </li>
@@ -206,6 +236,11 @@ const ParkDetail = () => {
                         <CreateEventForm
                             userId={currentUserId}
                             parkId={id}
+                            onSuccess={() => {
+                                setShowModal(false);
+                                // Refresh the upcoming list
+                                fetchUpcomingEvents();
+                            }}
                         />
                     </div>
                 </div>

@@ -3,7 +3,7 @@ import axios from 'axios';
 import getUserInfo from '../../utilities/decodeJwt';
 import apiClient from '../../utilities/apiClient';
 
-const CreateEventForm = ({ parkId }) => {
+const CreateEventForm = ({ parkId, onSuccess }) => {
   const [time, setTime] = useState('');
   const [date, setDate] = useState('');
   const [dogs, setDogs] = useState([]);
@@ -64,6 +64,7 @@ const CreateEventForm = ({ parkId }) => {
         setTime('');
         setDate('');
         setSelectedDogs([]);
+        onSuccess();
       }
     } catch (error) {
       console.error(error);

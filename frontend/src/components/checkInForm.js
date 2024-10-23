@@ -47,7 +47,7 @@ const CheckInForm = ({ userId, parkId, onSuccess }) => {
       });
 
       // Success
-      onSuccess();
+      onSuccess(duration);
     } catch (error) {
       console.error(error);
       setError('Failed to check in. Please try again.');
@@ -58,10 +58,11 @@ const CheckInForm = ({ userId, parkId, onSuccess }) => {
     <form onSubmit={handleSubmit}>
       {error && <p className="text-red-500">{error}</p>}
       <div className="form-group mt-4">
-        <label className="font-semibold">Durationb in minutes (defaults to 60):</label>
+        <label className="font-semibold">How long you'll be here:</label>
         <input
           type="number"
           min="1"
+          max="300"
           value={duration}
           onChange={(e) => setDuration(e.target.value)}
           className="border rounded px-2 py-1 w-full"
