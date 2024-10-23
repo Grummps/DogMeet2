@@ -17,6 +17,7 @@ import Unauthorized from "./components/unauthorized";
 import ProtectedRoute from "./components/protectedRoute";
 import ParksList from "./components/pages/parkList";
 import ParkDetail from "./components/pages/parkDetail";
+import useRefreshTokenOnActivity from "./components/hooks/refreshTokenOnActivity";
 
 import L from 'leaflet';
 import markerIcon2x from 'leaflet/dist/images/marker-icon-2x.png';
@@ -32,13 +33,13 @@ L.Icon.Default.mergeOptions({
   shadowUrl: markerShadow,
 });
 
-
 export const UserContext = createContext();
-//test change
-//test again
+
 const App = () => {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true); // Add loading state
+
+  useRefreshTokenOnActivity();
 
   useEffect(() => {
     const token = localStorage.getItem('accessToken');

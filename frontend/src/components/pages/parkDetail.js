@@ -135,24 +135,32 @@ const ParkDetail = () => {
                     {checkedInDogs.length === 0 ? (
                         <p>No dogs are currently checked in to this park.</p>
                     ) : (
-                        <div className="flex">
-                            {['small', 'medium', 'large'].map(size => (
-                                <div key={size} className="w-1/3 px-2">
-                                    <h3 className="text-xl font-semibold mb-2 capitalize">{size}</h3>
-                                    <ul>
-                                        {checkedInDogs.filter(dog => dog.size === size).map(dog => (
-                                            <li key={dog._id} className="mb-2">
-                                                <p><strong>{dog.dogName}</strong></p>
-                                                <p>Owner: {dog.ownerId.username}</p>
-                                                <p></p>
-                                            </li>
-                                        ))}
-                                    </ul>
-                                </div>
+                        <ul>
+                            {checkedInDogs.map(dog => (
+                                <li key={dog._id} className="mb-4 flex items-center">
+                                    {dog.image ? (
+                                        <img
+                                            src={dog.image}
+                                            alt={dog.dogName}
+                                            className="w-20 h-20 rounded-lg object-cover mr-4 border-2 border-gray-300"
+                                        />
+                                    ) : (
+                                        <div className="w-20 h-20 bg-gray-300 rounded-lg flex items-center justify-center mr-4 border-2 border-gray-300">
+                                            <span className="text-gray-500 text-xs">No Image</span>
+                                        </div>
+                                    )}
+                                    <div>
+                                        <p className="font-bold">{dog.dogName}</p>
+                                        <p>Owner: {dog.ownerId.username}</p>
+                                    </div>
+                                </li>
                             ))}
-                        </div>
+                        </ul>
                     )}
                 </div>
+
+
+
 
                 {/* Upcoming Events Section */}
                 <div className="w-1/2 ml-4">

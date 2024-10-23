@@ -117,7 +117,7 @@ router.get('/:id/events/active', async (req, res) => {
     })
       .populate({
         path: 'dogs',
-        select: 'dogName size ownerId',
+        select: 'dogName size ownerId image',
         populate: {
           path: 'ownerId',
           select: 'username',
