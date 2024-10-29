@@ -1,4 +1,3 @@
-// src/components/AdminDashboard.jsx
 import React from 'react';
 import AddPark from '../addPark'; // Ensure the path is correct
 

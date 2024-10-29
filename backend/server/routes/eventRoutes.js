@@ -65,7 +65,6 @@ router.post("/create", authenticate, async (req, res) => {
     }
 });
 
-
 // GET route to fetch all events
 router.get("/all", async (req, res) => {
     try {

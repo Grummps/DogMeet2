@@ -1,5 +1,3 @@
-// verifies user has a token
-
 const jwt = require('jsonwebtoken');
 
 const authenticate = (req, res, next) => {
