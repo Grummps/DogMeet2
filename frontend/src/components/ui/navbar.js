@@ -5,24 +5,45 @@ import {
   PlayCircleIcon,
   MapPinIcon,
   ArrowLeftOnRectangleIcon,
-  BellIcon, // Import BellIcon for notifications
+  BellIcon,
+  TrashIcon,
 } from "@heroicons/react/24/solid";
-import getUserInfo from "../../utilities/decodeJwt";
 import { useNavigate, useLocation, Link } from "react-router-dom";
+import getUserInfo from "../../utilities/decodeJwt";
 import apiClient from "../../utilities/apiClient";
+import ConfirmationModal from "./confirmationModal"; // Adjust the path as needed
+import Alert from "./alert"; // Adjust the path as needed
 
-// Navbar with clickable icons and hover tooltips
 export default function Navbar() {
   const [user, setUser] = useState({});
   const location = useLocation();
   const navigate = useNavigate();
 
-  // State for friend requests
+  // State for friend requests and notifications
   const [friendRequests, setFriendRequests] = useState([]);
+  const [friendRequestNotifications, setFriendRequestNotifications] = useState([]);
+  const [eventNotifications, setEventNotifications] = useState([]);
+  const [notifications, setNotifications] = useState([]); // Combined if needed
+  const [unreadCount, setUnreadCount] = useState(0);
   const [showDropdown, setShowDropdown] = useState(false);
   const dropdownRef = useRef(null);
 
-  const handleClick = (e) => {
+  // State for confirmation modals
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [modalContent, setModalContent] = useState({
+    title: "",
+    message: "",
+    onConfirm: null,
+  });
+
+  // State for feedback messages
+  const [feedbackMessage, setFeedbackMessage] = useState("");
+  const [feedbackType, setFeedbackType] = useState(""); // 'success' or 'error'
+
+  // State for active tab (optional)
+  const [activeTab, setActiveTab] = useState('friend_requests'); // 'friend_requests' or 'event_notifications'
+
+  const handleLogout = (e) => {
     e.preventDefault();
     localStorage.removeItem("accessToken");
     navigate("/");
@@ -32,19 +53,39 @@ export default function Navbar() {
     setUser(getUserInfo());
   }, []);
 
-  // Fetch friend requests when the component mounts
+  // Fetch friend requests and notifications when the component mounts
   useEffect(() => {
-    const fetchFriendRequests = async () => {
+    const fetchData = async () => {
       try {
-        const response = await apiClient.get('/users/friend-requests');
-        setFriendRequests(response.data.friendRequests);
+        // Fetch friend requests
+        const friendResponse = await apiClient.get("/users/friend-requests");
+        setFriendRequests(friendResponse.data.friendRequests);
+
+        // Fetch notifications
+        const notifResponse = await apiClient.get("/users/notifications");
+
+        const allNotifications = notifResponse.data.notifications || [];
+
+        // Separate notifications based on type
+        const friendRequestsNotifs = allNotifications.filter(
+          (n) => n.type === 'friend_request'
+        );
+        const eventNotifs = allNotifications.filter(
+          (n) => n.type === 'event_created'
+        );
+
+        setFriendRequestNotifications(friendRequestsNotifs);
+        setEventNotifications(eventNotifs);
+
+        // Calculate unread notifications count (combined)
+        const unread = allNotifications.filter((n) => !n.read).length;
+        setUnreadCount(unread);
       } catch (error) {
-        console.error('Error fetching friend requests:', error);
+        console.error("Error fetching data:", error);
       }
     };
 
-    fetchFriendRequests();
-    
+    fetchData();
   }, []);
 
   // Handle clicks outside the dropdown to close it
@@ -58,33 +99,135 @@ export default function Navbar() {
       }
     };
 
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
   // Function to accept a friend request
-  const acceptFriendRequest = async (friendId) => {
+  const acceptFriendRequest = async (friendId, notificationId) => {
     try {
       await apiClient.post(`/users/${friendId}/accept-friend-request`);
-      setFriendRequests(friendRequests.filter(req => req._id !== friendId));
-      // Optionally, show a success message or notification
+      // Remove the friend request from friendRequestNotifications
+      setFriendRequestNotifications((prev) =>
+        prev.filter((req) => req._id !== notificationId)
+      );
+      // Optionally, remove from combined notifications if necessary
+      setNotifications((prev) =>
+        prev.filter((n) => n._id !== notificationId)
+      );
+      setUnreadCount((prev) => Math.max(prev - 1, 0));
+      setFeedbackMessage("Friend request accepted.");
+      setFeedbackType("success");
     } catch (error) {
-      console.error('Error accepting friend request:', error);
-      // Optionally, show an error message
+      console.error("Error accepting friend request:", error);
+      setFeedbackMessage("Failed to accept friend request.");
+      setFeedbackType("error");
     }
   };
 
   // Function to decline a friend request
-  const declineFriendRequest = async (friendId) => {
+  const declineFriendRequest = async (friendId, notificationId) => {
     try {
       await apiClient.post(`/users/${friendId}/decline-friend-request`);
-      setFriendRequests(friendRequests.filter(req => req._id !== friendId));
-      // Optionally, show a success message or notification
+      // Remove the friend request from friendRequestNotifications
+      setFriendRequestNotifications((prev) =>
+        prev.filter((req) => req._id !== notificationId)
+      );
+      // Optionally, remove from combined notifications if necessary
+      setNotifications((prev) =>
+        prev.filter((n) => n._id !== notificationId)
+      );
+      setUnreadCount((prev) => Math.max(prev - 1, 0));
+      setFeedbackMessage("Friend request declined.");
+      setFeedbackType("success");
     } catch (error) {
-      console.error('Error declining friend request:', error);
-      // Optionally, show an error message
+      console.error("Error declining friend request:", error);
+      setFeedbackMessage("Failed to decline friend request.");
+      setFeedbackType("error");
     }
   };
+
+  // Function to mark all notifications as read
+  const markAllAsRead = async () => {
+    try {
+      const unreadNotifications = [
+        ...friendRequestNotifications.filter((n) => !n.read),
+        ...eventNotifications.filter((n) => !n.read),
+      ];
+      await Promise.all(
+        unreadNotifications.map((n) =>
+          apiClient.post(`/users/notifications/${n._id}/read`)
+        )
+      );
+      // Update state to mark notifications as read
+      setFriendRequestNotifications(
+        friendRequestNotifications.map((n) => ({ ...n, read: true }))
+      );
+      setEventNotifications(
+        eventNotifications.map((n) => ({ ...n, read: true }))
+      );
+      setUnreadCount(0);
+    } catch (error) {
+      console.error("Error marking notifications as read:", error);
+    }
+  };
+
+  // Function to open the confirmation modal
+  const openConfirmationModal = (title, message, onConfirm) => {
+    setModalContent({
+      title,
+      message,
+      onConfirm,
+    });
+    setIsModalOpen(true);
+  };
+
+  // Function to mark an event notification as read
+  const markEventNotificationAsRead = async (notificationId) => {
+    try {
+      await apiClient.post(`/users/notifications/${notificationId}/read`);
+      setEventNotifications((prev) =>
+        prev.map((notif) =>
+          notif._id === notificationId ? { ...notif, read: true } : notif
+        )
+      );
+      setUnreadCount((prev) => Math.max(prev - 1, 0));
+    } catch (error) {
+      console.error("Error marking notification as read:", error);
+      setFeedbackMessage("Failed to mark notification as read.");
+      setFeedbackType("error");
+    }
+  };
+
+  // Function to delete a notification
+  const deleteNotification = async (notificationId) => {
+    // Optimistically update the UI
+    const originalFriendRequests = [...friendRequestNotifications];
+    const originalEventNotifs = [...eventNotifications];
+
+    setFriendRequestNotifications((prev) =>
+      prev.filter((n) => n._id !== notificationId)
+    );
+    setEventNotifications((prev) =>
+      prev.filter((n) => n._id !== notificationId)
+    );
+    setUnreadCount((prev) => Math.max(prev - 1, 0));
+
+    try {
+      await apiClient.delete(`/users/notifications/${notificationId}`);
+      setFeedbackMessage("Notification deleted successfully.");
+      setFeedbackType("success");
+    } catch (error) {
+      console.error("Error deleting notification:", error);
+      // Revert UI changes
+      setFriendRequestNotifications(originalFriendRequests);
+      setEventNotifications(originalEventNotifs);
+      setUnreadCount((prev) => prev + 1);
+      setFeedbackMessage("Failed to delete notification.");
+      setFeedbackType("error");
+    }
+  };
+
 
   // Don't show Navbar on login or signup pages
   if (location.pathname === "/login" || location.pathname === "/signup") {
@@ -96,78 +239,191 @@ export default function Navbar() {
       {/* Icons Container */}
       <div className="flex flex-col mt-24 items-start space-y-6 flex-1">
         {/* Play Icon */}
-        <a href="/" className="flex items-center">
+        <Link to="/" className="flex items-center no-underline">
           <PlayCircleIcon className="h-6 w-6 fill-white hover:fill-blue-500 cursor-pointer" />
-          <span className="ml-4 text-white text-lg hover:fill-blue-500 cursor-pointer hidden md:inline">Start</span>
-        </a>
+          <span className="ml-4 text-white text-lg hidden md:inline">Start</span>
+        </Link>
 
         {/* Home Icon */}
-        <a href="/home" className="flex items-center">
+        <Link to="/home" className="flex items-center no-underline">
           <HomeIcon className="h-6 w-6 fill-white hover:fill-blue-500 cursor-pointer" />
-          <span className="ml-4 text-white text-lg hover:fill-blue-500 cursor-pointer hidden md:inline">Home</span>
-        </a>
+          <span className="ml-4 text-white text-lg hidden md:inline">Home</span>
+        </Link>
 
         {/* Profile Icon */}
-        <a href="/profile" className="flex items-center">
+        <Link to="/profile" className="flex items-center no-underline">
           <UserIcon className="h-6 w-6 fill-white hover:fill-blue-500 cursor-pointer" />
-          <span className="ml-4 text-white text-lg hover:fill-blue-500 cursor-pointer hidden md:inline">Profile</span>
-        </a>
+          <span className="ml-4 text-white text-lg hidden md:inline">Profile</span>
+        </Link>
 
         {/* Parks Icon */}
-        <a href="/parks" className="flex items-center">
+        <Link to="/parks" className="flex items-center no-underline">
           <MapPinIcon className="h-6 w-6 fill-white hover:fill-blue-500 cursor-pointer" />
-          <span className="ml-4 text-white text-lg hover:fill-blue-500 cursor-pointer hidden md:inline">Parks</span>
-        </a>
+          <span className="ml-4 text-white text-lg hidden md:inline">Parks</span>
+        </Link>
 
-        {/* Notification Bell - Placed under Parks */}
+        {/* Inbox Icon */}
         <div className="relative w-full" ref={dropdownRef}>
           <button
-            onClick={() => setShowDropdown(!showDropdown)}
-            className="flex items-center w-full focus:outline-none mt-6"
+            onClick={() => {
+              setShowDropdown(!showDropdown);
+              if (!showDropdown) markAllAsRead();
+            }}
+            className="flex items-center w-full focus:outline-none"
           >
             <BellIcon className="h-6 w-6 fill-white hover:fill-blue-500 cursor-pointer" />
-            <span className="ml-4 text-white text-lg hover:fill-blue-500 cursor-pointer hidden md:inline">Inbox</span>
-            {friendRequests.length > 0 && (
+            <span className="ml-4 text-white text-lg hidden md:inline">Inbox</span>
+            {unreadCount > 0 && (
               <span className="absolute top-0 right-0 bg-red-500 text-white rounded-full h-5 w-5 flex items-center justify-center text-xs">
-                {friendRequests.length}
+                {unreadCount}
               </span>
             )}
           </button>
 
-          {/* Dropdown Menu - Positioned on the right */}
+          {/* Dropdown Menu */}
           {showDropdown && (
-            <div className="fixed mt-2 w-64 bg-white border rounded shadow-lg z-50">
-              {friendRequests.length > 0 ? (
-                <ul>
-                  {friendRequests.map((request) => (
-                    <li key={request._id} className="px-4 py-2 border-b">
-                      <div className="flex items-center justify-between">
-                        <Link to={`/profile/${request._id}`} className="text-blue-600">
-                          {request.username}
-                        </Link>
-                        <div className="flex space-x-2">
-                          <button
-                            onClick={() => acceptFriendRequest(request._id)}
-                            className="text-green-500 hover:text-green-700"
-                          >
-                            Accept
-                          </button>
-                          <button
-                            onClick={() => declineFriendRequest(request._id)}
-                            className="text-red-500 hover:text-red-700"
-                          >
-                            Decline
-                          </button>
-                        </div>
-                      </div>
-                    </li>
-                  ))}
-                </ul>
-              ) : (
-                <div className="px-4 py-2">
-                  No new friend requests.
+            <div className="absolute top-12 right-auto w-80 bg-white border rounded shadow-lg z-50 max-h-96 overflow-y-auto">
+              {/* Feedback Message */}
+              {feedbackMessage && (
+                <div className="p-4">
+                  <Alert
+                    type={feedbackType}
+                    message={feedbackMessage}
+                    onClose={() => setFeedbackMessage("")}
+                  />
                 </div>
               )}
+
+              {/* Tabs */}
+              <div className="flex border-b">
+                <button
+                  className={`flex-1 py-2 ${activeTab === 'friend_requests'
+                    ? 'border-b-2 border-blue-500 text-blue-500'
+                    : 'text-gray-500'
+                    }`}
+                  onClick={() => setActiveTab('friend_requests')}
+                >
+                  Friend Requests
+                </button>
+                <button
+                  className={`flex-1 py-2 ${activeTab === 'event_notifications'
+                    ? 'border-b-2 border-blue-500 text-blue-500'
+                    : 'text-gray-500'
+                    }`}
+                  onClick={() => setActiveTab('event_notifications')}
+                >
+                  Events
+                </button>
+              </div>
+
+              {/* Tab Content */}
+              <div className="p-4">
+                {activeTab === 'friend_requests' ? (
+                  <div>
+                    {friendRequestNotifications.length > 0 ? (
+                      <ul>
+                        {friendRequestNotifications.map((notification) => (
+                          <li key={notification._id} className="px-2 py-1 border-b">
+                            <div className="flex items-center justify-between">
+                              <Link
+                                to={`/profile/${notification.sender._id}`}
+                                className="text-blue-600 no-underline"
+                              >
+                                {notification.sender.username} sent you a friend request.
+                              </Link>
+                              <div className="flex space-x-2">
+                                <button
+                                  onClick={() =>
+                                    acceptFriendRequest(
+                                      notification.sender._id,
+                                      notification._id
+                                    )
+                                  }
+                                  className="text-green-500 hover:text-green-700"
+                                >
+                                  Accept
+                                </button>
+                                <button
+                                  onClick={() =>
+                                    declineFriendRequest(
+                                      notification.sender._id,
+                                      notification._id
+                                    )
+                                  }
+                                  className="text-red-500 hover:text-red-700"
+                                >
+                                  Decline
+                                </button>
+                                {/* Delete Button */}
+                                <button
+                                  onClick={() => deleteNotification(notification._id)}
+                                  className="text-gray-500 hover:text-gray-700"
+                                  title="Delete Notification"
+                                >
+                                  <TrashIcon className="h-5 w-5" />
+                                </button>
+                              </div>
+                            </div>
+                          </li>
+                        ))}
+                      </ul>
+                    ) : (
+                      <div className="text-gray-500">No new friend requests.</div>
+                    )}
+                  </div>
+                ) : (
+                  <div>
+                    {eventNotifications.length > 0 ? (
+                      <ul>
+                        {eventNotifications.map((notification) => (
+                          <li key={notification._id} className="px-2 py-1 border-b">
+                            <div className="flex items-center justify-between">
+                              <div>
+                                <Link
+                                  to={`/profile/${notification.sender._id}`}
+                                  className="text-blue-600 no-underline"
+                                  onClick={() => markEventNotificationAsRead(notification._id)}
+                                >
+                                  {notification.sender.username}
+                                </Link>{" "}
+                                created a new event at{" "}
+                                <Link
+                                  to={`/events/${notification.event._id}`}
+                                  className="text-blue-600 no-underline"
+                                  onClick={() => markEventNotificationAsRead(notification._id)}
+                                >
+                                  {notification.event.parkId?.parkName || "a park"}
+                                </Link>
+                                .
+                              </div>
+                              {/* Delete Button */}
+                              <button
+                                onClick={() => deleteNotification(notification._id)}
+                                className="text-gray-500 hover:text-gray-700"
+                                title="Delete Notification"
+                              >
+                                <TrashIcon className="h-5 w-5" />
+                              </button>
+                            </div>
+                          </li>
+                        ))}
+                      </ul>
+                    ) : (
+                      <div className="text-gray-500">No new event notifications.</div>
+                    )}
+                  </div>
+                )}
+              </div>
+
+              {/* Optional: Button to Mark All as Read */}
+              <div className="px-4 py-2">
+                <button
+                  onClick={markAllAsRead}
+                  className="text-blue-500 hover:underline"
+                >
+                  Mark all as read
+                </button>
+              </div>
             </div>
           )}
         </div>
@@ -175,13 +431,20 @@ export default function Navbar() {
 
       {/* Logout Button */}
       <div className="mb-4">
-        <button
-          onClick={handleClick}
-          className="flex items-center"
-        >
+        <button onClick={handleLogout} className="flex items-center no-underline">
           <ArrowLeftOnRectangleIcon className="h-6 w-6 fill-white hover:fill-red-500 cursor-pointer" />
+          <span className="ml-4 text-white text-lg hidden md:inline">Logout</span>
         </button>
       </div>
+
+      {/* Confirmation Modal */}
+      <ConfirmationModal
+        isOpen={isModalOpen}
+        title={modalContent.title}
+        message={modalContent.message}
+        onConfirm={modalContent.onConfirm}
+        onCancel={() => setIsModalOpen(false)}
+      />
     </div>
   );
 }

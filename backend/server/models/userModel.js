@@ -56,6 +56,12 @@ const newUserSchema = new mongoose.Schema(
         ref: 'events',
       }
     ],
+    notifications: [
+      {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'notifications',
+      }
+    ],
   },
   { collection: "users" }
 );

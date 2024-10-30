@@ -2,21 +2,22 @@ const express = require("express");
 const router = express.Router();
 const bcrypt = require("bcrypt");
 const mongoose = require('mongoose');
-const newUserModel = require('../models/userModel');
+const User = require('../models/userModel');
 const { newUserValidation, partialUserValidation } = require('../models/userValidator');
 const { generateAccessToken } = require('../utilities/generateToken');
 const authenticate = require("../middleware/auth");
+const Notification = require("../models/notificationModel");
 
 // Route to delete all users
 router.post('/deleteAll', async (req, res) => {
-    const user = await newUserModel.deleteMany();
+    const user = await User.deleteMany();
     return res.json(user);
 });
 
 // Route to get all users
 router.get('/getAll', async (req, res) => {
     try {
-        const users = await newUserModel.find({})
+        const users = await User.find({})
             .populate('parkId')
             .populate('dogId')
             .populate('friends')
@@ -32,7 +33,7 @@ router.get('/getAll', async (req, res) => {
 // Route to get incoming friend requests
 router.get('/friend-requests', authenticate, async (req, res) => {
     try {
-        const user = await newUserModel.findById(req.user.id)
+        const user = await User.findById(req.user.id)
             .populate('friendRequests', '_id username')
             .exec();
 
@@ -50,7 +51,7 @@ router.get('/friend-requests', authenticate, async (req, res) => {
 // Route to get list of friends
 router.get('/friends', authenticate, async (req, res) => {
     try {
-        const user = await newUserModel.findById(req.user.id)
+        const user = await User.findById(req.user.id)
             .populate('friends', '_id username')
             .exec();
 
@@ -74,7 +75,7 @@ router.get('/search', authenticate, async (req, res) => {
     }
 
     try {
-        const users = await newUserModel.find({
+        const users = await User.find({
             $or: [
                 { username: { $regex: query, $options: 'i' } },
                 { email: { $regex: query, $options: 'i' } },
@@ -89,14 +90,67 @@ router.get('/search', authenticate, async (req, res) => {
     }
 });
 
+// GET /users/notifications
+router.get('/notifications', authenticate, async (req, res) => {
+    try {
+        const userId = req.user.id;
+        const page = parseInt(req.query.page) || 1;
+        const limit = parseInt(req.query.limit) || 20;
+        const skip = (page - 1) * limit;
+
+        const notifications = await Notification.find({ receiver: userId })
+            .populate('sender', 'username')
+            .populate('event')
+            .sort({ createdAt: -1 })
+            .skip(skip)
+            .limit(limit);
+
+        res.json({ notifications });
+    } catch (error) {
+        console.error('Error fetching notifications:', error);
+        res.status(500).json({ error: 'Failed to fetch notifications.' });
+    }
+});
+
 // ============== Dynamic routes ==============
+
+// DELETE /users/notifications/:id
+router.delete('/notifications/:id', authenticate, async (req, res) => {
+    try {
+        const userId = req.user.id;
+        const notificationId = req.params.id;
+
+        // Find the notification to ensure it belongs to the authenticated user
+        const notification = await Notification.findById(notificationId);
+
+        if (!notification) {
+            return res.status(404).json({ message: 'Notification not found.' });
+        }
+
+        if (notification.receiver.toString() !== userId) {
+            return res.status(403).json({ message: 'Unauthorized to delete this notification.' });
+        }
+
+        // Delete the notification
+        await Notification.findByIdAndDelete(notificationId);
+
+        // Remove the notification from the user's notifications array
+        await User.findByIdAndUpdate(userId, { $pull: { notifications: notificationId } });
+
+
+        res.json({ message: 'Notification deleted successfully.' });
+    } catch (error) {
+        console.error('Error deleting notification:', error);
+        res.status(500).json({ message: 'Failed to delete notification.' });
+    }
+});
 
 // Route to get a user by ID
 router.get("/:id", async (req, res) => {
     const userId = req.params.id;
 
     try {
-        const user = await newUserModel.findById(userId)
+        const user = await User.findById(userId)
             .populate({
                 path: 'dogId',
                 select: 'dogName image size',
@@ -114,6 +168,38 @@ router.get("/:id", async (req, res) => {
     } catch (error) {
         console.error("Error fetching user:", error);
         res.status(500).send({ message: 'Error fetching user.' });
+    }
+});
+
+// Route to mark a notification as read
+router.post('/notifications/:id/read', authenticate, async (req, res) => {
+    try {
+        const notificationId = req.params.id;
+        const userId = req.user.id;
+
+        // Validate notificationId
+        if (!mongoose.Types.ObjectId.isValid(notificationId)) {
+            return res.status(400).json({ error: 'Invalid notification ID' });
+        }
+
+        const notification = await Notification.findById(notificationId);
+
+        if (!notification) {
+            return res.status(404).json({ error: 'Notification not found.' });
+        }
+
+        // Ensure the notification belongs to the user
+        if (notification.receiver.toString() !== userId) {
+            return res.status(403).json({ error: 'Access denied.' });
+        }
+
+        notification.read = true;
+        await notification.save();
+
+        res.json({ message: 'Notification marked as read.' });
+    } catch (error) {
+        console.error('Error marking notification as read:', error);
+        res.status(500).json({ error: 'Failed to update notification.' });
     }
 });
 
@@ -137,8 +223,8 @@ router.post('/:id/remove-friend', authenticate, async (req, res) => {
 
     try {
         const [user, friend] = await Promise.all([
-            newUserModel.findById(userId),
-            newUserModel.findById(friendId),
+            User.findById(userId),
+            User.findById(friendId),
         ]);
 
         if (!user || !friend) {
@@ -171,7 +257,7 @@ router.delete('/removeDog/:id/:dogId', async (req, res) => {
         const dogObjectId = mongoose.Types.ObjectId(dogId);
 
         // Update the user's dogId array by pulling the specified dogId
-        const updatedUser = await newUserModel.findByIdAndUpdate(
+        const updatedUser = await User.findByIdAndUpdate(
             id,
             { $pull: { dogId: dogObjectId } },
             { new: true, runValidators: true }
@@ -201,7 +287,7 @@ router.put('/editUser/:id', authenticate, async (req, res) => {
     const { username, email, password, parkId, dogId, friends, eventId } = req.body;
 
     if (username) {
-        const user = await newUserModel.findOne({ username });
+        const user = await User.findOne({ username });
         if (user && user._id.toString() !== id) {
             return res.status(409).send({ message: "Username is taken, pick another" });
         }
@@ -232,7 +318,7 @@ router.put('/editUser/:id', authenticate, async (req, res) => {
         updateFields.friends = { $addToSet: { $each: friendIds } }; // Add multiple friend IDs
     }
 
-    newUserModel.findByIdAndUpdate(
+    User.findByIdAndUpdate(
         id,
         { $set: updateFields },
         { new: true, runValidators: true },
@@ -268,8 +354,8 @@ router.post('/:id/send-friend-request', authenticate, async (req, res) => {
 
     try {
         const [user, friend] = await Promise.all([
-            newUserModel.findById(userId),
-            newUserModel.findById(friendId),
+            User.findById(userId),
+            User.findById(friendId),
         ]);
 
         if (!friend) {
@@ -295,6 +381,19 @@ router.post('/:id/send-friend-request', authenticate, async (req, res) => {
         friend.friendRequests.push(userId);
         await friend.save();
 
+        // Create a notification
+        const notification = new Notification({
+            type: 'friend_request',
+            sender: userId,
+            receiver: friendId,
+        });
+
+        await notification.save();
+
+        // Add the notification to the recipient's notifications array
+        friend.notifications.push(notification._id);
+        await friend.save();
+
         res.json({ message: 'Friend request sent' });
     } catch (error) {
         console.error("Error sending friend request:", error);
@@ -314,19 +413,28 @@ router.post('/:id/accept-friend-request', authenticate, async (req, res) => {
 
     try {
         const [user, friend] = await Promise.all([
-            newUserModel.findById(userId),
-            newUserModel.findById(friendId),
+            User.findById(userId),
+            User.findById(friendId),
         ]);
 
+        if (!user || !friend) {
+            return res.status(404).json({ error: 'User not found' });
+        }
+
+        // Check if there's a friend request from friendId to userId
         if (!user.friendRequests.includes(friendId)) {
             return res.status(400).json({ error: 'No friend request from this user' });
         }
 
-        // Add friendId to user's friends array
-        user.friends.push(friendId);
+        // Add friendId to user's friends array if not already present
+        if (!user.friends.includes(friendId)) {
+            user.friends.push(friendId);
+        }
 
-        // Add userId to friend's friends array
-        friend.friends.push(userId);
+        // Add userId to friend's friends array if not already present
+        if (!friend.friends.includes(userId)) {
+            friend.friends.push(userId);
+        }
 
         // Remove friendId from user's friendRequests array
         user.friendRequests = user.friendRequests.filter(id => id.toString() !== friendId);
@@ -351,7 +459,7 @@ router.post('/:id/decline-friend-request', authenticate, async (req, res) => {
     }
 
     try {
-        const user = await newUserModel.findById(userId);
+        const user = await User.findById(userId);
 
         if (!user.friendRequests.includes(friendId)) {
             return res.status(400).json({ error: 'No friend request from this user' });
@@ -381,8 +489,8 @@ router.post('/:id/cancel-friend-request', authenticate, async (req, res) => {
 
     try {
         const [user, recipient] = await Promise.all([
-            newUserModel.findById(userId),
-            newUserModel.findById(recipientId),
+            User.findById(userId),
+            User.findById(recipientId),
         ]);
 
         if (!user || !recipient) {

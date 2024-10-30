@@ -4,21 +4,26 @@ const Event = require("../models/eventModel");
 const authenticate = require("../middleware/auth");
 const User = require('../models/userModel');  // Import User model
 const Park = require('../models/parkModel');  // Import Park model
+const Notification = require('../models/notificationModel'); // Import Notification model
 
 // POST route to create a new event
 router.post("/create", authenticate, async (req, res) => {
     try {
-        const { userId, parkId, dogs, time, date, duration } = req.body;
+        const { parkId, dogs, time, date, duration } = req.body;
+        const userId = req.user.id;
 
         // Validate the input
-        if (!userId || !parkId || !dogs || !dogs.length || !time || !date) {
+        if (!parkId || !dogs || !dogs.length || !time || !date) {
             return res.status(400).json({ message: "All fields are required, including at least one dog." });
         }
 
         // Verify that the dogs belong to the user
-        const userDogs = await User.findById(userId).select('dogId');
-        const userDogIds = userDogs.dogId.map((id) => id.toString());
+        const user = await User.findById(userId).select('dogId friends');
+        if (!user) {
+            return res.status(404).json({ message: "User not found." });
+        }
 
+        const userDogIds = user.dogId.map((id) => id.toString());
         const invalidDogs = dogs.filter((dogId) => !userDogIds.includes(dogId));
 
         if (invalidDogs.length > 0) {
@@ -27,6 +32,9 @@ router.post("/create", authenticate, async (req, res) => {
 
         // Parse the date and time into a Date object
         const eventStartTime = new Date(`${date}T${time}:00`);
+        if (isNaN(eventStartTime)) {
+            return res.status(400).json({ message: "Invalid date or time format." });
+        }
 
         // Calculate the duration (default to 60 minutes if not provided)
         const eventDuration = duration || 60;
@@ -49,13 +57,37 @@ router.post("/create", authenticate, async (req, res) => {
         const savedEvent = await newEvent.save();
 
         // Update user and park documents
-        await User.findByIdAndUpdate(userId, {
-            $addToSet: { eventId: savedEvent._id },
-        });
+        await Promise.all([
+            User.findByIdAndUpdate(userId, {
+                $addToSet: { eventId: savedEvent._id },
+            }),
+            Park.findByIdAndUpdate(parkId, {
+                $addToSet: { eventId: savedEvent._id },
+            }),
+        ]);
 
-        await Park.findByIdAndUpdate(parkId, {
-            $addToSet: { eventId: savedEvent._id },
-        });
+        // After creating the event, fetch the user's friends
+        const userFriends = user.friends; // Already populated if you modify the query
+
+        if (userFriends && userFriends.length > 0) {
+            // Create a notification for each friend
+            const notifications = userFriends.map(friend => ({
+                type: 'event_created',
+                sender: userId,
+                receiver: friend._id,
+                event: savedEvent._id,
+            }));
+
+            // Save notifications and update friends' notification lists
+            const savedNotifications = await Notification.insertMany(notifications);
+
+            // Update each friend's notifications
+            const friendIds = userFriends.map(friend => friend._id);
+            await User.updateMany(
+                { _id: { $in: friendIds } },
+                { $push: { notifications: { $each: savedNotifications.map(n => n._id) } } }
+            );
+        }
 
         // Respond with the saved event
         res.status(201).json(savedEvent);
