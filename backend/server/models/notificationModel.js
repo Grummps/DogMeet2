@@ -28,4 +28,11 @@ const notificationSchema = new mongoose.Schema({
     },
 });
 
+// Transform _id to id in JSON responses
+notificationSchema.method('toJSON', function () {
+    const { _id, __v, ...object } = this.toObject();
+    object.id = _id;
+    return object;
+});
+
 module.exports = mongoose.model('notifications', notificationSchema);

@@ -11,8 +11,7 @@ import {
 import { useNavigate, useLocation, Link } from "react-router-dom";
 import getUserInfo from "../../utilities/decodeJwt";
 import apiClient from "../../utilities/apiClient";
-import ConfirmationModal from "./confirmationModal"; // Adjust the path as needed
-import Alert from "./alert"; // Adjust the path as needed
+import Alert from "./alert"; // Ensure this path is correct
 
 export default function Navbar() {
   const [user, setUser] = useState({});
@@ -23,24 +22,15 @@ export default function Navbar() {
   const [friendRequests, setFriendRequests] = useState([]);
   const [friendRequestNotifications, setFriendRequestNotifications] = useState([]);
   const [eventNotifications, setEventNotifications] = useState([]);
-  const [notifications, setNotifications] = useState([]); // Combined if needed
   const [unreadCount, setUnreadCount] = useState(0);
   const [showDropdown, setShowDropdown] = useState(false);
   const dropdownRef = useRef(null);
-
-  // State for confirmation modals
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const [modalContent, setModalContent] = useState({
-    title: "",
-    message: "",
-    onConfirm: null,
-  });
 
   // State for feedback messages
   const [feedbackMessage, setFeedbackMessage] = useState("");
   const [feedbackType, setFeedbackType] = useState(""); // 'success' or 'error'
 
-  // State for active tab (optional)
+  // State for active tab
   const [activeTab, setActiveTab] = useState('friend_requests'); // 'friend_requests' or 'event_notifications'
 
   const handleLogout = (e) => {
@@ -111,10 +101,6 @@ export default function Navbar() {
       setFriendRequestNotifications((prev) =>
         prev.filter((req) => req._id !== notificationId)
       );
-      // Optionally, remove from combined notifications if necessary
-      setNotifications((prev) =>
-        prev.filter((n) => n._id !== notificationId)
-      );
       setUnreadCount((prev) => Math.max(prev - 1, 0));
       setFeedbackMessage("Friend request accepted.");
       setFeedbackType("success");
@@ -132,10 +118,6 @@ export default function Navbar() {
       // Remove the friend request from friendRequestNotifications
       setFriendRequestNotifications((prev) =>
         prev.filter((req) => req._id !== notificationId)
-      );
-      // Optionally, remove from combined notifications if necessary
-      setNotifications((prev) =>
-        prev.filter((n) => n._id !== notificationId)
       );
       setUnreadCount((prev) => Math.max(prev - 1, 0));
       setFeedbackMessage("Friend request declined.");
@@ -169,17 +151,9 @@ export default function Navbar() {
       setUnreadCount(0);
     } catch (error) {
       console.error("Error marking notifications as read:", error);
+      setFeedbackMessage("Failed to mark notifications as read.");
+      setFeedbackType("error");
     }
-  };
-
-  // Function to open the confirmation modal
-  const openConfirmationModal = (title, message, onConfirm) => {
-    setModalContent({
-      title,
-      message,
-      onConfirm,
-    });
-    setIsModalOpen(true);
   };
 
   // Function to mark an event notification as read
@@ -228,7 +202,6 @@ export default function Navbar() {
     }
   };
 
-
   // Don't show Navbar on login or signup pages
   if (location.pathname === "/login" || location.pathname === "/signup") {
     return null;
@@ -274,7 +247,7 @@ export default function Navbar() {
             <BellIcon className="h-6 w-6 fill-white hover:fill-blue-500 cursor-pointer" />
             <span className="ml-4 text-white text-lg hidden md:inline">Inbox</span>
             {unreadCount > 0 && (
-              <span className="absolute top-0 right-0 bg-red-500 text-white rounded-full h-5 w-5 flex items-center justify-center text-xs">
+              <span className="absolute top-0 left-3 bg-red-500 text-white rounded-full h-4 w-4 flex items-center justify-center text-xs">
                 {unreadCount}
               </span>
             )}
@@ -298,8 +271,8 @@ export default function Navbar() {
               <div className="flex border-b">
                 <button
                   className={`flex-1 py-2 ${activeTab === 'friend_requests'
-                    ? 'border-b-2 border-blue-500 text-blue-500'
-                    : 'text-gray-500'
+                      ? 'border-b-2 border-blue-500 text-blue-500'
+                      : 'text-gray-500'
                     }`}
                   onClick={() => setActiveTab('friend_requests')}
                 >
@@ -307,8 +280,8 @@ export default function Navbar() {
                 </button>
                 <button
                   className={`flex-1 py-2 ${activeTab === 'event_notifications'
-                    ? 'border-b-2 border-blue-500 text-blue-500'
-                    : 'text-gray-500'
+                      ? 'border-b-2 border-blue-500 text-blue-500'
+                      : 'text-gray-500'
                     }`}
                   onClick={() => setActiveTab('event_notifications')}
                 >
@@ -326,7 +299,7 @@ export default function Navbar() {
                           <li key={notification._id} className="px-2 py-1 border-b">
                             <div className="flex items-center justify-between">
                               <Link
-                                to={`/profile/${notification.sender._id}`}
+                                to={`/profile/${notification.sender.id || notification.sender._id}`}
                                 className="text-blue-600 no-underline"
                               >
                                 {notification.sender.username} sent you a friend request.
@@ -335,7 +308,7 @@ export default function Navbar() {
                                 <button
                                   onClick={() =>
                                     acceptFriendRequest(
-                                      notification.sender._id,
+                                      notification.sender.id || notification.sender._id,
                                       notification._id
                                     )
                                   }
@@ -346,7 +319,7 @@ export default function Navbar() {
                                 <button
                                   onClick={() =>
                                     declineFriendRequest(
-                                      notification.sender._id,
+                                      notification.sender.id || notification.sender._id,
                                       notification._id
                                     )
                                   }
@@ -380,20 +353,24 @@ export default function Navbar() {
                             <div className="flex items-center justify-between">
                               <div>
                                 <Link
-                                  to={`/profile/${notification.sender._id}`}
+                                  to={notification.event ? `/profile/${notification.sender.id || notification.sender._id}` : '#'}
                                   className="text-blue-600 no-underline"
-                                  onClick={() => markEventNotificationAsRead(notification._id)}
+                                  onClick={() => notification.event && markEventNotificationAsRead(notification._id)}
                                 >
                                   {notification.sender.username}
                                 </Link>{" "}
                                 created a new event at{" "}
-                                <Link
-                                  to={`/events/${notification.event._id}`}
-                                  className="text-blue-600 no-underline"
-                                  onClick={() => markEventNotificationAsRead(notification._id)}
-                                >
-                                  {notification.event.parkId?.parkName || "a park"}
-                                </Link>
+                                {notification.event ? (
+                                  <Link
+                                    to={`/events/${notification.event._id}`}
+                                    className="text-blue-600 no-underline"
+                                    onClick={() => markEventNotificationAsRead(notification._id)}
+                                  >
+                                    {notification.event.parkId?.parkName || "a park"}
+                                  </Link>
+                                ) : (
+                                  <span className="text-gray-500">a park</span>
+                                )}
                                 .
                               </div>
                               {/* Delete Button */}
@@ -436,15 +413,6 @@ export default function Navbar() {
           <span className="ml-4 text-white text-lg hidden md:inline">Logout</span>
         </button>
       </div>
-
-      {/* Confirmation Modal */}
-      <ConfirmationModal
-        isOpen={isModalOpen}
-        title={modalContent.title}
-        message={modalContent.message}
-        onConfirm={modalContent.onConfirm}
-        onCancel={() => setIsModalOpen(false)}
-      />
     </div>
   );
 }

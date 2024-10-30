@@ -30,7 +30,9 @@ const Login = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      const { data: res } = await axios.post(`${process.env.REACT_APP_BACKEND_URI}/users/login`, data);
+      const { data: res } = await axios.post(`${process.env.REACT_APP_BACKEND_URI}/users/login`, data,
+        { withCredentials: true }
+      );
       const { accessToken } = res;
       localStorage.setItem("accessToken", accessToken);
       setUser(getUserInfo(accessToken));

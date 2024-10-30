@@ -22,35 +22,39 @@ const useRefreshTokenOnActivity = () => {
     }, [lastRefreshTime]);
 
     const handleTokenRefresh = useCallback(async () => {
+        if (!user) return; // Exit if user is not authenticated
+
         const now = Date.now();
         if (now - lastRefreshTimeRef.current >= TOKEN_REFRESH_INTERVAL) {
             try {
-                const accessToken = localStorage.getItem('accessToken');
-                if (!accessToken) {
-                    console.warn('No access token found in localStorage.');
-                    return;
+                const response = await refreshAccessToken(); // Make sure this sends cookies
+                if (response && response.accessToken) {
+                    localStorage.setItem('accessToken', response.accessToken);
+                    const decodedAccessToken = jwt_decode(response.accessToken);
+
+                    // Update the last refresh time
+                    setLastRefreshTime(now);
+                    lastRefreshTimeRef.current = now;
+
+                    // Update user state with new decoded token
+                    if (setUser) {
+                        setUser(decodedAccessToken);
+                    }
+
+                    console.log('Token refreshed at', new Date(now).toLocaleTimeString());
+                } else {
+                    throw new Error('Invalid token response');
                 }
-
-                const decodedAccessToken = jwt_decode(accessToken);
-
-                // Refresh the token
-                const newDecodedToken = await refreshAccessToken(decodedAccessToken);
-
-                // Update the last refresh time
-                setLastRefreshTime(now);
-                lastRefreshTimeRef.current = now;
-
-                // Update user state with new decoded token
-                if (setUser) {
-                    setUser(newDecodedToken);
-                }
-
-                console.log('Token refreshed at', new Date(now).toLocaleTimeString());
             } catch (error) {
-                console.error('Error refreshing token:', error);
+                console.error('Error refreshing token:', error.response?.data?.message || error.message);
+                // Handle token refresh failure
+                setUser(null);
+                localStorage.removeItem('accessToken');
+                // Optionally, redirect to login
+                window.location.href = '/login';
             }
         }
-    }, [setLastRefreshTime, setUser]);
+    }, [user, setLastRefreshTime, setUser]);
 
     const handleUserActivity = useCallback(() => {
         if (isThrottledRef.current) return; // Exit if throttled

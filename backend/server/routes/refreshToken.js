@@ -1,5 +1,5 @@
 const express = require('express');
-const { generateAccessToken } = require('../utilities/generateToken')
+const { generateAccessToken, generateRefreshToken } = require('../utilities/generateToken');
 const router = express.Router();
 const jwt = require('jsonwebtoken');
 
@@ -10,17 +10,36 @@ router.post('/refresh-token', (req, res) => {
         return res.status(401).json({ message: 'No refresh token provided' });
     }
 
-    jwt.verify(refreshToken, process.env.REFRESH_TOKEN_SECRET, (err, user) => {
-        if (err) return res.status(403).json({ message: 'Invalid refresh token' });
+    jwt.verify(refreshToken, process.env.REFRESH_TOKEN_SECRET, (err, decoded) => {
+        if (err) {
+            console.error('Refresh token verification failed:', err);
+            return res.status(403).json({ message: 'Invalid or expired refresh token' });
+        }
+
+        const user = {
+            id: decoded.id,
+            email: decoded.email,
+            username: decoded.username,
+            isAdmin: decoded.isAdmin,
+        };
 
         // Generate a new access token
-        const accessToken = jwt.sign(
-            { id: user.id, email: user.email, username: user.username, isAdmin: user.isAdmin },
-            process.env.ACCESS_TOKEN_SECRET,
-            { expiresIn: '60m' }
-        );
+        const newAccessToken = generateAccessToken(user);
 
-        res.json({ accessToken });
+        // Implement Refresh Token Rotation
+        // Generate a new refresh token and invalidate the old one
+        const newRefreshToken = generateRefreshToken(user);
+
+        // Set the new refresh token in the cookie
+        res.cookie('refreshToken', newRefreshToken, {
+            httpOnly: true,
+            secure: process.env.NODE_ENV === 'production', // Ensure HTTPS in production
+            sameSite: 'None', // Use 'None' if your frontend and backend are on different domains
+            maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
+            path: '/', // Ensure the cookie is accessible across the entire site
+        });
+
+        res.json({ accessToken: newAccessToken });
     });
 });
 

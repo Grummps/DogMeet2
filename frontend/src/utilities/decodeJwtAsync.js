@@ -3,29 +3,38 @@ import jwtDecode from 'jwt-decode';
 const backendRefreshTokenURL = `${process.env.REACT_APP_BACKEND_URI}/auth/refresh-token`;
 
 const refreshAccessToken = async () => {
-    try {
-      // Since refresh token is in an HTTP-only cookie, no need to send it manually
-      const response = await fetch(backendRefreshTokenURL, {
-        method: 'POST',
-        credentials: 'include', // Important to include cookies in the request
-      });
-  
-      if (!response.ok) {
-        throw new Error('Failed to refresh access token');
-      }
-  
-      const data = await response.json();
-      const newAccessToken = data.accessToken;
-  
-      localStorage.setItem('accessToken', newAccessToken);
-  
-      return newAccessToken;
-    } catch (error) {
-      console.error('Error refreshing access token:', error);
-      throw error;
+  try {
+    const response = await fetch(backendRefreshTokenURL, {
+      method: 'POST',
+      credentials: 'include', // Include cookies in the request
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      const errorMessage = errorData.message || 'Failed to refresh access token';
+      throw new Error(errorMessage);
     }
-  };
-  
+
+    const data = await response.json();
+    const newAccessToken = data.accessToken;
+
+    if (!newAccessToken) {
+      throw new Error('No access token returned from the server');
+    }
+
+    localStorage.setItem('accessToken', newAccessToken);
+
+    return newAccessToken;
+  } catch (error) {
+    console.error('Error refreshing access token:', error);
+    // Optionally, handle logout or redirection here or in the calling function
+    throw error;
+  }
+};
+
 
 
 const getUserInfoAsync = async () => {

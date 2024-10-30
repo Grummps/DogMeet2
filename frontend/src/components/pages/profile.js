@@ -1,5 +1,3 @@
-// src/components/Profile.jsx
-
 import React, { useEffect, useState } from 'react';
 import { useNavigate, useParams, Link } from 'react-router-dom';
 import getUserInfo from '../../utilities/decodeJwt';
