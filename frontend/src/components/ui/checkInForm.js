@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
-import apiClient from '../utilities/apiClient';
+import apiClient from '../../utilities/apiClient';
 
 const CheckInForm = ({ userId, parkId, onSuccess }) => {
   const [dogs, setDogs] = useState([]);

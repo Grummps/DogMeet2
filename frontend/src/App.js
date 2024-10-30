@@ -3,7 +3,7 @@ import React from "react";
 import { Route, Routes } from "react-router-dom";
 
 // We import all the components we need in our app
-import Navbar from "./components/navbar";
+import Navbar from "./components/ui/navbar";
 import LandingPage from "./components/pages/landingPage";
 import HomePage from "./components/pages/homePage";
 import Login from "./components/pages/login";
@@ -13,8 +13,8 @@ import { createContext, useState, useEffect } from "react";
 import getUserInfo from "./utilities/decodeJwt";
 import 'leaflet/dist/leaflet.css';
 import AdminDashboard from "./components/pages/adminDashboard";
-import Unauthorized from "./components/unauthorized";
-import ProtectedRoute from "./components/protectedRoute";
+import Unauthorized from "./components/ui/unauthorized";
+import ProtectedRoute from "./components/ui/protectedRoute";
 import ParksList from "./components/pages/parkList";
 import ParkDetail from "./components/pages/parkDetail";
 import useRefreshTokenOnActivity from "./components/hooks/refreshTokenOnActivity";

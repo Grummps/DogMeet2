@@ -1,10 +1,12 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import getUserInfo from '../../utilities/decodeJwt';
-import DogForm from './dogForm';
+import DogForm from '../ui/dogForm';
 import apiClient from '../../utilities/apiClient';
-import EventList from '../eventProfile';
-import UserDogs from '../userDogs';
+import EventList from '../ui/userEvents';
+import UserDogs from '../ui/userDogs';
+import ConfirmationModal from '../ui/confirmationModal';
+import Alert from '../ui/alert';
 
 const Profile = () => {
     const navigate = useNavigate();
@@ -12,44 +14,74 @@ const Profile = () => {
     const [user, setUser] = useState(null);
     const [currentUser, setCurrentUser] = useState(null);
     const [isCurrentUser, setIsCurrentUser] = useState(false);
-    const [friendRequestSent, setFriendRequestSent] = useState(false);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
 
+    // New state variables
+    const [isFriend, setIsFriend] = useState(false);
+    const [isFriendRequestPending, setIsFriendRequestPending] = useState(false);
+    const [hasReceivedFriendRequest, setHasReceivedFriendRequest] = useState(false);
+    const [feedbackMessage, setFeedbackMessage] = useState('');
+    const [feedbackType, setFeedbackType] = useState(''); // 'success' or 'error'
+
+    // Modal state
+    const [isModalOpen, setIsModalOpen] = useState(false);
+    const [modalContent, setModalContent] = useState({
+        title: '',
+        message: '',
+        onConfirm: null,
+    });
+
+    const fetchUserData = async () => {
+        setLoading(true);
+
+        const userInfo = getUserInfo();
+
+        if (!userInfo) {
+            console.error("No access token found, redirecting to login.");
+            navigate('/login');
+            return;
+        }
+
+        const currentUserId = userInfo.id || userInfo.sub;
+        const userId = id || currentUserId;
+
+        try {
+            const [userResponse, currentUserResponse] = await Promise.all([
+                apiClient.get(`/users/${userId}`),
+                apiClient.get(`/users/${currentUserId}`)
+            ]);
+
+            setUser(userResponse.data);
+            setCurrentUser(currentUserResponse.data);
+            setIsCurrentUser(userId === currentUserId);
+
+            // Determine friendship and request statuses
+            const friendRequestPending = userResponse.data.friendRequests?.some(
+                (request) => request._id === currentUserId
+            );
+
+            const receivedFriendRequest = currentUserResponse.data.friendRequests?.some(
+                (request) => request._id === userId
+            );
+
+            setIsFriend(userResponse.data.friends?.some(
+                (friend) => friend._id === currentUserId
+            ));
+
+            setIsFriendRequestPending(friendRequestPending);
+            setHasReceivedFriendRequest(receivedFriendRequest);
+
+            setError(null);
+        } catch (error) {
+            console.error('Error fetching user data:', error);
+            setError('Failed to load user data');
+        } finally {
+            setLoading(false);
+        }
+    };
+
     useEffect(() => {
-        const fetchUserData = async () => {
-            setLoading(true);
-
-            const userInfo = getUserInfo();
-
-            if (!userInfo) {
-                console.error("No access token found, redirecting to login.");
-                navigate('/login');
-                return;
-            }
-
-            const currentUserId = userInfo.id || userInfo.sub;
-
-            const userId = id || currentUserId;
-
-            try {
-                const [userResponse, currentUserResponse] = await Promise.all([
-                    apiClient.get(`/users/${userId}`),
-                    apiClient.get(`/users/${currentUserId}`)
-                ]);
-
-                setUser(userResponse.data);
-                setCurrentUser(currentUserResponse.data);
-                setIsCurrentUser(userId === currentUserId);
-                setError(null);
-            } catch (error) {
-                console.error('Error fetching user data:', error);
-                setError('Failed to load user data');
-            } finally {
-                setLoading(false);
-            }
-        };
-
         fetchUserData();
     }, [id, navigate]);
 
@@ -60,39 +92,87 @@ const Profile = () => {
     const sendFriendRequest = async () => {
         try {
             await apiClient.post(`/users/${user._id}/send-friend-request`);
-            setFriendRequestSent(true);
-            alert('Friend request sent');
+            setIsFriendRequestPending(true);
+            setFeedbackMessage('Friend request sent');
+            setFeedbackType('success');
         } catch (error) {
             console.error('Error sending friend request:', error);
-            alert('Error sending friend request');
+
+            // Handle specific error messages
+            if (error.response && error.response.data && error.response.data.error) {
+                const errorMessage = error.response.data.error;
+                setFeedbackMessage(errorMessage);
+                setFeedbackType('error');
+            } else {
+                setFeedbackMessage('Error sending friend request');
+                setFeedbackType('error');
+            }
         }
     };
 
-    // Add null checks and ensure IDs are strings
-    const isFriend =
-        currentUser &&
-        Array.isArray(currentUser.friends) &&
-        currentUser.friends.some(
-            (friend) =>
-                friend &&
-                friend._id &&
-                user &&
-                user._id &&
-                friend._id.toString() === user._id.toString()
-        );
+    const acceptFriendRequest = async () => {
+        try {
+            await apiClient.post(`/users/${user._id}/accept-friend-request`);
+            setIsFriend(true);
+            setHasReceivedFriendRequest(false);
+            setIsFriendRequestPending(false);
+            setFeedbackMessage('Friend request accepted');
+            setFeedbackType('success');
+        } catch (error) {
+            console.error('Error accepting friend request:', error);
+            setFeedbackMessage('Error accepting friend request');
+            setFeedbackType('error');
+        }
+    };
 
-    const friendRequestPending =
-        user &&
-        Array.isArray(user.friendRequests) &&
-        user.friendRequests.some(
-            (request) =>
-                request &&
-                request._id &&
-                currentUser &&
-                currentUser._id &&
-                request._id.toString() === currentUser._id.toString()
-        );
+    const openCancelFriendRequestModal = () => {
+        setModalContent({
+            title: 'Cancel Friend Request',
+            message: `Are you sure you want to cancel the friend request to ${user.username}?`,
+            onConfirm: handleConfirmCancelFriendRequest,
+        });
+        setIsModalOpen(true);
+    };
 
+    const handleConfirmCancelFriendRequest = async () => {
+        setIsModalOpen(false);
+
+        try {
+            await apiClient.post(`/users/${user._id}/cancel-friend-request`);
+            setIsFriendRequestPending(false);
+            setFeedbackMessage('Friend request cancelled');
+            setFeedbackType('success');
+        } catch (error) {
+            console.error('Error cancelling friend request:', error);
+            setFeedbackMessage('Error cancelling friend request');
+            setFeedbackType('error');
+        }
+    };
+
+
+    const removeFriend = () => {
+        setModalContent({
+            title: 'Remove Friend',
+            message: `Are you sure you want to remove ${user.username} from your friends?`,
+            onConfirm: handleConfirmRemoveFriend,
+        });
+        setIsModalOpen(true);
+    };
+
+    const handleConfirmRemoveFriend = async () => {
+        setIsModalOpen(false);
+
+        try {
+            await apiClient.post(`/users/${user._id}/remove-friend`);
+            setIsFriend(false);
+            setFeedbackMessage('Friend removed successfully');
+            setFeedbackType('success');
+        } catch (error) {
+            console.error('Error removing friend:', error);
+            setFeedbackMessage('Error removing friend');
+            setFeedbackType('error');
+        }
+    };
 
     if (loading || !user || !currentUser) {
         return <div className="text-center text-lg text-gray-600">Loading...</div>;
@@ -138,17 +218,36 @@ const Profile = () => {
                         </p>
                     </div>
 
-                    {/* Friend Request Button */}
+                    {/* Friend Actions */}
                     {!isCurrentUser && (
                         <div className="ml-auto mt-20">
                             {isFriend ? (
-                                <button disabled className="btn btn-disabled">Friends</button>
-                            ) : friendRequestPending ? (
-                                <button disabled className="btn btn-disabled">Friend Request Pending</button>
-                            ) : (
-                                <button onClick={sendFriendRequest} className="btn btn-primary">
-                                    {friendRequestSent ? 'Friend Request Sent' : 'Add Friend'}
+                                <button onClick={removeFriend} className="bg-red-500 hover:bg-red-600 text-white font-semibold py-2 px-4 rounded">
+                                    Remove Friend
                                 </button>
+                            ) : isFriendRequestPending ? (
+                                <button onClick={openCancelFriendRequestModal} className="bg-yellow-500 hover:bg-yellow-600 text-white font-semibold py-2 px-4 rounded">
+                                    Cancel Friend Request
+                                </button>
+                            ) : hasReceivedFriendRequest ? (
+                                <button onClick={acceptFriendRequest} className="bg-green-500 hover:bg-green-600 text-white font-semibold py-2 px-4 rounded">
+                                    Accept Friend Request
+                                </button>
+                            ) : (
+                                <button onClick={sendFriendRequest} className="bg-blue-500 hover:bg-blue-600 text-white font-semibold py-2 px-4 rounded">
+                                    Add Friend
+                                </button>
+                            )}
+
+                            {/* Feedback Message */}
+                            {feedbackMessage && (
+                                <div className="mt-4">
+                                    <Alert
+                                        type={feedbackType}
+                                        message={feedbackMessage}
+                                        onClose={() => setFeedbackMessage('')}
+                                    />
+                                </div>
                             )}
                         </div>
                     )}
@@ -170,6 +269,15 @@ const Profile = () => {
                     )}
                 </div>
             </div>
+
+            {/* Confirmation Modal */}
+            <ConfirmationModal
+                isOpen={isModalOpen}
+                title={modalContent.title}
+                message={modalContent.message}
+                onConfirm={modalContent.onConfirm}
+                onCancel={() => setIsModalOpen(false)}
+            />
         </div>
     );
 };

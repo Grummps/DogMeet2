@@ -1,5 +1,5 @@
 import React from 'react';
-import AddPark from '../addPark'; // Ensure the path is correct
+import AddPark from '../ui/addPark'; // Ensure the path is correct
 
 const AdminDashboard = () => {
     return (

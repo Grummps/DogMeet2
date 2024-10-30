@@ -117,6 +117,51 @@ router.get("/:id", async (req, res) => {
     }
 });
 
+// Route to remove a friend
+router.post('/:id/remove-friend', authenticate, async (req, res) => {
+    const userId = req.user.id;
+    const friendId = req.params.id;
+
+    // Validate that friendId is a valid ObjectId
+    if (!mongoose.Types.ObjectId.isValid(friendId)) {
+        return res.status(400).json({ error: 'Invalid user ID' });
+    }
+
+    if (!userId) {
+        return res.status(401).json({ error: 'User not authenticated' });
+    }
+
+    if (userId.toString() === friendId) {
+        return res.status(400).json({ error: 'Cannot remove yourself as a friend' });
+    }
+
+    try {
+        const [user, friend] = await Promise.all([
+            newUserModel.findById(userId),
+            newUserModel.findById(friendId),
+        ]);
+
+        if (!user || !friend) {
+            return res.status(404).json({ error: 'User not found' });
+        }
+
+        // Check if they are friends
+        if (!user.friends.includes(friendId)) {
+            return res.status(400).json({ error: 'You are not friends with this user' });
+        }
+
+        // Remove friendId from user's friends array
+        user.friends = user.friends.filter(id => id.toString() !== friendId);
+        // Remove userId from friend's friend array
+        friend.friends = friend.friends.filter(id => id.toString() !== userId);
+
+        await Promise.all([user.save(), friend.save()]);
+    } catch (error) {
+        console.error("Error removing friend:", error);
+        res.status(500).json({ error: 'Server error' });
+    }
+});
+
 // Route to remove a dog from the user's dogId array
 router.delete('/removeDog/:id/:dogId', async (req, res) => {
     const { id, dogId } = req.params;
@@ -231,12 +276,19 @@ router.post('/:id/send-friend-request', authenticate, async (req, res) => {
             return res.status(404).json({ error: 'User not found' });
         }
 
+        // Check if users are already friends
         if (user.friends.includes(friendId)) {
             return res.status(400).json({ error: 'Already friends with this user' });
         }
 
+        // Check if a friend request has already been sent from current user to friend
         if (friend.friendRequests.includes(userId)) {
             return res.status(400).json({ error: 'Friend request already sent' });
+        }
+
+        // **New Check**: See if the friend has already sent a friend request to the current user
+        if (user.friendRequests.includes(friendId)) {
+            return res.status(400).json({ error: 'User has already sent you a friend request' });
         }
 
         // Add userId to friend's friendRequests array
@@ -316,5 +368,43 @@ router.post('/:id/decline-friend-request', authenticate, async (req, res) => {
         res.status(500).json({ error: 'Server error' });
     }
 });
+
+// Route to cancel a friend request
+router.post('/:id/cancel-friend-request', authenticate, async (req, res) => {
+    const userId = req.user.id;
+    const recipientId = req.params.id;
+
+    // Validate recipientId
+    if (!mongoose.Types.ObjectId.isValid(recipientId)) {
+        return res.status(400).json({ error: 'Invalid user ID' });
+    }
+
+    try {
+        const [user, recipient] = await Promise.all([
+            newUserModel.findById(userId),
+            newUserModel.findById(recipientId),
+        ]);
+
+        if (!user || !recipient) {
+            return res.status(404).json({ error: 'User not found' });
+        }
+
+        // Check if the friend request exists
+        if (!recipient.friendRequests.includes(userId)) {
+            return res.status(400).json({ error: 'Friend request does not exist' });
+        }
+
+        // Remove userId from recipient's friendRequests array
+        recipient.friendRequests = recipient.friendRequests.filter(id => id.toString() !== userId);
+
+        await recipient.save();
+
+        res.json({ message: 'Friend request cancelled' });
+    } catch (error) {
+        console.error("Error cancelling friend request:", error);
+        res.status(500).json({ error: 'Server error' });
+    }
+});
+
 
 module.exports = router;

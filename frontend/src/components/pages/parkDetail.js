@@ -3,8 +3,8 @@ import axios from 'axios';
 import { useParams } from 'react-router-dom';
 import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
 import L from 'leaflet';
-import CreateEventForm from './eventForm';
-import CheckInForm from '../checkInForm'; // Import the CheckInForm component
+import CreateEventForm from '../ui/eventForm';
+import CheckInForm from '../ui/checkInForm'; // Import the CheckInForm component
 import getUserInfo from '../../utilities/decodeJwt';
 import { Link } from 'react-router-dom';
 

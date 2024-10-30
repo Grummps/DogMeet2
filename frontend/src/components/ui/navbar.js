@@ -7,9 +7,9 @@ import {
   ArrowLeftOnRectangleIcon,
   BellIcon, // Import BellIcon for notifications
 } from "@heroicons/react/24/solid";
-import getUserInfo from "../utilities/decodeJwt";
+import getUserInfo from "../../utilities/decodeJwt";
 import { useNavigate, useLocation, Link } from "react-router-dom";
-import apiClient from "../utilities/apiClient";
+import apiClient from "../../utilities/apiClient";
 
 // Navbar with clickable icons and hover tooltips
 export default function Navbar() {
@@ -44,11 +44,7 @@ export default function Navbar() {
     };
 
     fetchFriendRequests();
-
-    // Optional: Refresh friend requests periodically
-    const intervalId = setInterval(fetchFriendRequests, 30000); // Refresh every 30 seconds
-
-    return () => clearInterval(intervalId);
+    
   }, []);
 
   // Handle clicks outside the dropdown to close it

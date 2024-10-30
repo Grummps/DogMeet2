@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
-import apiClient from '../utilities/apiClient';
-import getUserInfo from '../utilities/decodeJwt';
+import apiClient from '../../utilities/apiClient';
+import getUserInfo from '../../utilities/decodeJwt';
 
 const EventList = () => {
   const [events, setEvents] = useState([]);

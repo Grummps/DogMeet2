@@ -3,7 +3,7 @@ import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
 import { MapContainer, TileLayer, Marker, useMap, useMapEvents } from 'react-leaflet';
 import L from 'leaflet';
-import getUserInfo from '../utilities/decodeJwt'; // Adjust the path as necessary
+import getUserInfo from '../../utilities/decodeJwt'; // Adjust the path as necessary
 
 // Fix Leaflet's default icon paths
 delete L.Icon.Default.prototype._getIconUrl;
