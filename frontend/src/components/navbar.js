@@ -7,12 +7,12 @@ import {
   ArrowLeftOnRectangleIcon, // Import logout icon
 } from "@heroicons/react/24/solid";
 import getUserInfo from "../utilities/decodeJwt";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 
 // Navbar with clickable icons and hover tooltips
 export default function Navbar() {
   const [user, setUser] = useState({});
-
+  const location = useLocation();
   const navigate = useNavigate();
 
   const handleClick = (e) => {
@@ -24,6 +24,11 @@ export default function Navbar() {
   useEffect(() => {
     setUser(getUserInfo());
   }, []);
+
+  // Don't show Navbar on login or signup pages
+  if (location.pathname === "/login" || location.pathname === "/signup") {
+    return null;
+  }
 
   return (
     <div className="fixed top-0 left-0 h-screen w-36 qhd:w-36 bg-gray-900 flex flex-col items-center py-4 z-50">
@@ -61,7 +66,7 @@ export default function Navbar() {
           className="flex items-center"
         >
           <ArrowLeftOnRectangleIcon className="h-6 w-6 fill-white hover:fill-red-500 cursor-pointer" />
-        
+
         </button>
       </div>
     </div>

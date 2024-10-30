@@ -9,9 +9,11 @@ const { generateAccessToken, generateRefreshToken } = require('../utilities/gene
 // Route for user login
 router.post('/login', async (req, res) => {
   // Validate login input
-  const { error } = userLoginValidation(req.body);
-  if (error) {
-    return res.status(400).send({ message: error.details[0].message });
+  const validationResult = userLoginValidation(req.body);
+  if (!validationResult.success) {
+    // Extract the error message from validationResult.error
+    const errorMessage = validationResult.error.errors[0]?.message || "Invalid input";
+    return res.status(400).send({ message: errorMessage });
   }
 
   const { username, password } = req.body;
@@ -57,41 +59,54 @@ router.post('/login', async (req, res) => {
 
 // Route for user signup
 router.post('/signup', async (req, res) => {
-  const { error } = newUserValidation(req.body);
-  if (error) return res.status(400).send({ message: error.details[0].message });
+  // Perform validation using safeParse
+  const validationResult = newUserValidation(req.body);
+
+  // Check if validation failed
+  if (!validationResult.success) {
+    // Extract the first error message
+    const errorMessage = validationResult.error.errors[0]?.message || "Invalid input";
+    return res.status(400).send({ message: errorMessage });
+  }
 
   const { username, email, password, parkId, dogId, friends, eventId } = req.body;
 
-  const existingUser = await newUserModel.findOne({ username });
-  if (existingUser) return res.status(409).send({ message: "Username is taken, pick another" });
-
-  const generateHash = await bcrypt.genSalt(Number(10));
-  const hashPassword = await bcrypt.hash(password, generateHash);
-
-  const createUser = new newUserModel({
-    username,
-    email,
-    password: hashPassword,
-    isAdmin: false,
-    parkId,
-    dogId,
-    friends: friends ? friends.map(id => mongoose.Types.ObjectId(id)) : [],
-    eventId,
-  });
-
   try {
+    // Check if username already exists
+    const existingUser = await newUserModel.findOne({ username });
+    if (existingUser) {
+      return res.status(409).send({ message: "Username is taken, pick another" });
+    }
+
+    // Hash the password
+    const salt = await bcrypt.genSalt(10);
+    const hashPassword = await bcrypt.hash(password, salt);
+
+    // Create the new user
+    const createUser = new newUserModel({
+      username,
+      email,
+      password: hashPassword,
+      isAdmin: false,
+      parkId,
+      dogId,
+      friends: friends ? friends.map(id => mongoose.Types.ObjectId(id)) : [],
+      eventId,
+    });
+
+    // Save the user to the database
     const savedUser = await createUser.save();
 
     // Generate tokens
     const accessToken = generateAccessToken(savedUser);
     const refreshToken = generateRefreshToken(savedUser);
 
-    // Set refresh token as HTTP-only cookie
+    // Set the refresh token as an HTTP-only cookie
     res.cookie('refreshToken', refreshToken, {
       httpOnly: true,
-      secure: process.env.NODE_ENV === 'production', // Set to true in production
+      secure: process.env.NODE_ENV === 'production',
       sameSite: 'Lax',
-      maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days in milliseconds
+      maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
     });
 
     // Send the access token in the response
@@ -101,6 +116,7 @@ router.post('/signup', async (req, res) => {
     res.status(500).send({ message: "Internal server error." });
   }
 });
+
 
 // In userLoginSignup.js or a separate route file
 router.post('/logout', (req, res) => {
