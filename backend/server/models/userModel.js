@@ -40,6 +40,14 @@ const newUserSchema = new mongoose.Schema(
       {
         type: Schema.Types.ObjectId,
         ref: 'users',
+        default: [],
+      }
+    ],
+    friendRequests: [
+      {
+        type: Schema.Types.ObjectId,
+        ref: 'users',
+        default: [],
       }
     ],
     eventId: [

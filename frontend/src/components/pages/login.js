@@ -47,7 +47,7 @@ const Login = () => {
 
   return (
     <section className="min-h-screen bg-gray-900 flex justify-center items-center">
-      <div className="container max-w-md mx-auto p-2 shadow-2xl rounded-lg">
+      <div className=" mx-auto p-2 shadow-2xl rounded-lg">
         <form onSubmit={handleSubmit} className="space-y-6 p-8 bg-gray-950 rounded-lg">
           <h2 className="text-3xl font-bold text-blue-50 text-center">Log in to DogMeet</h2>
 

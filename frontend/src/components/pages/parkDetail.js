@@ -6,6 +6,7 @@ import L from 'leaflet';
 import CreateEventForm from './eventForm';
 import CheckInForm from '../checkInForm'; // Import the CheckInForm component
 import getUserInfo from '../../utilities/decodeJwt';
+import { Link } from 'react-router-dom';
 
 // Fix Leaflet's default icon paths if not already done
 delete L.Icon.Default.prototype._getIconUrl;
@@ -182,7 +183,7 @@ const ParkDetail = () => {
                                         </div>
                                     )}
                                     <div>
-                                        <p><strong>Size:</strong> {dog.size} <strong>Name:</strong> {dog.dogName} <strong>Owner:</strong> {dog.ownerId.username}</p>
+                                        <p><strong>Size:</strong> {dog.size} <strong>Name:</strong> {dog.dogName} <strong>Owner:</strong><Link to={`/profile/${dog.ownerId._id}`}>{dog.ownerId.username}</Link> </p>
                                         <p>Here for another: {dog.remainingTime} minute(s)</p>
                                     </div>
                                 </li>

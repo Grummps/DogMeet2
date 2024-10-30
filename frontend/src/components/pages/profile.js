@@ -1,20 +1,26 @@
 import React, { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import getUserInfo from '../../utilities/decodeJwt';  // Import getUserInfo
-import DogForm from './dogForm';  // Corrected to dogForm
+import { useNavigate, useParams } from 'react-router-dom';
+import getUserInfo from '../../utilities/decodeJwt';
+import DogForm from './dogForm';
 import apiClient from '../../utilities/apiClient';
 import EventList from '../eventProfile';
+import UserDogs from '../userDogs';
 
 const Profile = () => {
     const navigate = useNavigate();
+    const { id } = useParams(); // Get user ID from URL params
     const [user, setUser] = useState(null);
+    const [currentUser, setCurrentUser] = useState(null);
+    const [isCurrentUser, setIsCurrentUser] = useState(false);
+    const [friendRequestSent, setFriendRequestSent] = useState(false);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
 
     useEffect(() => {
         const fetchUserData = async () => {
             setLoading(true);
-            const userInfo = getUserInfo();  // Get the decoded user info from the token
+
+            const userInfo = getUserInfo();
 
             if (!userInfo) {
                 console.error("No access token found, redirecting to login.");
@@ -22,12 +28,19 @@ const Profile = () => {
                 return;
             }
 
-            const userId = userInfo.id || userInfo.sub;  // Adjust this based on how your JWT stores the user ID
-            console.log('User ID from token:', userId);  // Log the user ID
+            const currentUserId = userInfo.id || userInfo.sub;
+
+            const userId = id || currentUserId;
 
             try {
-                const response = await apiClient.get(`/users/${userId}`);
-                setUser(response.data);
+                const [userResponse, currentUserResponse] = await Promise.all([
+                    apiClient.get(`/users/${userId}`),
+                    apiClient.get(`/users/${currentUserId}`)
+                ]);
+
+                setUser(userResponse.data);
+                setCurrentUser(currentUserResponse.data);
+                setIsCurrentUser(userId === currentUserId);
                 setError(null);
             } catch (error) {
                 console.error('Error fetching user data:', error);
@@ -37,14 +50,51 @@ const Profile = () => {
             }
         };
 
-        fetchUserData();  // Trigger the request
-    }, [navigate]);
+        fetchUserData();
+    }, [id, navigate]);
 
     const updateUser = (updatedData) => {
         setUser({ ...user, ...updatedData });
     };
 
-    if (loading) {
+    const sendFriendRequest = async () => {
+        try {
+            await apiClient.post(`/users/${user._id}/send-friend-request`);
+            setFriendRequestSent(true);
+            alert('Friend request sent');
+        } catch (error) {
+            console.error('Error sending friend request:', error);
+            alert('Error sending friend request');
+        }
+    };
+
+    // Add null checks and ensure IDs are strings
+    const isFriend =
+        currentUser &&
+        Array.isArray(currentUser.friends) &&
+        currentUser.friends.some(
+            (friend) =>
+                friend &&
+                friend._id &&
+                user &&
+                user._id &&
+                friend._id.toString() === user._id.toString()
+        );
+
+    const friendRequestPending =
+        user &&
+        Array.isArray(user.friendRequests) &&
+        user.friendRequests.some(
+            (request) =>
+                request &&
+                request._id &&
+                currentUser &&
+                currentUser._id &&
+                request._id.toString() === currentUser._id.toString()
+        );
+
+
+    if (loading || !user || !currentUser) {
         return <div className="text-center text-lg text-gray-600">Loading...</div>;
     }
 
@@ -53,12 +103,10 @@ const Profile = () => {
     }
 
     return (
-
         <div className="flex flex-col items-start justify-start relative overflow-visible pt-0">
             {/* Background */}
             <div className="w-full from-gray-200 via-gray-300 to-gray-200 -mb-32 h-72 bg-right bg-profile-bg">
-                <div className="text-center py-10">
-                </div>
+                <div className="text-center py-10"></div>
             </div>
 
             {/* Profile content */}
@@ -81,22 +129,45 @@ const Profile = () => {
                     </div>
 
                     {/* User's name */}
-                    <div >
+                    <div>
                         <h1 className="pl-16 mt-36 -ml-12 text-2xl qhd:text-4xl font-bold text-gray-800 border-l-emerald-100">
                             {user.username}
                         </h1>
-                        <p className="pl-16 -ml-12 text-gray-600 mt-2 text-sm">Member since: {new Date(user.createdAt).toLocaleDateString()}</p>
+                        <p className="pl-16 -ml-12 text-gray-600 mt-2 text-sm">
+                            Member since: {new Date(user.createdAt).toLocaleDateString()}
+                        </p>
                     </div>
 
-                    {/* EventList */}
-                    <div className="ml-auto mt-20">
-                        <EventList updateUser={updateUser} />
-                    </div>
+                    {/* Friend Request Button */}
+                    {!isCurrentUser && (
+                        <div className="ml-auto mt-20">
+                            {isFriend ? (
+                                <button disabled className="btn btn-disabled">Friends</button>
+                            ) : friendRequestPending ? (
+                                <button disabled className="btn btn-disabled">Friend Request Pending</button>
+                            ) : (
+                                <button onClick={sendFriendRequest} className="btn btn-primary">
+                                    {friendRequestSent ? 'Friend Request Sent' : 'Add Friend'}
+                                </button>
+                            )}
+                        </div>
+                    )}
+
+                    {/* EventList for Current User */}
+                    {isCurrentUser && (
+                        <div className="ml-auto mt-20">
+                            <EventList updateUser={updateUser} />
+                        </div>
+                    )}
                 </div>
 
-                {/* Dog Form */}
+                {/* Dog Form or User's Dogs */}
                 <div className="mt-10 px-4 ml-56">
-                    <DogForm updateUser={updateUser} />
+                    {isCurrentUser ? (
+                        <DogForm updateUser={updateUser} />
+                    ) : (
+                        <UserDogs user={user} />
+                    )}
                 </div>
             </div>
         </div>
