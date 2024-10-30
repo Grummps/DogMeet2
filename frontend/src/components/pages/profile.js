@@ -1,12 +1,13 @@
 import React, { useEffect, useState } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
+import { useNavigate, useParams, Link } from 'react-router-dom';
 import getUserInfo from '../../utilities/decodeJwt';
 import DogForm from '../ui/dogForm';
 import apiClient from '../../utilities/apiClient';
-import EventList from '../ui/userEvents';
-import UserDogs from '../ui/userDogs';
+import DogList from '../ui/dogList';
 import ConfirmationModal from '../ui/confirmationModal';
 import Alert from '../ui/alert';
+import FriendsModal from '../ui/friendList';
+import EventsModal from '../ui/eventList';
 
 const Profile = () => {
     const navigate = useNavigate();
@@ -17,20 +18,22 @@ const Profile = () => {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
 
-    // New state variables
+    // Existing state variables
     const [isFriend, setIsFriend] = useState(false);
     const [isFriendRequestPending, setIsFriendRequestPending] = useState(false);
     const [hasReceivedFriendRequest, setHasReceivedFriendRequest] = useState(false);
     const [feedbackMessage, setFeedbackMessage] = useState('');
     const [feedbackType, setFeedbackType] = useState(''); // 'success' or 'error'
 
-    // Modal state
+    // Modal states
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [modalContent, setModalContent] = useState({
         title: '',
         message: '',
         onConfirm: null,
     });
+    const [isFriendsModalOpen, setIsFriendsModalOpen] = useState(false);
+    const [isEventsModalOpen, setIsEventsModalOpen] = useState(false);
 
     const fetchUserData = async () => {
         setLoading(true);
@@ -38,7 +41,7 @@ const Profile = () => {
         const userInfo = getUserInfo();
 
         if (!userInfo) {
-            console.error("No access token found, redirecting to login.");
+            console.error('No access token found, redirecting to login.');
             navigate('/login');
             return;
         }
@@ -49,7 +52,7 @@ const Profile = () => {
         try {
             const [userResponse, currentUserResponse] = await Promise.all([
                 apiClient.get(`/users/${userId}`),
-                apiClient.get(`/users/${currentUserId}`)
+                apiClient.get(`/users/${currentUserId}`),
             ]);
 
             setUser(userResponse.data);
@@ -65,9 +68,9 @@ const Profile = () => {
                 (request) => request._id === userId
             );
 
-            setIsFriend(userResponse.data.friends?.some(
-                (friend) => friend._id === currentUserId
-            ));
+            setIsFriend(
+                userResponse.data.friends?.some((friend) => friend._id === currentUserId)
+            );
 
             setIsFriendRequestPending(friendRequestPending);
             setHasReceivedFriendRequest(receivedFriendRequest);
@@ -125,6 +128,30 @@ const Profile = () => {
         }
     };
 
+    const removeFriend = () => {
+        setModalContent({
+            title: 'Remove Friend',
+            message: `Are you sure you want to remove ${user.username} from your friends?`,
+            onConfirm: handleConfirmRemoveFriend,
+        });
+        setIsModalOpen(true);
+    };
+
+    const handleConfirmRemoveFriend = async () => {
+        setIsModalOpen(false);
+
+        try {
+            await apiClient.post(`/users/${user._id}/remove-friend`);
+            setIsFriend(false);
+            setFeedbackMessage('Friend removed successfully');
+            setFeedbackType('success');
+        } catch (error) {
+            console.error('Error removing friend:', error);
+            setFeedbackMessage('Error removing friend');
+            setFeedbackType('error');
+        }
+    };
+
     const openCancelFriendRequestModal = () => {
         setModalContent({
             title: 'Cancel Friend Request',
@@ -149,29 +176,23 @@ const Profile = () => {
         }
     };
 
-
-    const removeFriend = () => {
-        setModalContent({
-            title: 'Remove Friend',
-            message: `Are you sure you want to remove ${user.username} from your friends?`,
-            onConfirm: handleConfirmRemoveFriend,
-        });
-        setIsModalOpen(true);
+    // Function to open the Friends modal
+    const openFriendsModal = () => {
+        setIsFriendsModalOpen(true);
     };
 
-    const handleConfirmRemoveFriend = async () => {
-        setIsModalOpen(false);
+    // Function to open the Events modal
+    const openEventsModal = () => {
+        setIsEventsModalOpen(true);
+    };
 
-        try {
-            await apiClient.post(`/users/${user._id}/remove-friend`);
-            setIsFriend(false);
-            setFeedbackMessage('Friend removed successfully');
-            setFeedbackType('success');
-        } catch (error) {
-            console.error('Error removing friend:', error);
-            setFeedbackMessage('Error removing friend');
-            setFeedbackType('error');
-        }
+    // Function to close modals
+    const closeFriendsModal = () => {
+        setIsFriendsModalOpen(false);
+    };
+
+    const closeEventsModal = () => {
+        setIsEventsModalOpen(false);
     };
 
     if (loading || !user || !currentUser) {
@@ -222,19 +243,31 @@ const Profile = () => {
                     {!isCurrentUser && (
                         <div className="ml-auto mt-20">
                             {isFriend ? (
-                                <button onClick={removeFriend} className="bg-red-500 hover:bg-red-600 text-white font-semibold py-2 px-4 rounded">
+                                <button
+                                    onClick={removeFriend}
+                                    className="bg-red-500 hover:bg-red-600 text-white font-semibold py-2 px-4 rounded"
+                                >
                                     Remove Friend
                                 </button>
                             ) : isFriendRequestPending ? (
-                                <button onClick={openCancelFriendRequestModal} className="bg-yellow-500 hover:bg-yellow-600 text-white font-semibold py-2 px-4 rounded">
+                                <button
+                                    onClick={openCancelFriendRequestModal}
+                                    className="bg-yellow-500 hover:bg-yellow-600 text-white font-semibold py-2 px-4 rounded"
+                                >
                                     Cancel Friend Request
                                 </button>
                             ) : hasReceivedFriendRequest ? (
-                                <button onClick={acceptFriendRequest} className="bg-green-500 hover:bg-green-600 text-white font-semibold py-2 px-4 rounded">
+                                <button
+                                    onClick={acceptFriendRequest}
+                                    className="bg-green-500 hover:bg-green-600 text-white font-semibold py-2 px-4 rounded"
+                                >
                                     Accept Friend Request
                                 </button>
                             ) : (
-                                <button onClick={sendFriendRequest} className="bg-blue-500 hover:bg-blue-600 text-white font-semibold py-2 px-4 rounded">
+                                <button
+                                    onClick={sendFriendRequest}
+                                    className="bg-blue-500 hover:bg-blue-600 text-white font-semibold py-2 px-4 rounded"
+                                >
                                     Add Friend
                                 </button>
                             )}
@@ -252,10 +285,21 @@ const Profile = () => {
                         </div>
                     )}
 
-                    {/* EventList for Current User */}
+                    {/* Buttons for current user's profile */}
                     {isCurrentUser && (
-                        <div className="ml-auto mt-20">
-                            <EventList updateUser={updateUser} />
+                        <div className="flex space-x-4 ml-auto mt-20">
+                            <button
+                                onClick={openFriendsModal}
+                                className="bg-blue-500 hover:bg-blue-600 text-white font-semibold py-2 px-4 rounded"
+                            >
+                                Friends
+                            </button>
+                            <button
+                                onClick={openEventsModal}
+                                className="bg-blue-500 hover:bg-blue-600 text-white font-semibold py-2 px-4 rounded"
+                            >
+                                Your Events
+                            </button>
                         </div>
                     )}
                 </div>
@@ -265,10 +309,14 @@ const Profile = () => {
                     {isCurrentUser ? (
                         <DogForm updateUser={updateUser} />
                     ) : (
-                        <UserDogs user={user} />
+                        <DogList user={user} />
                     )}
                 </div>
             </div>
+
+            {/* Modals */}
+            <FriendsModal isOpen={isFriendsModalOpen} onClose={closeFriendsModal} />
+            <EventsModal isOpen={isEventsModalOpen} onClose={closeEventsModal} />
 
             {/* Confirmation Modal */}
             <ConfirmationModal

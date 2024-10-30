@@ -76,6 +76,17 @@ router.get("/all", async (req, res) => {
     }
 });
 
+// Route to get events for the authenticated user
+router.get('/user', authenticate, async (req, res) => {
+    try {
+        const events = await Event.find({ userId: req.user.id }).populate('parkId');
+        res.json(events);
+    } catch (error) {
+        console.error('Error fetching events:', error);
+        res.status(500).json({ error: 'Failed to fetch events.' });
+    }
+});
+
 // GET route to fetch a specific event by ID
 router.get("/:id", async (req, res) => {
     try {

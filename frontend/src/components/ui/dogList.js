@@ -1,6 +1,8 @@
+// Unlike dogform, this component gathers a list of other user's dogs
+
 import React from 'react';
 
-const UserDogs = ({ user }) => (
+const ListDogs = ({ user }) => (
     <div>
         <h2 className="mt-36 text-xl font-bold mb-4">{user.username}'s Dogs:</h2>
         {user.dogId && user.dogId.length > 0 ? (
@@ -33,4 +35,4 @@ const UserDogs = ({ user }) => (
     </div>
 );
 
-export default UserDogs;
+export default ListDogs;
