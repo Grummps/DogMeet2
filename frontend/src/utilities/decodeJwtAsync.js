@@ -1,40 +1,28 @@
 import jwtDecode from 'jwt-decode';
+import apiClient from './apiClient';
+import axios from 'axios';
 
 const backendRefreshTokenURL = `${process.env.REACT_APP_BACKEND_URI}/auth/refresh-token`;
 
 const refreshAccessToken = async () => {
   try {
-    const response = await fetch(backendRefreshTokenURL, {
-      method: 'POST',
-      credentials: 'include', // Include cookies in the request
-      headers: {
-        'Content-Type': 'application/json',
-      },
-    });
+    const response = await axios.post(
+      backendRefreshTokenURL, 
+      {},
+      { withCredentials: true }
+    );
 
-    if (!response.ok) {
-      const errorData = await response.json();
-      const errorMessage = errorData.message || 'Failed to refresh access token';
-      throw new Error(errorMessage);
+    const { accessToken } = response.data;
+    if (accessToken) {
+      localStorage.setItem("accessToken", accessToken); // Store the new access token
+      return accessToken; // Return the new access token
     }
-
-    const data = await response.json();
-    const newAccessToken = data.accessToken;
-
-    if (!newAccessToken) {
-      throw new Error('No access token returned from the server');
-    }
-
-    localStorage.setItem('accessToken', newAccessToken);
-
-    return newAccessToken;
+    throw new Error("No access token returned");
   } catch (error) {
-    console.error('Error refreshing access token:', error);
-    // Optionally, handle logout or redirection here or in the calling function
-    throw error;
+    console.error("Failed to refresh access token:", error);
+    throw error; // Propagate error to handle in calling function
   }
 };
-
 
 
 const getUserInfoAsync = async () => {

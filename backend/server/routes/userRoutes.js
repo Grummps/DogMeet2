@@ -114,6 +114,8 @@ router.get('/notifications', authenticate, async (req, res) => {
 
 // ============== Dynamic routes ==============
 
+// ============== Notif routes ==============
+
 // DELETE /users/notifications/:id
 router.delete('/notifications/:id', authenticate, async (req, res) => {
     try {
@@ -142,32 +144,6 @@ router.delete('/notifications/:id', authenticate, async (req, res) => {
     } catch (error) {
         console.error('Error deleting notification:', error);
         res.status(500).json({ message: 'Failed to delete notification.' });
-    }
-});
-
-// Route to get a user by ID
-router.get("/:id", async (req, res) => {
-    const userId = req.params.id;
-
-    try {
-        const user = await User.findById(userId)
-            .populate({
-                path: 'dogId',
-                select: 'dogName image size',
-            })
-            .populate('parkId')
-            .populate('friends', '_id username')
-            .populate('friendRequests', '_id username')
-            .populate('eventId');
-
-        if (!user) {
-            return res.status(404).send("User ID does not exist.");
-        }
-
-        res.json(user);
-    } catch (error) {
-        console.error("Error fetching user:", error);
-        res.status(500).send({ message: 'Error fetching user.' });
     }
 });
 
@@ -202,6 +178,35 @@ router.post('/notifications/:id/read', authenticate, async (req, res) => {
         res.status(500).json({ error: 'Failed to update notification.' });
     }
 });
+
+// ============== Other routes ==============
+
+// Route to get a user by ID
+router.get("/:id", async (req, res) => {
+    const userId = req.params.id;
+
+    try {
+        const user = await User.findById(userId)
+            .populate({
+                path: 'dogId',
+                select: 'dogName image size',
+            })
+            .populate('parkId')
+            .populate('friends', '_id username')
+            .populate('friendRequests', '_id username')
+            .populate('eventId');
+
+        if (!user) {
+            return res.status(404).send("User ID does not exist.");
+        }
+
+        res.json(user);
+    } catch (error) {
+        console.error("Error fetching user:", error);
+        res.status(500).send({ message: 'Error fetching user.' });
+    }
+});
+
 
 // Route to remove a friend
 router.post('/:id/remove-friend', authenticate, async (req, res) => {

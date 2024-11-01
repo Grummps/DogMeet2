@@ -12,9 +12,12 @@ import { useNavigate, useLocation, Link } from "react-router-dom";
 import getUserInfo from "../../utilities/decodeJwt";
 import apiClient from "../../utilities/apiClient";
 import Alert from "./alert"; // Ensure this path is correct
+import { useContext } from "react";
+import { UserContext } from "../contexts/userContext";
 
 export default function Navbar() {
-  const [user, setUser] = useState({});
+  const { user, setUser } = useContext(UserContext);
+
   const location = useLocation();
   const navigate = useNavigate();
 
@@ -36,16 +39,19 @@ export default function Navbar() {
   const handleLogout = (e) => {
     e.preventDefault();
     localStorage.removeItem("accessToken");
+    setUser(null);
     navigate("/");
   };
-
-  useEffect(() => {
-    setUser(getUserInfo());
-  }, []);
 
   // Fetch friend requests and notifications when the component mounts
   useEffect(() => {
     const fetchData = async () => {
+
+      if (!user) {
+        console.warn("User is not authenticated. Skipping fetch.");
+        return; // Exit if user is not logged in
+      }
+
       try {
         // Fetch friend requests
         const friendResponse = await apiClient.get("/users/friend-requests");
@@ -72,6 +78,9 @@ export default function Navbar() {
         setUnreadCount(unread);
       } catch (error) {
         console.error("Error fetching data:", error);
+        if (error.response && error.response.status === 401) {
+          handleLogout();
+        }
       }
     };
 
@@ -99,7 +108,7 @@ export default function Navbar() {
       await apiClient.post(`/users/${friendId}/accept-friend-request`);
       // Remove the friend request from friendRequestNotifications
       setFriendRequestNotifications((prev) =>
-        prev.filter((req) => req._id !== notificationId)
+        prev.filter((req) => req.id !== notificationId)
       );
       setUnreadCount((prev) => Math.max(prev - 1, 0));
       setFeedbackMessage("Friend request accepted.");
@@ -117,7 +126,7 @@ export default function Navbar() {
       await apiClient.post(`/users/${friendId}/decline-friend-request`);
       // Remove the friend request from friendRequestNotifications
       setFriendRequestNotifications((prev) =>
-        prev.filter((req) => req._id !== notificationId)
+        prev.filter((req) => req.id !== notificationId)
       );
       setUnreadCount((prev) => Math.max(prev - 1, 0));
       setFeedbackMessage("Friend request declined.");
@@ -138,7 +147,7 @@ export default function Navbar() {
       ];
       await Promise.all(
         unreadNotifications.map((n) =>
-          apiClient.post(`/users/notifications/${n._id}/read`)
+          apiClient.post(`/users/notifications/${n.id}/read`)
         )
       );
       // Update state to mark notifications as read
@@ -162,7 +171,7 @@ export default function Navbar() {
       await apiClient.post(`/users/notifications/${notificationId}/read`);
       setEventNotifications((prev) =>
         prev.map((notif) =>
-          notif._id === notificationId ? { ...notif, read: true } : notif
+          notif.id === notificationId ? { ...notif, read: true } : notif
         )
       );
       setUnreadCount((prev) => Math.max(prev - 1, 0));
@@ -180,10 +189,10 @@ export default function Navbar() {
     const originalEventNotifs = [...eventNotifications];
 
     setFriendRequestNotifications((prev) =>
-      prev.filter((n) => n._id !== notificationId)
+      prev.filter((n) => n.id !== notificationId)
     );
     setEventNotifications((prev) =>
-      prev.filter((n) => n._id !== notificationId)
+      prev.filter((n) => n.id !== notificationId)
     );
     setUnreadCount((prev) => Math.max(prev - 1, 0));
 
@@ -271,8 +280,8 @@ export default function Navbar() {
               <div className="flex border-b">
                 <button
                   className={`flex-1 py-2 ${activeTab === 'friend_requests'
-                      ? 'border-b-2 border-blue-500 text-blue-500'
-                      : 'text-gray-500'
+                    ? 'border-b-2 border-blue-500 text-blue-500'
+                    : 'text-gray-500'
                     }`}
                   onClick={() => setActiveTab('friend_requests')}
                 >
@@ -280,8 +289,8 @@ export default function Navbar() {
                 </button>
                 <button
                   className={`flex-1 py-2 ${activeTab === 'event_notifications'
-                      ? 'border-b-2 border-blue-500 text-blue-500'
-                      : 'text-gray-500'
+                    ? 'border-b-2 border-blue-500 text-blue-500'
+                    : 'text-gray-500'
                     }`}
                   onClick={() => setActiveTab('event_notifications')}
                 >
@@ -296,10 +305,10 @@ export default function Navbar() {
                     {friendRequestNotifications.length > 0 ? (
                       <ul>
                         {friendRequestNotifications.map((notification) => (
-                          <li key={notification._id} className="px-2 py-1 border-b">
+                          <li key={notification.id} className="px-2 py-1 border-b">
                             <div className="flex items-center justify-between">
                               <Link
-                                to={`/profile/${notification.sender.id || notification.sender._id}`}
+                                to={`/profile/${notification.sender.id || notification.sender.id}`}
                                 className="text-blue-600 no-underline"
                               >
                                 {notification.sender.username} sent you a friend request.
@@ -308,8 +317,8 @@ export default function Navbar() {
                                 <button
                                   onClick={() =>
                                     acceptFriendRequest(
-                                      notification.sender.id || notification.sender._id,
-                                      notification._id
+                                      notification.sender.id || notification.sender.id,
+                                      notification.id
                                     )
                                   }
                                   className="text-green-500 hover:text-green-700"
@@ -319,8 +328,8 @@ export default function Navbar() {
                                 <button
                                   onClick={() =>
                                     declineFriendRequest(
-                                      notification.sender.id || notification.sender._id,
-                                      notification._id
+                                      notification.sender.id || notification.sender.id,
+                                      notification.id
                                     )
                                   }
                                   className="text-red-500 hover:text-red-700"
@@ -329,7 +338,7 @@ export default function Navbar() {
                                 </button>
                                 {/* Delete Button */}
                                 <button
-                                  onClick={() => deleteNotification(notification._id)}
+                                  onClick={() => deleteNotification(notification.id)}
                                   className="text-gray-500 hover:text-gray-700"
                                   title="Delete Notification"
                                 >
@@ -349,22 +358,22 @@ export default function Navbar() {
                     {eventNotifications.length > 0 ? (
                       <ul>
                         {eventNotifications.map((notification) => (
-                          <li key={notification._id} className="px-2 py-1 border-b">
+                          <li key={notification.id} className="px-2 py-1 border-b">
                             <div className="flex items-center justify-between">
                               <div>
                                 <Link
-                                  to={notification.event ? `/profile/${notification.sender.id || notification.sender._id}` : '#'}
+                                  to={notification.event ? `/profile/${notification.sender.id || notification.sender.id}` : '#'}
                                   className="text-blue-600 no-underline"
-                                  onClick={() => notification.event && markEventNotificationAsRead(notification._id)}
+                                  onClick={() => notification.event && markEventNotificationAsRead(notification.id)}
                                 >
                                   {notification.sender.username}
                                 </Link>{" "}
                                 created a new event at{" "}
                                 {notification.event ? (
                                   <Link
-                                    to={`/events/${notification.event._id}`}
+                                    to={`/events/${notification.event.id}`}
                                     className="text-blue-600 no-underline"
-                                    onClick={() => markEventNotificationAsRead(notification._id)}
+                                    onClick={() => markEventNotificationAsRead(notification.id)}
                                   >
                                     {notification.event.parkId?.parkName || "a park"}
                                   </Link>
@@ -375,7 +384,7 @@ export default function Navbar() {
                               </div>
                               {/* Delete Button */}
                               <button
-                                onClick={() => deleteNotification(notification._id)}
+                                onClick={() => deleteNotification(notification.id)}
                                 className="text-gray-500 hover:text-gray-700"
                                 title="Delete Notification"
                               >

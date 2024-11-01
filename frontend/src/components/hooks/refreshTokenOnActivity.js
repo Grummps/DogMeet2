@@ -1,96 +1,87 @@
-import { useEffect, useRef, useContext, useCallback } from 'react';
-import { refreshAccessToken } from '../../utilities/decodeJwtAsync'; // Adjust the import path
-import jwt_decode from 'jwt-decode';
-import { UserContext } from '../../App';
-import { useLocation } from 'react-router-dom';
-import { TokenRefreshContext } from '../contexts/tokenRefreshContext';
+import { useEffect, useContext, useCallback } from "react";
+import { refreshAccessToken } from "../../utilities/decodeJwtAsync";
+import jwt_decode from "jwt-decode";
+import { UserContext } from "../contexts/userContext";
+import { useLocation } from "react-router-dom";
+import { TokenRefreshContext } from "../contexts/tokenRefreshContext";
+import throttle from "lodash/throttle";
 
 const TOKEN_REFRESH_INTERVAL = 45 * 60 * 1000; // 45 minutes
-const THROTTLE_DELAY = 1000; // 1 second delay for throttling
 
 const useRefreshTokenOnActivity = () => {
     const location = useLocation();
-    const isThrottledRef = useRef(false); // Throttle flag
-    const throttleTimeoutRef = useRef(null); // Throttle timer reference
     const { user, setUser } = useContext(UserContext);
     const { lastRefreshTime, setLastRefreshTime } = useContext(TokenRefreshContext);
 
-    const lastRefreshTimeRef = useRef(lastRefreshTime);
-
-    useEffect(() => {
-        lastRefreshTimeRef.current = lastRefreshTime;
-    }, [lastRefreshTime]);
-
     const handleTokenRefresh = useCallback(async () => {
-        if (!user) return; // Exit if user is not authenticated
+        if (!user) {
+            console.log("No user available. Skipping token refresh.");
+            return;
+        }
 
         const now = Date.now();
-        if (now - lastRefreshTimeRef.current >= TOKEN_REFRESH_INTERVAL) {
+        if (now - lastRefreshTime >= TOKEN_REFRESH_INTERVAL) {
+            console.log("TOKEN_REFRESH_INTERVAL elapsed. Refreshing token.");
             try {
-                const response = await refreshAccessToken(); // Make sure this sends cookies
-                if (response && response.accessToken) {
-                    localStorage.setItem('accessToken', response.accessToken);
-                    const decodedAccessToken = jwt_decode(response.accessToken);
+                const newAccessToken = await refreshAccessToken();
+                if (newAccessToken) {
+                    localStorage.setItem("accessToken", newAccessToken);
+                    const decodedAccessToken = jwt_decode(newAccessToken);
 
-                    // Update the last refresh time
-                    setLastRefreshTime(now);
-                    lastRefreshTimeRef.current = now;
-
-                    // Update user state with new decoded token
+                    setLastRefreshTime(now); // Update using TokenRefreshContext
                     if (setUser) {
                         setUser(decodedAccessToken);
                     }
-
-                    console.log('Token refreshed at', new Date(now).toLocaleTimeString());
+                    console.log("Token refreshed at", new Date(now).toLocaleTimeString());
                 } else {
-                    throw new Error('Invalid token response');
+                    throw new Error("Invalid token response");
                 }
             } catch (error) {
-                console.error('Error refreshing token:', error.response?.data?.message || error.message);
-                // Handle token refresh failure
+                console.error("Token refresh failed:", error);
                 setUser(null);
-                localStorage.removeItem('accessToken');
-                // Optionally, redirect to login
-                window.location.href = '/login';
+                localStorage.removeItem("accessToken");
+                window.location.href = "/login";
             }
+        } else {
+            console.log("TOKEN_REFRESH_INTERVAL not yet elapsed. Skipping token refresh.");
         }
-    }, [user, setLastRefreshTime, setUser]);
+    }, [user, lastRefreshTime, setLastRefreshTime, setUser]);
 
-    const handleUserActivity = useCallback(() => {
-        if (isThrottledRef.current) return; // Exit if throttled
-
-        isThrottledRef.current = true; // Set throttle flag
-        handleTokenRefresh(); // Call the token refresh function
-
-        // Set a timeout to reset the throttle flag after the delay
-        throttleTimeoutRef.current = setTimeout(() => {
-            isThrottledRef.current = false;
-        }, THROTTLE_DELAY);
-    }, [handleTokenRefresh]);
+    // Throttle the token refresh handler to once every THROTTLE_DELAY milliseconds
+    const throttledHandleTokenRefresh = useCallback(
+        throttle(() => {
+            console.log("User activity detected. Attempting token refresh.");
+            handleTokenRefresh();
+        }, 1000), // 1 second throttle delay
+        [handleTokenRefresh]
+    );
 
     useEffect(() => {
-        // Add event listeners for user activity
-        document.addEventListener('click', handleUserActivity);
-        document.addEventListener('scroll', handleUserActivity);
-        document.addEventListener('mousemove', handleUserActivity);
+        document.addEventListener("click", throttledHandleTokenRefresh);
+        document.addEventListener("scroll", throttledHandleTokenRefresh);
+        document.addEventListener("mousemove", throttledHandleTokenRefresh);
+
+        console.log("Event listeners for user activity added.");
 
         return () => {
-            // Remove event listeners on cleanup
-            document.removeEventListener('click', handleUserActivity);
-            document.removeEventListener('scroll', handleUserActivity);
-            document.removeEventListener('mousemove', handleUserActivity);
+            document.removeEventListener("click", throttledHandleTokenRefresh);
+            document.removeEventListener("scroll", throttledHandleTokenRefresh);
+            document.removeEventListener("mousemove", throttledHandleTokenRefresh);
 
-            // Clear the throttle timeout if it exists
-            if (throttleTimeoutRef.current) {
-                clearTimeout(throttleTimeoutRef.current);
-            }
+            throttledHandleTokenRefresh.cancel();
+            console.log("Event listeners for user activity removed.");
         };
-    }, [handleUserActivity]);
+    }, [throttledHandleTokenRefresh]);
 
-    // Trigger token refresh on route change
     useEffect(() => {
-        handleUserActivity();
-    }, [location.pathname, handleUserActivity]);
+        throttledHandleTokenRefresh();
+    }, [location.pathname, throttledHandleTokenRefresh]);
+
+    useEffect(() => {
+        if (user) {
+            handleTokenRefresh();
+        }
+    }, [user, handleTokenRefresh]);
 };
 
 export default useRefreshTokenOnActivity;
