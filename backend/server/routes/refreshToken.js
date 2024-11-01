@@ -26,10 +26,10 @@ router.post('/refresh-token', async (req, res) => {
         console.log('Refresh token decoded:', decoded);
 
         // Check if the required fields are present in the decoded token
-        const { id, email, username, isAdmin } = decoded;
-        if (!id) throw new Error('Decoded token missing user ID');
+        const { _id, email, username, isAdmin } = decoded;
+        if (!_id) throw new Error('Decoded token missing user ID');
 
-        const user = { id, email, username, isAdmin };
+        const user = { _id, email, username, isAdmin };
 
         // Generate new tokens
         const newAccessToken = generateAccessToken(user);

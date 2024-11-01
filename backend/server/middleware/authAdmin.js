@@ -2,7 +2,7 @@ const User = require('../models/userModel'); // Adjust the path as needed
 
 const authorizeAdmin = async (req, res, next) => {
   try {
-    const userId = req.user.id; // Assuming the JWT contains the user's ID
+    const userId = req.user._id; // Assuming the JWT contains the user's ID
     const user = await User.findById(userId);
 
     if (!user || !user.isAdmin) {

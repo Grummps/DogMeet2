@@ -26,4 +26,5 @@ const dogSchema = new mongoose.Schema(
   { collection: "dogs" }
 );
 
+
 module.exports = mongoose.model('dogs', dogSchema);

@@ -42,15 +42,12 @@ const useRefreshTokenOnActivity = () => {
                 localStorage.removeItem("accessToken");
                 window.location.href = "/login";
             }
-        } else {
-            console.log("TOKEN_REFRESH_INTERVAL not yet elapsed. Skipping token refresh.");
-        }
+        } 
     }, [user, lastRefreshTime, setLastRefreshTime, setUser]);
 
     // Throttle the token refresh handler to once every THROTTLE_DELAY milliseconds
     const throttledHandleTokenRefresh = useCallback(
         throttle(() => {
-            console.log("User activity detected. Attempting token refresh.");
             handleTokenRefresh();
         }, 1000), // 1 second throttle delay
         [handleTokenRefresh]

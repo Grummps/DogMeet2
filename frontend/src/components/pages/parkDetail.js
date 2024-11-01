@@ -17,7 +17,7 @@ L.Icon.Default.mergeOptions({
 });
 
 const ParkDetail = () => {
-    const { id } = useParams();
+    const { _id: parkId } = useParams();
     const [park, setPark] = useState(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState('');
@@ -36,7 +36,7 @@ const ParkDetail = () => {
 
         const userInfo = getUserInfo();
         if (userInfo) {
-            setCurrentUserId(userInfo.id);
+            setCurrentUserId(userInfo._id);
         } else {
             console.error('User info not found');
         }
@@ -76,7 +76,7 @@ const ParkDetail = () => {
     // Fetch park details
     const fetchParkDetails = async () => {
         try {
-            const parkResponse = await axios.get(`${process.env.REACT_APP_BACKEND_URI}/parks/${id}`);
+            const parkResponse = await axios.get(`${process.env.REACT_APP_BACKEND_URI}/parks/${parkId}`);
             setPark(parkResponse.data);
         } catch (err) {
             console.error('Error fetching park details:', err);
@@ -89,7 +89,7 @@ const ParkDetail = () => {
     // Fetch upcoming events
     const fetchUpcomingEvents = async () => {
         try {
-            const eventsResponse = await axios.get(`${process.env.REACT_APP_BACKEND_URI}/parks/${id}/events/upcoming`);
+            const eventsResponse = await axios.get(`${process.env.REACT_APP_BACKEND_URI}/parks/${parkId}/events/upcoming`);
             setUpcomingEvents(eventsResponse.data);
         } catch (err) {
             console.error('Error fetching upcoming events:', err);
@@ -99,7 +99,7 @@ const ParkDetail = () => {
     // Fetch checked-in dogs (active events)
     const fetchCheckedInDogs = async () => {
         try {
-            const eventsResponse = await axios.get(`${process.env.REACT_APP_BACKEND_URI}/parks/${id}/events/active`);
+            const eventsResponse = await axios.get(`${process.env.REACT_APP_BACKEND_URI}/parks/${parkId}/events/active`);
             const activeEvents = eventsResponse.data;
 
             // Extract dogs from active events
@@ -236,7 +236,7 @@ const ParkDetail = () => {
                         <h2 className="text-2xl font-semibold mb-4">Create Event for {parkName}</h2>
                         <CreateEventForm
                             userId={currentUserId}
-                            parkId={id}
+                            parkId={parkId}
                             onSuccess={() => {
                                 setShowModal(false);
                                 // Refresh the upcoming list
@@ -260,7 +260,7 @@ const ParkDetail = () => {
                         <h2 className="text-2xl font-semibold mb-4">Check-in at {parkName}</h2>
                         <CheckInForm
                             userId={currentUserId}
-                            parkId={id}
+                            parkId={parkId}
                             onSuccess={() => {
                                 setShowCheckInModal(false);
                                 // Refresh the checked-in dogs list

@@ -31,7 +31,7 @@ const HomePage = () => {
     }
 
     // Destructure only the fields present in the token
-    const { id, email, username, isAdmin } = user;
+    const { _id, email, username, isAdmin } = user;
 
     return (
         <div className="min-h-screen bg-gray-100 flex flex-col items-center justify-center">
@@ -39,7 +39,7 @@ const HomePage = () => {
                 <h3 className="text-2xl font-semibold mb-4">
                     Welcome <span className='text-pink-600'>@{username}</span>!
                 </h3>
-                <p className="mb-2"><strong>User ID:</strong> {id}</p>
+                <p className="mb-2"><strong>User ID:</strong> {_id}</p>
                 <p className="mb-2"><strong>Email:</strong> {email}</p>
                 <p className="mb-4"><strong>Admin:</strong> {isAdmin ? 'Yes' : 'No'}</p>
                 {isAdmin && (

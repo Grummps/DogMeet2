@@ -13,14 +13,14 @@ const CreateEventForm = ({ parkId, onSuccess }) => {
   const [duration, setDuration] = useState(60); // Default duration to 60 minutes
 
   const userInfo = getUserInfo();
-  const userId = userInfo.id;
+  const userId = userInfo._id;
 
   useEffect(() => {
     // Fetch the user's dogs
     const fetchDogs = async () => {
       try {
         const response = await axios.get(`${process.env.REACT_APP_BACKEND_URI}/users/${userId}`);
-        setDogs(response.data.dogId); // Assuming user's dogs are in dogId array
+        setDogs(response.data.dogId); // Assuming `dogId` already contains the correct `_id` format
       } catch (err) {
         console.error('Error fetching dogs:', err);
       }
@@ -34,7 +34,7 @@ const CreateEventForm = ({ parkId, onSuccess }) => {
     if (e.target.checked) {
       setSelectedDogs([...selectedDogs, dogId]);
     } else {
-      setSelectedDogs(selectedDogs.filter((id) => id !== dogId));
+      setSelectedDogs(selectedDogs.filter((_id) => _id !== dogId));
     }
   };
 

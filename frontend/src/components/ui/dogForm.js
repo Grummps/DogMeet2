@@ -19,8 +19,11 @@ const DogForm = ({ updateUser, userId }) => {
 
         const fetchDogs = async () => {
             try {
-                const response = await axios.get(`${process.env.REACT_APP_BACKEND_URI}/users/${userInfo.id}`);
-                setDogs(response.data.dogId);  // Assuming dogId contains an array of dog IDs
+                const response = await axios.get(`${process.env.REACT_APP_BACKEND_URI}/users/${userInfo._id}`);
+                const dogsWithId = response.data.dogId.map(dog => ({
+                    ...dog,
+                }));
+                setDogs(dogsWithId);
             } catch (error) {
                 console.error('Error fetching dogs:', error);
                 setError('Failed to fetch dogs.');
@@ -34,7 +37,7 @@ const DogForm = ({ updateUser, userId }) => {
         try {
             const userInfo = getUserInfo();  // Get the logged-in user's info from the JWT
 
-            await axios.delete(`${process.env.REACT_APP_BACKEND_URI}/users/removeDog/${userInfo.id}/${dogId}`);
+            await axios.delete(`${process.env.REACT_APP_BACKEND_URI}/users/removeDog/${userInfo._id}/${dogId}`);
             await axios.delete(`${process.env.REACT_APP_BACKEND_URI}/dogs/delete/${dogId}`);  // Delete dog from dogs collection
             setDogs(prevDogs => prevDogs.filter(dog => dog._id.toString() !== dogId.toString()));  // Ensure both are strings
         } catch (error) {
@@ -59,7 +62,7 @@ const DogForm = ({ updateUser, userId }) => {
         const formData = new FormData();
         formData.append('dogName', dogName);
         formData.append('size', size);
-        formData.append('userId', userInfo.id || userInfo._id);  // Append the user ID to the form data
+        formData.append('userId', userInfo._id);  // Append the user ID to the form data
         if (image) {
             formData.append('image', image);  // Append the image if it exists
         }
@@ -75,7 +78,7 @@ const DogForm = ({ updateUser, userId }) => {
             setDogs(prevDogs => [...prevDogs, newDog]);  // Add the new dog to the state
 
             const dogId = response.data.dog._id;  // Assuming the response contains the new dog's ID
-            await apiClient.put(`/users/editUser/${userInfo.id}`, { dogId });
+            await apiClient.put(`/users/editUser/${userInfo._id}`, { dogId });
 
             updateUser({ dogId });
 

@@ -14,7 +14,7 @@ const getUserInfo = () => {
         return null;
     }
 
-    const { exp, id, email, username, isAdmin } = decodedToken;
+    const { exp, _id, email, username, isAdmin } = decodedToken;
 
     // Check if token has expired
     if (exp * 1000 < Date.now()) {
@@ -24,7 +24,7 @@ const getUserInfo = () => {
     }
 
     return {
-        id,
+        _id,
         email,
         username,
         isAdmin,

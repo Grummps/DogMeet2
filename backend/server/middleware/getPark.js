@@ -2,14 +2,21 @@ const mongoose = require('mongoose');
 const Park = require('../models/parkModel');
 
 const getPark = async (req, res, next) => {
-  const { id } = req.params;
+  const { _id } = req.params;
 
-  if (!mongoose.Types.ObjectId.isValid(id)) {
+  if (!mongoose.Types.ObjectId.isValid(_id)) {
     return res.status(400).json({ message: 'Invalid park ID.' });
   }
 
   try {
-    const park = await Park.findById(id).populate('eventId');
+    const park = await Park.findById(_id).populate({
+      path: 'eventId',
+      populate: {
+        path: 'parkId',
+        select: 'parkName', // Only select necessary fields
+      },
+    });
+
     if (!park) {
       return res.status(404).json({ message: 'Park not found.' });
     }

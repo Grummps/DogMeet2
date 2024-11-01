@@ -90,7 +90,7 @@ router.post('/signup', async (req, res) => {
       isAdmin: false,
       parkId,
       dogId,
-      friends: friends ? friends.map(id => mongoose.Types.ObjectId(id)) : [],
+      friends: friends ? friends.map(_id => mongoose.Types.ObjectId(_id)) : [],
       eventId,
     });
 

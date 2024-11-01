@@ -12,8 +12,8 @@ const authenticate = (req, res, next) => {
     const decoded = jwt.verify(token, process.env.ACCESS_TOKEN_SECRET);
     console.log('Decoded token payload:', decoded); // Log payload to confirm userId presence
 
-    // Check if userId (or id) exists in the decoded token
-    if (!decoded.id) {
+    // Check if userId (or _id) exists in the decoded token
+    if (!decoded._id) {
       console.log('Token is missing userId');
       return res.status(400).json({ message: 'Token payload invalid: userId missing.' });
     }

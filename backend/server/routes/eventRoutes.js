@@ -2,15 +2,15 @@ const express = require("express");
 const router = express.Router();
 const Event = require("../models/eventModel");
 const authenticate = require("../middleware/auth");
-const User = require('../models/userModel');  // Import User model
-const Park = require('../models/parkModel');  // Import Park model
-const Notification = require('../models/notificationModel'); // Import Notification model
+const User = require('../models/userModel');
+const Park = require('../models/parkModel');
+const Notification = require('../models/notificationModel');
 
 // POST route to create a new event
 router.post("/create", authenticate, async (req, res) => {
     try {
         const { parkId, dogs, time, date, duration } = req.body;
-        const userId = req.user.id;
+        const userId = req.user._id;
 
         // Validate the input
         if (!parkId || !dogs || !dogs.length || !time || !date) {
@@ -23,7 +23,7 @@ router.post("/create", authenticate, async (req, res) => {
             return res.status(404).json({ message: "User not found." });
         }
 
-        const userDogIds = user.dogId.map((id) => id.toString());
+        const userDogIds = user.dogId.map((_id) => _id.toString());
         const invalidDogs = dogs.filter((dogId) => !userDogIds.includes(dogId));
 
         if (invalidDogs.length > 0) {
@@ -40,7 +40,7 @@ router.post("/create", authenticate, async (req, res) => {
         const eventDuration = duration || 60;
 
         // Calculate the expiration time
-        const expiresAt = new Date(eventStartTime.getTime() + eventDuration * 60000); // Convert minutes to milliseconds
+        const expiresAt = new Date(eventStartTime.getTime() + eventDuration * 60000);
 
         // Create a new event instance
         const newEvent = new Event({
@@ -67,7 +67,7 @@ router.post("/create", authenticate, async (req, res) => {
         ]);
 
         // After creating the event, fetch the user's friends
-        const userFriends = user.friends; // Already populated if you modify the query
+        const userFriends = user.friends;
 
         if (userFriends && userFriends.length > 0) {
             // Create a notification for each friend
@@ -111,7 +111,7 @@ router.get("/all", async (req, res) => {
 // Route to get events for the authenticated user
 router.get('/user', authenticate, async (req, res) => {
     try {
-        const events = await Event.find({ userId: req.user.id }).populate('parkId');
+        const events = await Event.find({ userId: req.user._id }).populate('parkId');
         res.json(events);
     } catch (error) {
         console.error('Error fetching events:', error);
@@ -120,9 +120,9 @@ router.get('/user', authenticate, async (req, res) => {
 });
 
 // GET route to fetch a specific event by ID
-router.get("/:id", async (req, res) => {
+router.get("/:_id", async (req, res) => {
     try {
-        const eventId = req.params.id;
+        const eventId = req.params._id;
 
         // Find the event by ID and populate the referenced user and park
         const event = await Event.findById(eventId).populate('userId').populate('parkId').populate('dogs');
@@ -139,8 +139,8 @@ router.get("/:id", async (req, res) => {
 });
 
 // GET route to fetch all events for a single user
-router.get('/user/:userId', authenticate, async (req, res) => {
-    const { userId } = req.params; // Extract the userId from the URL parameter
+router.get('/user/:_id', authenticate, async (req, res) => {
+    const { _id: userId } = req.params;
 
     try {
         // Find all events that match the provided userId
@@ -160,9 +160,9 @@ router.get('/user/:userId', authenticate, async (req, res) => {
 });
 
 // PUT route to update an event by ID
-router.put("/update/:id", async (req, res) => {
+router.put("/update/:_id", async (req, res) => {
     try {
-        const eventId = req.params.id;
+        const eventId = req.params._id;
         const { userId, parkId, time, date } = req.body;
 
         // Validate if all necessary fields are provided
@@ -174,7 +174,7 @@ router.put("/update/:id", async (req, res) => {
         const updatedEvent = await Event.findByIdAndUpdate(
             eventId,
             { userId, parkId, time, date },
-            { new: true, runValidators: true }  // new: true returns the updated document, runValidators: true ensures validation
+            { new: true, runValidators: true }
         ).populate('userId').populate('parkId');
 
         // Check if the event was found and updated
@@ -191,9 +191,9 @@ router.put("/update/:id", async (req, res) => {
 });
 
 // DELETE route to delete an event by ID
-router.delete("/delete/:id", async (req, res) => {
+router.delete("/delete/:_id", async (req, res) => {
     try {
-        const eventId = req.params.id;
+        const eventId = req.params._id;
 
         // Find the event by ID and delete it
         const deletedEvent = await Event.findByIdAndDelete(eventId);

@@ -4,7 +4,12 @@ dotenv.config();
 
 const generateAccessToken = (user) => {
   return jwt.sign(
-    { id: user.id, email: user.email, username: user.username, isAdmin: user.isAdmin },
+    { 
+      _id: user._id, 
+      email: user.email, 
+      username: user.username, 
+      isAdmin: user.isAdmin 
+    },
     process.env.ACCESS_TOKEN_SECRET,
     { expiresIn: '60m' } // Access token valid for 60 minutes
   );
@@ -12,7 +17,12 @@ const generateAccessToken = (user) => {
 
 const generateRefreshToken = (user) => {
   return jwt.sign(
-    { id: user.id, email: user.email, username: user.username, isAdmin: user.isAdmin },
+    { 
+      _id: user._id, 
+      email: user.email, 
+      username: user.username, 
+      isAdmin: user.isAdmin 
+    },
     process.env.REFRESH_TOKEN_SECRET,
     { expiresIn: '7d' } // Refresh token valid for 7 days
   );

@@ -42,20 +42,20 @@ router.get('/all', async (req, res) => {
   }
 });
 
-// Get a specific park by ID
-router.get('/:id', getPark, (req, res) => {
+// Get a specific park by _id
+router.get('/:_id', getPark, (req, res) => {
   res.status(200).json(req.park);
 });
 
-// Update a park by ID (Admin Only)
-router.put('/update/:id', authenticate, authorizeAdmin, getPark, async (req, res) => {
+// Update a park by _id (Admin Only)
+router.put('/update/:_id', authenticate, authorizeAdmin, getPark, async (req, res) => {
   try {
     const { parkName, eventId, image } = req.body;
 
     // Update fields if they are provided in the request
     if (parkName !== undefined) req.park.parkName = parkName;
     if (eventId !== undefined) {
-      req.park.eventId = eventId.map(id => mongoose.Types.ObjectId(id));
+      req.park.eventId = eventId.map(_id => mongoose.Types.ObjectId(_id));
     }
     if (image !== undefined) req.park.image = image;
 
@@ -68,8 +68,8 @@ router.put('/update/:id', authenticate, authorizeAdmin, getPark, async (req, res
   }
 });
 
-// Delete a park by ID (Admin Only)
-router.delete('/delete/:id', authenticate, authorizeAdmin, getPark, async (req, res) => {
+// Delete a park by _id (Admin Only)
+router.delete('/delete/:_id', authenticate, authorizeAdmin, getPark, async (req, res) => {
   try {
     await req.park.remove();
     res.status(200).json({ message: 'Park deleted successfully.' });
@@ -80,9 +80,9 @@ router.delete('/delete/:id', authenticate, authorizeAdmin, getPark, async (req, 
 });
 
 // Get upcoming events for a specific park
-router.get('/:id/events/upcoming', async (req, res) => {
+router.get('/:_id/events/upcoming', async (req, res) => {
   try {
-    const parkId = req.params.id;
+    const parkId = req.params._id;
     const now = new Date();
 
     // Find upcoming events for this park
@@ -104,9 +104,9 @@ router.get('/:id/events/upcoming', async (req, res) => {
 });
 
 // Get active (checked-in) events for a specific park
-router.get('/:id/events/active', async (req, res) => {
+router.get('/:_id/events/active', async (req, res) => {
   try {
-    const parkId = req.params.id;
+    const parkId = req.params._id;
     const now = new Date();
 
     // Find events that have started but not yet expired
@@ -132,12 +132,12 @@ router.get('/:id/events/active', async (req, res) => {
   }
 });
 
-// POST /parks/:id/check-in
-router.post('/:id/check-in', authenticate, async (req, res) => {
+// POST /parks/:_id/check-in
+router.post('/:_id/check-in', authenticate, async (req, res) => {
   try {
-    const parkId = req.params.id;
+    const parkId = req.params._id;
     const { dogIds, duration } = req.body;
-    const userId = req.user.id;
+    const userId = req.user._id;
 
     // Validate inputs
     if (!dogIds || !dogIds.length) {
@@ -146,7 +146,12 @@ router.post('/:id/check-in', authenticate, async (req, res) => {
 
     // Verify that the dogs belong to the user
     const userDogs = await User.findById(userId).select('dogId');
-    const userDogIds = userDogs.dogId.map((id) => id.toString());
+
+    if (!userDogs || !userDogs.dogId) {
+      return res.status(400).json({ message: 'No dogs found for this user.' });
+    }
+
+    const userDogIds = userDogs.dogId.map((_id) => _id.toString());
 
     const invalidDogs = dogIds.filter((dogId) => !userDogIds.includes(dogId));
 

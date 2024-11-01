@@ -108,7 +108,7 @@ export default function Navbar() {
       await apiClient.post(`/users/${friendId}/accept-friend-request`);
       // Remove the friend request from friendRequestNotifications
       setFriendRequestNotifications((prev) =>
-        prev.filter((req) => req.id !== notificationId)
+        prev.filter((req) => req._id !== notificationId)
       );
       setUnreadCount((prev) => Math.max(prev - 1, 0));
       setFeedbackMessage("Friend request accepted.");
@@ -147,7 +147,7 @@ export default function Navbar() {
       ];
       await Promise.all(
         unreadNotifications.map((n) =>
-          apiClient.post(`/users/notifications/${n.id}/read`)
+          apiClient.post(`/users/notifications/${n._id}/read`)
         )
       );
       // Update state to mark notifications as read
@@ -171,7 +171,7 @@ export default function Navbar() {
       await apiClient.post(`/users/notifications/${notificationId}/read`);
       setEventNotifications((prev) =>
         prev.map((notif) =>
-          notif.id === notificationId ? { ...notif, read: true } : notif
+          notif._id === notificationId ? { ...notif, read: true } : notif
         )
       );
       setUnreadCount((prev) => Math.max(prev - 1, 0));
@@ -189,10 +189,10 @@ export default function Navbar() {
     const originalEventNotifs = [...eventNotifications];
 
     setFriendRequestNotifications((prev) =>
-      prev.filter((n) => n.id !== notificationId)
+      prev.filter((n) => n._id !== notificationId)
     );
     setEventNotifications((prev) =>
-      prev.filter((n) => n.id !== notificationId)
+      prev.filter((n) => n._id !== notificationId)
     );
     setUnreadCount((prev) => Math.max(prev - 1, 0));
 
@@ -305,10 +305,10 @@ export default function Navbar() {
                     {friendRequestNotifications.length > 0 ? (
                       <ul>
                         {friendRequestNotifications.map((notification) => (
-                          <li key={notification.id} className="px-2 py-1 border-b">
+                          <li key={notification._id} className="px-2 py-1 border-b">
                             <div className="flex items-center justify-between">
                               <Link
-                                to={`/profile/${notification.sender.id || notification.sender.id}`}
+                                to={`/profile/${notification.sender._id}`}
                                 className="text-blue-600 no-underline"
                               >
                                 {notification.sender.username} sent you a friend request.
@@ -317,8 +317,8 @@ export default function Navbar() {
                                 <button
                                   onClick={() =>
                                     acceptFriendRequest(
-                                      notification.sender.id || notification.sender.id,
-                                      notification.id
+                                      notification.sender._id,
+                                      notification._id
                                     )
                                   }
                                   className="text-green-500 hover:text-green-700"
@@ -328,8 +328,8 @@ export default function Navbar() {
                                 <button
                                   onClick={() =>
                                     declineFriendRequest(
-                                      notification.sender.id || notification.sender.id,
-                                      notification.id
+                                      notification.sender._id,
+                                      notification._id
                                     )
                                   }
                                   className="text-red-500 hover:text-red-700"
@@ -338,7 +338,7 @@ export default function Navbar() {
                                 </button>
                                 {/* Delete Button */}
                                 <button
-                                  onClick={() => deleteNotification(notification.id)}
+                                  onClick={() => deleteNotification(notification._id)}
                                   className="text-gray-500 hover:text-gray-700"
                                   title="Delete Notification"
                                 >
@@ -358,22 +358,22 @@ export default function Navbar() {
                     {eventNotifications.length > 0 ? (
                       <ul>
                         {eventNotifications.map((notification) => (
-                          <li key={notification.id} className="px-2 py-1 border-b">
+                          <li key={notification._id} className="px-2 py-1 border-b">
                             <div className="flex items-center justify-between">
                               <div>
                                 <Link
-                                  to={notification.event ? `/profile/${notification.sender.id || notification.sender.id}` : '#'}
+                                  to={notification.event ? `/profile/${notification.sender._id}` : '#'}
                                   className="text-blue-600 no-underline"
-                                  onClick={() => notification.event && markEventNotificationAsRead(notification.id)}
+                                  onClick={() => notification.event && markEventNotificationAsRead(notification._id)}
                                 >
                                   {notification.sender.username}
                                 </Link>{" "}
                                 created a new event at{" "}
                                 {notification.event ? (
                                   <Link
-                                    to={`/events/${notification.event.id}`}
+                                    to={`/parks/${notification.event.parkId._id}`}
                                     className="text-blue-600 no-underline"
-                                    onClick={() => markEventNotificationAsRead(notification.id)}
+                                    onClick={() => markEventNotificationAsRead(notification._id)}
                                   >
                                     {notification.event.parkId?.parkName || "a park"}
                                   </Link>
@@ -384,7 +384,7 @@ export default function Navbar() {
                               </div>
                               {/* Delete Button */}
                               <button
-                                onClick={() => deleteNotification(notification.id)}
+                                onClick={() => deleteNotification(notification._id)}
                                 className="text-gray-500 hover:text-gray-700"
                                 title="Delete Notification"
                               >

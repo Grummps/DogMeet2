@@ -8,7 +8,7 @@ const ListDogs = ({ user }) => (
         {user.dogId && user.dogId.length > 0 ? (
             <ul>
                 {user.dogId.map(dog => (
-                    <li key={dog._id} className="mb-4">
+                    <li key={dog.id} className="mb-4">
                         <div className="flex items-center">
                             {dog.image ? (
                                 <img

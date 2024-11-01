@@ -13,7 +13,8 @@ const CheckInForm = ({ userId, parkId, onSuccess }) => {
     const fetchDogs = async () => {
       try {
         const response = await axios.get(`${process.env.REACT_APP_BACKEND_URI}/users/${userId}`);
-        setDogs(response.data.dogId); // Assuming user's dogs are in dogId array
+        const dogsWithId = response.data.dogId.map(dog => ({ ...dog }));
+        setDogs(dogsWithId); // Assuming user's dogs are in dogId array
       } catch (err) {
         console.error('Error fetching dogs:', err);
       }
@@ -27,7 +28,7 @@ const CheckInForm = ({ userId, parkId, onSuccess }) => {
     if (e.target.checked) {
       setSelectedDogs([...selectedDogs, dogId]);
     } else {
-      setSelectedDogs(selectedDogs.filter((id) => id !== dogId));
+      setSelectedDogs(selectedDogs.filter((_id) => _id !== dogId));
     }
   };
 

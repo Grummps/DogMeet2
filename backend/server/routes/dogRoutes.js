@@ -13,7 +13,7 @@ const authenticate = require('../middleware/auth');
 router.post('/create', authenticate, upload.single('image'), async (req, res) => {
     try {
         const { dogName, size } = req.body;
-        const userId = req.user.id; // Get userId from authenticated user
+        const userId = req.user._id; // Get _id from authenticated user
 
         // Validate required fields
         if (!dogName || !size) {
@@ -51,12 +51,12 @@ router.post('/create', authenticate, upload.single('image'), async (req, res) =>
             dogName,
             size,
             image: imageUrl,
-            ownerId: userId, // Set the ownerId to the authenticated user's ID
+            ownerId: userId, // Set the ownerId to the authenticated user's _id
         });
 
         const savedDog = await newDog.save();
 
-        // Update the user's profile with the new dogId
+        // Update the user's profile with the new dog _id
         await newUserModel.findByIdAndUpdate(userId, { $push: { dogId: savedDog._id } });
 
         res.status(201).json({ message: 'Dog created and assigned to user successfully.', dog: savedDog });
@@ -66,14 +66,14 @@ router.post('/create', authenticate, upload.single('image'), async (req, res) =>
     }
 });
 
-// Get a specific dog by ID
-router.get('/:id', async (req, res) => {
+// Get a specific dog by _id
+router.get('/:_id', async (req, res) => {
     try {
-        const dogId = req.params.id;
+        const dogId = req.params._id;
 
         // Validate ObjectId
         if (!dogId || !mongoose.Types.ObjectId.isValid(dogId)) {
-            return res.status(400).json({ message: 'Invalid dog ID.' });
+            return res.status(400).json({ message: 'Invalid dog _id.' });
         }
 
         const dog = await dogModel.findById(dogId);
@@ -88,15 +88,15 @@ router.get('/:id', async (req, res) => {
     }
 });
 
-// Update a dog by ID
-router.put('/update/:id', async (req, res) => {
+// Update a dog by _id
+router.put('/update/:_id', async (req, res) => {
     try {
-        const dogId = req.params.id;
+        const dogId = req.params._id;
         const { dogName, size, image } = req.body;
 
         // Validate ObjectId
         if (!mongoose.Types.ObjectId.isValid(dogId)) {
-            return res.status(400).json({ message: 'Invalid dog ID.' });
+            return res.status(400).json({ message: 'Invalid dog _id.' });
         }
 
         // Find and update the dog
@@ -117,14 +117,14 @@ router.put('/update/:id', async (req, res) => {
     }
 });
 
-// Delete a dog by ID
-router.delete('/delete/:id', async (req, res) => {
+// Delete a dog by _id
+router.delete('/delete/:_id', async (req, res) => {
     try {
-        const dogId = req.params.id;
+        const dogId = req.params._id;
 
         // Validate ObjectId
         if (!mongoose.Types.ObjectId.isValid(dogId)) {
-            return res.status(400).json({ message: 'Invalid dog ID.' });
+            return res.status(400).json({ message: 'Invalid dog _id.' });
         }
 
         // Find the dog first to get the image URL
@@ -150,7 +150,6 @@ router.delete('/delete/:id', async (req, res) => {
                 await s3.deleteObject(params).promise();
             } catch (s3Error) {
                 console.error('Error deleting image from S3:', s3Error);
-                // You might want to handle this error separately or continue
             }
         }
 

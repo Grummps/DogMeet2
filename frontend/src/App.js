@@ -44,9 +44,9 @@ const App = () => {
         <Route exact path="/home" element={<HomePage />} />
         <Route exact path="/login" element={<Login />} />
         <Route exact path="/signup" element={<Signup />} />
-        <Route path="/profile/:id?" element={<Profile />} />
+        <Route path="/profile/:_id?" element={<Profile />} />
         <Route path="/parks" element={<ParksList />} />
-        <Route path="/parks/:id" element={<ParkDetail />} />
+        <Route path="/parks/:_id" element={<ParkDetail />} />
 
         {/* Protected Admin Dashboard Route */}
         <Route

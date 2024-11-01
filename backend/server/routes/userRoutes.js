@@ -33,7 +33,7 @@ router.get('/getAll', async (req, res) => {
 // Route to get incoming friend requests
 router.get('/friend-requests', authenticate, async (req, res) => {
     try {
-        const user = await User.findById(req.user.id)
+        const user = await User.findById(req.user._id)
             .populate('friendRequests', '_id username')
             .exec();
 
@@ -51,7 +51,7 @@ router.get('/friend-requests', authenticate, async (req, res) => {
 // Route to get list of friends
 router.get('/friends', authenticate, async (req, res) => {
     try {
-        const user = await User.findById(req.user.id)
+        const user = await User.findById(req.user._id)
             .populate('friends', '_id username')
             .exec();
 
@@ -80,7 +80,7 @@ router.get('/search', authenticate, async (req, res) => {
                 { username: { $regex: query, $options: 'i' } },
                 { email: { $regex: query, $options: 'i' } },
             ],
-            _id: { $ne: req.user.id }, // Exclude the current user
+            _id: { $ne: req.user._id }, // Exclude the current user
         }).select('username email');
 
         res.json({ users });
@@ -93,14 +93,20 @@ router.get('/search', authenticate, async (req, res) => {
 // GET /users/notifications
 router.get('/notifications', authenticate, async (req, res) => {
     try {
-        const userId = req.user.id;
+        const userId = req.user._id;
         const page = parseInt(req.query.page) || 1;
         const limit = parseInt(req.query.limit) || 20;
         const skip = (page - 1) * limit;
 
         const notifications = await Notification.find({ receiver: userId })
             .populate('sender', 'username')
-            .populate('event')
+            .populate({
+                path: 'event',
+                populate: {
+                    path: 'parkId',
+                    select: 'parkName', // Only retrieve parkName to limit data transfer
+                },
+            })
             .sort({ createdAt: -1 })
             .skip(skip)
             .limit(limit);
@@ -117,10 +123,10 @@ router.get('/notifications', authenticate, async (req, res) => {
 // ============== Notif routes ==============
 
 // DELETE /users/notifications/:id
-router.delete('/notifications/:id', authenticate, async (req, res) => {
+router.delete('/notifications/:_id', authenticate, async (req, res) => {
     try {
-        const userId = req.user.id;
-        const notificationId = req.params.id;
+        const userId = req.user._id;
+        const notificationId = req.params._id;
 
         // Find the notification to ensure it belongs to the authenticated user
         const notification = await Notification.findById(notificationId);
@@ -148,10 +154,10 @@ router.delete('/notifications/:id', authenticate, async (req, res) => {
 });
 
 // Route to mark a notification as read
-router.post('/notifications/:id/read', authenticate, async (req, res) => {
+router.post('/notifications/:_id/read', authenticate, async (req, res) => {
     try {
-        const notificationId = req.params.id;
-        const userId = req.user.id;
+        const notificationId = req.params._id;
+        const userId = req.user._id;
 
         // Validate notificationId
         if (!mongoose.Types.ObjectId.isValid(notificationId)) {
@@ -179,11 +185,15 @@ router.post('/notifications/:id/read', authenticate, async (req, res) => {
     }
 });
 
+module.exports = router;
+
+
 // ============== Other routes ==============
 
 // Route to get a user by ID
-router.get("/:id", async (req, res) => {
-    const userId = req.params.id;
+router.get("/:_id", async (req, res) => {
+    console.log("_ID:", req.params._id);
+    const userId = req.params._id;
 
     try {
         const user = await User.findById(userId)
@@ -207,11 +217,10 @@ router.get("/:id", async (req, res) => {
     }
 });
 
-
 // Route to remove a friend
-router.post('/:id/remove-friend', authenticate, async (req, res) => {
-    const userId = req.user.id;
-    const friendId = req.params.id;
+router.post('/:_id/remove-friend', authenticate, async (req, res) => {
+    const userId = req.user._id;
+    const friendId = req.params._id;
 
     // Validate that friendId is a valid ObjectId
     if (!mongoose.Types.ObjectId.isValid(friendId)) {
@@ -242,9 +251,9 @@ router.post('/:id/remove-friend', authenticate, async (req, res) => {
         }
 
         // Remove friendId from user's friends array
-        user.friends = user.friends.filter(id => id.toString() !== friendId);
+        user.friends = user.friends.filter(_id => _id.toString() !== friendId);
         // Remove userId from friend's friend array
-        friend.friends = friend.friends.filter(id => id.toString() !== userId);
+        friend.friends = friend.friends.filter(_id => _id.toString() !== userId);
 
         await Promise.all([user.save(), friend.save()]);
     } catch (error) {
@@ -254,8 +263,8 @@ router.post('/:id/remove-friend', authenticate, async (req, res) => {
 });
 
 // Route to remove a dog from the user's dogId array
-router.delete('/removeDog/:id/:dogId', async (req, res) => {
-    const { id, dogId } = req.params;
+router.delete('/removeDog/:_id/:dogId', async (req, res) => {
+    const { _id, dogId } = req.params;
 
     try {
         // Ensure dogId is a valid ObjectId
@@ -263,7 +272,7 @@ router.delete('/removeDog/:id/:dogId', async (req, res) => {
 
         // Update the user's dogId array by pulling the specified dogId
         const updatedUser = await User.findByIdAndUpdate(
-            id,
+            _id,
             { $pull: { dogId: dogObjectId } },
             { new: true, runValidators: true }
         );
@@ -280,7 +289,7 @@ router.delete('/removeDog/:id/:dogId', async (req, res) => {
 });
 
 // Route to edit a user using the :id parameter in the URL
-router.put('/editUser/:id', authenticate, async (req, res) => {
+router.put('/editUser/:_id', authenticate, async (req, res) => {
     const { error } = partialUserValidation(req.body);
 
     if (error) {
@@ -288,12 +297,12 @@ router.put('/editUser/:id', authenticate, async (req, res) => {
         return res.status(400).send({ message: error.errors[0].message });
     }
 
-    const id = req.params.id;
+    const _id = req.params._id;
     const { username, email, password, parkId, dogId, friends, eventId } = req.body;
 
     if (username) {
         const user = await User.findOne({ username });
-        if (user && user._id.toString() !== id) {
+        if (user && user._id.toString() !== _id) {
             return res.status(409).send({ message: "Username is taken, pick another" });
         }
     }
@@ -324,7 +333,7 @@ router.put('/editUser/:id', authenticate, async (req, res) => {
     }
 
     User.findByIdAndUpdate(
-        id,
+        _id,
         { $set: updateFields },
         { new: true, runValidators: true },
         (err, updatedUser) => {
@@ -340,9 +349,9 @@ router.put('/editUser/:id', authenticate, async (req, res) => {
 });
 
 // Route to send a friend request
-router.post('/:id/send-friend-request', authenticate, async (req, res) => {
-    const userId = req.user.id;
-    const friendId = req.params.id;
+router.post('/:_id/send-friend-request', authenticate, async (req, res) => {
+    const userId = req.user._id;
+    const friendId = req.params._id;
 
     // Validate that friendId is a valid ObjectId
     if (!mongoose.Types.ObjectId.isValid(friendId)) {
@@ -407,9 +416,9 @@ router.post('/:id/send-friend-request', authenticate, async (req, res) => {
 });
 
 // Route to accept a friend request
-router.post('/:id/accept-friend-request', authenticate, async (req, res) => {
-    const userId = req.user.id;
-    const friendId = req.params.id;
+router.post('/:_id/accept-friend-request', authenticate, async (req, res) => {
+    const userId = req.user._id;
+    const friendId = req.params._id;
 
     // Validate that friendId is a valid ObjectId
     if (!mongoose.Types.ObjectId.isValid(friendId)) {
@@ -442,7 +451,7 @@ router.post('/:id/accept-friend-request', authenticate, async (req, res) => {
         }
 
         // Remove friendId from user's friendRequests array
-        user.friendRequests = user.friendRequests.filter(id => id.toString() !== friendId);
+        user.friendRequests = user.friendRequests.filter(_id => _id.toString() !== friendId);
 
         await Promise.all([user.save(), friend.save()]);
 
@@ -454,9 +463,9 @@ router.post('/:id/accept-friend-request', authenticate, async (req, res) => {
 });
 
 // Route to decline a friend request
-router.post('/:id/decline-friend-request', authenticate, async (req, res) => {
-    const userId = req.user.id;
-    const friendId = req.params.id;
+router.post('/:_id/decline-friend-request', authenticate, async (req, res) => {
+    const userId = req.user._id;
+    const friendId = req.params._id;
 
     // Validate that friendId is a valid ObjectId
     if (!mongoose.Types.ObjectId.isValid(friendId)) {
@@ -471,7 +480,7 @@ router.post('/:id/decline-friend-request', authenticate, async (req, res) => {
         }
 
         // Remove friendId from user's friendRequests array
-        user.friendRequests = user.friendRequests.filter(id => id.toString() !== friendId);
+        user.friendRequests = user.friendRequests.filter(_id => _id.toString() !== friendId);
 
         await user.save();
 
@@ -483,9 +492,9 @@ router.post('/:id/decline-friend-request', authenticate, async (req, res) => {
 });
 
 // Route to cancel a friend request
-router.post('/:id/cancel-friend-request', authenticate, async (req, res) => {
-    const userId = req.user.id;
-    const recipientId = req.params.id;
+router.post('/:_id/cancel-friend-request', authenticate, async (req, res) => {
+    const userId = req.user._id;
+    const recipientId = req.params._id;
 
     // Validate recipientId
     if (!mongoose.Types.ObjectId.isValid(recipientId)) {
@@ -508,7 +517,7 @@ router.post('/:id/cancel-friend-request', authenticate, async (req, res) => {
         }
 
         // Remove userId from recipient's friendRequests array
-        recipient.friendRequests = recipient.friendRequests.filter(id => id.toString() !== userId);
+        recipient.friendRequests = recipient.friendRequests.filter(_id => _id.toString() !== userId);
 
         await recipient.save();
 
@@ -518,6 +527,5 @@ router.post('/:id/cancel-friend-request', authenticate, async (req, res) => {
         res.status(500).json({ error: 'Server error' });
     }
 });
-
 
 module.exports = router;

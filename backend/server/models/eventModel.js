@@ -46,6 +46,7 @@ const eventSchema = new mongoose.Schema(
   { collection: "events" }
 );
 
+
 // TTL index to automatically delete documents after `expiresAt`
 eventSchema.index({ expiresAt: 1 }, { expireAfterSeconds: 0 });
 

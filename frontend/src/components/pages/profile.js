@@ -11,7 +11,7 @@ import EventsModal from '../ui/eventList';
 
 const Profile = () => {
     const navigate = useNavigate();
-    const { id } = useParams(); // Get user ID from URL params
+    const { _id } = useParams(); // Get user _id from URL params
     const [user, setUser] = useState(null);
     const [currentUser, setCurrentUser] = useState(null);
     const [isCurrentUser, setIsCurrentUser] = useState(false);
@@ -46,8 +46,8 @@ const Profile = () => {
             return;
         }
 
-        const currentUserId = userInfo.id || userInfo.sub;
-        const userId = id || currentUserId;
+        const currentUserId = userInfo._id;
+        const userId = _id || currentUserId;
 
         try {
             const [userResponse, currentUserResponse] = await Promise.all([
@@ -86,7 +86,7 @@ const Profile = () => {
 
     useEffect(() => {
         fetchUserData();
-    }, [id, navigate]);
+    }, [_id, navigate]);
 
     const updateUser = (updatedData) => {
         setUser({ ...user, ...updatedData });
@@ -328,7 +328,6 @@ const Profile = () => {
             />
         </div>
     );
-
 };
 
 export default Profile;
