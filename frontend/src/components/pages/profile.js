@@ -8,6 +8,8 @@ import ConfirmationModal from '../ui/confirmationModal';
 import Alert from '../ui/alert';
 import FriendsModal from '../ui/friendList';
 import EventsModal from '../ui/eventList';
+import { motion, AnimatePresence } from 'framer-motion';
+
 
 const Profile = () => {
     const navigate = useNavigate();
@@ -276,11 +278,11 @@ const Profile = () => {
     const handleMouseEnter = () => {
         setIsHovering(true);
     };
-    
+
     const handleMouseLeave = () => {
         setIsHovering(false);
     };
-    
+
 
     if (loading || !user || !currentUser) {
         return <div className="text-center text-lg text-gray-600">Loading...</div>;
@@ -303,67 +305,84 @@ const Profile = () => {
                 <div className="flex items-center relative -mb-20 ml-56">
                     {/* Profile Image */}
                     <div
-                        className="flex-shrink-0 relative mt-4 z-10"
+                        className="flex-shrink-0 relative mt-4 z-10 rounded-full"
                         onMouseEnter={handleMouseEnter}
                         onMouseLeave={handleMouseLeave}
                     >
-                        <div className="relative">
+                        <div className="relative rounded-full">
                             {user.image ? (
-                                <img
+                                <motion.img
                                     src={user.image}
                                     alt={`${user.username}'s profile`}
-                                    className={`w-48 h-48 qhd:w-52 qhd:h-52 rounded-full object-cover border-4 border-white shadow-lg transition duration-300 ${
-                                        isHovering && isCurrentUser ? 'blur-sm' : ''
-                                    }`}
+                                    className="w-48 h-48 qhd:w-52 qhd:h-52 rounded-full object-cover border-4 border-white shadow-lg"
+                                    animate={
+                                        isHovering && isCurrentUser
+                                            ? { filter: 'blur(4px)', opacity: 1 }
+                                            : { filter: 'blur(0px)', opacity: 1 }
+                                    }
+                                    transition={{ duration: 0.3 }}
                                 />
                             ) : (
-                                <div
-                                    className={`w-48 h-48 qhd:w-52 qhd:h-52 bg-gray-300 rounded-full flex items-center justify-center border-4 border-white shadow-lg transition duration-300 ${
-                                        isHovering && isCurrentUser ? 'blur-sm' : ''
-                                    }`}
+                                <motion.div
+                                    className="w-48 h-48 qhd:w-52 qhd:h-52 bg-gray-300 rounded-full flex items-center justify-center border-4 border-white shadow-lg"
+                                    animate={
+                                        isHovering && isCurrentUser
+                                            ? { filter: 'blur(4px)', opacity: 1 }
+                                            : { filter: 'blur(0px)', opacity: 1 }
+                                    }
+                                    transition={{ duration: 0.3 }}
                                 >
                                     <span className="text-gray-500 text-xl">No Image</span>
-                                </div>
+                                </motion.div>
                             )}
                             {/* Overlay Options */}
-                            {isCurrentUser && isHovering && (
-                                <div className="absolute inset-0 flex flex-col items-center justify-center">
-                                    <button
-                                        className="bg-white bg-opacity-80 hover:bg-opacity-100 text-gray-800 font-semibold py-2 px-4 rounded mb-2"
-                                        onClick={() =>
-                                            document.getElementById('profileImageInput').click()
-                                        }
+                            <AnimatePresence>
+                                {isCurrentUser && isHovering && (
+                                    <motion.div
+                                        className="absolute inset-0 flex flex-col items-center justify-center bg-white rounded-full bg-opacity-80"
+                                        initial={{ opacity: 0 }}
+                                        animate={{ opacity: .5 }}
+                                        exit={{ opacity: 0 }}
+                                        transition={{ duration: 0.3 }}
                                     >
-                                        Replace Image
-                                    </button>
-                                    {user.image && (
-                                        <button
-                                            className="bg-red-500 bg-opacity-80 hover:bg-opacity-100 text-white font-semibold py-2 px-4 rounded"
-                                            onClick={openDeleteModal}
+                                        <motion.button
+                                            className="bg-opacity-20 hover:bg-opacity-100 text-gray-800 font-semibold py-2 px-4 rounded mb-2"
+                                            whileHover={{ scale: 1.05 }}
+                                            onClick={() =>
+                                                document.getElementById('profileImageInput').click()
+                                            }
                                         >
-                                            Delete Image
-                                        </button>
-                                    )}
-                                    <input
-                                        type="file"
-                                        id="profileImageInput"
-                                        accept="image/*"
-                                        style={{ display: 'none' }}
-                                        onChange={handleImageChange}
-                                    />
-                                </div>
-                            )}
+                                            Replace Image
+                                        </motion.button>
+                                        {user.image && (
+                                            <motion.button
+                                                className="bg-opacity-80 hover:bg-opacity-100 text-gray-800 font-semibold py-2 px-4 rounded"
+                                                whileHover={{ scale: 1.05 }}
+                                                onClick={openDeleteModal}
+                                            >
+                                                Delete Image
+                                            </motion.button>
+                                        )}
+                                        <input
+                                            type="file"
+                                            id="profileImageInput"
+                                            accept="image/*"
+                                            style={{ display: 'none' }}
+                                            onChange={handleImageChange}
+                                        />
+                                    </motion.div>
+                                )}
+                            </AnimatePresence>
                         </div>
                     </div>
 
                     {/* User's name */}
                     <div>
-                        <h1 className="pl-16 mt-36 -ml-12 text-2xl qhd:text-4xl font-bold text-gray-800 border-l-emerald-100">
+                        <h1 className="pl-16 mt-36 -ml-12 text-2xl qhd:text-4xl font-bold text-gray-800">
                             {user.username}
                         </h1>
                         <p className="pl-16 -ml-12 text-gray-600 mt-2 text-sm">
-                            Member since:{' '}
-                            {new Date(user.createdAt).toLocaleDateString()}
+                            Member since: {new Date(user.createdAt).toLocaleDateString()}
                         </p>
                     </div>
 
@@ -446,7 +465,7 @@ const Profile = () => {
             <FriendsModal isOpen={isFriendsModalOpen} onClose={closeFriendsModal} />
             <EventsModal isOpen={isEventsModalOpen} onClose={closeEventsModal} />
 
-            {/* Confirmation Modal */}
+            {/* Confirmation Modals */}
             <ConfirmationModal
                 isOpen={isModalOpen}
                 title={modalContent.title}
@@ -455,7 +474,6 @@ const Profile = () => {
                 onCancel={() => setIsModalOpen(false)}
             />
 
-            {/* Delete Confirmation Modal */}
             <ConfirmationModal
                 isOpen={isDeleteModalOpen}
                 title="Delete Profile Picture"
