@@ -18,6 +18,10 @@ const Profile = () => {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
 
+    // State variables for profile picture upload
+    const [selectedImage, setSelectedImage] = useState(null);
+    const [uploading, setUploading] = useState(false);
+
     // Existing state variables
     const [isFriend, setIsFriend] = useState(false);
     const [isFriendRequestPending, setIsFriendRequestPending] = useState(false);
@@ -34,6 +38,7 @@ const Profile = () => {
     });
     const [isFriendsModalOpen, setIsFriendsModalOpen] = useState(false);
     const [isEventsModalOpen, setIsEventsModalOpen] = useState(false);
+    const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
 
     const fetchUserData = async () => {
         setLoading(true);
@@ -176,6 +181,78 @@ const Profile = () => {
         }
     };
 
+    const handleImageChange = (event) => {
+        if (event.target.files && event.target.files[0]) {
+            const file = event.target.files[0];
+            setSelectedImage(file);
+            handleImageUpload(file);
+        }
+    };
+
+    const handleImageUpload = async (file) => {
+        if (!file) {
+            return;
+        }
+        setUploading(true);
+        try {
+            const formData = new FormData();
+            formData.append('image', file);
+
+            // Upload the image to the server
+            const response = await apiClient.post('/users/uploadProfilePicture', formData, {
+                headers: {
+                    'Content-Type': 'multipart/form-data',
+                },
+            });
+
+            // Update the user's image URL
+            const newImageUrl = response.data.imageUrl;
+
+            // Update the user state with the new image
+            setUser((prevUser) => ({
+                ...prevUser,
+                image: newImageUrl,
+            }));
+
+            // Reset selected image
+            setSelectedImage(null);
+            setFeedbackMessage('Profile picture updated successfully');
+            setFeedbackType('success');
+        } catch (error) {
+            console.error('Error uploading profile picture:', error);
+            setFeedbackMessage('Error uploading profile picture');
+            setFeedbackType('error');
+        } finally {
+            setUploading(false);
+        }
+    };
+
+    // Function to handle the deletion of the profile picture
+    const handleDeleteProfilePicture = async () => {
+        setIsDeleteModalOpen(false);
+        try {
+            await apiClient.delete('/users/deleteProfilePicture');
+            // Update the user's profile image in the state
+            setUser((prevUser) => ({
+                ...prevUser,
+                image: undefined,
+                imageKey: undefined,
+            }));
+            setFeedbackMessage('Profile picture deleted successfully');
+            setFeedbackType('success');
+        } catch (error) {
+            console.error('Error deleting profile picture:', error);
+            setFeedbackMessage('Error deleting profile picture');
+            setFeedbackType('error');
+        }
+    };
+
+
+    // Function to open the delete confirmation modal
+    const openDeleteModal = () => {
+        setIsDeleteModalOpen(true);
+    };
+
     // Function to open the Friends modal
     const openFriendsModal = () => {
         setIsFriendsModalOpen(true);
@@ -216,9 +293,9 @@ const Profile = () => {
                 <div className="flex items-center relative -mb-20 ml-56">
                     {/* Profile Image */}
                     <div className="flex-shrink-0 relative mt-4 z-10">
-                        {user.profileImage ? (
+                        {user.image ? (
                             <img
-                                src={user.profileImage}
+                                src={user.image}
                                 alt={`${user.username}'s profile`}
                                 className="w-48 h-48 qhd:w-52 qhd:h-52 rounded-full object-cover border-4 border-white shadow-lg"
                             />
@@ -226,6 +303,72 @@ const Profile = () => {
                             <div className="w-48 h-48 qhd:w-52 qhd:h-52 bg-gray-300 rounded-full flex items-center justify-center border-4 border-white shadow-lg">
                                 <span className="text-gray-500 text-xl">No Image</span>
                             </div>
+                        )}
+
+                        {isCurrentUser && (
+                            <>
+                                {/* Edit Profile Picture Button */}
+                                <button
+                                    className="absolute bottom-2 right-2 bg-gray-800 hover:bg-gray-700 text-white rounded-full p-2 focus:outline-none"
+                                    onClick={() => document.getElementById('profileImageInput').click()}
+                                >
+                                    {/* Edit Icon */}
+                                    <svg
+                                        xmlns="http://www.w3.org/2000/svg"
+                                        className="h-6 w-6"
+                                        fill="none"
+                                        viewBox="0 0 24 24"
+                                        stroke="currentColor"
+                                    >
+                                        <path
+                                            strokeLinecap="round"
+                                            strokeLinejoin="round"
+                                            strokeWidth={2}
+                                            d="M15.232 5.232l3.536 3.536M16 13V7a2 2 0 00-2-2H7a2 2 0 00-2 2v9a2 2 0 002 2h6"
+                                        />
+                                    </svg>
+                                </button>
+                                <input
+                                    type="file"
+                                    id="profileImageInput"
+                                    accept="image/*"
+                                    style={{ display: 'none' }}
+                                    onChange={handleImageChange}
+                                />
+                                {/* Delete Profile Picture Button */}
+                                {user.image && (
+                                    <>
+                                        <button
+                                            className="absolute bottom-2 left-2 bg-red-500 hover:bg-red-600 text-white rounded-full p-2 focus:outline-none"
+                                            onClick={openDeleteModal}
+                                        >
+                                            {/* Delete Icon */}
+                                            <svg
+                                                xmlns="http://www.w3.org/2000/svg"
+                                                className="h-6 w-6"
+                                                fill="none"
+                                                viewBox="0 0 24 24"
+                                                stroke="currentColor"
+                                            >
+                                                <path
+                                                    strokeLinecap="round"
+                                                    strokeLinejoin="round"
+                                                    strokeWidth={2}
+                                                    d="M6 18L18 6M6 6l12 12"
+                                                />
+                                            </svg>
+                                        </button>
+                                        {/* Confirmation Modal */}
+                                        <ConfirmationModal
+                                            isOpen={isDeleteModalOpen}
+                                            title="Delete Profile Picture"
+                                            message="Are you sure you want to delete your profile picture?"
+                                            onConfirm={handleDeleteProfilePicture}
+                                            onCancel={() => setIsDeleteModalOpen(false)}
+                                        />
+                                    </>
+                                )}
+                            </>
                         )}
                     </div>
 
@@ -326,6 +469,17 @@ const Profile = () => {
                 onConfirm={modalContent.onConfirm}
                 onCancel={() => setIsModalOpen(false)}
             />
+
+            {/* Feedback Message for Profile Picture Upload */}
+            {feedbackMessage && feedbackType && (
+                <div className="fixed bottom-4 right-4">
+                    <Alert
+                        type={feedbackType}
+                        message={feedbackMessage}
+                        onClose={() => setFeedbackMessage('')}
+                    />
+                </div>
+            )}
         </div>
     );
 };

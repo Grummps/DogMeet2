@@ -62,8 +62,19 @@ const newUserSchema = new mongoose.Schema(
         ref: 'notifications',
       }
     ],
+    image: {
+      type: String, // URL of the image stored in S3
+      required: false,
+    },
+    imageKey: {
+      type: String,
+      required: false,
+    },
   },
-  { collection: "users" }
+  { 
+    collection: "users",
+    timestamps: true,
+  }
 );
 
 

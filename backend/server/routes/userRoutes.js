@@ -7,6 +7,9 @@ const { newUserValidation, partialUserValidation } = require('../models/userVali
 const { generateAccessToken } = require('../utilities/generateToken');
 const authenticate = require("../middleware/auth");
 const Notification = require("../models/notificationModel");
+const upload = require('../config/multerConfig');  // Import the Multer configuration
+const s3 = require('../config/s3Config');  // Import the S3 configuration
+const { v4: uuidv4 } = require('uuid');  // For generating unique file names
 
 // Route to delete all users
 router.post('/deleteAll', async (req, res) => {
@@ -117,6 +120,105 @@ router.get('/notifications', authenticate, async (req, res) => {
         res.status(500).json({ error: 'Failed to fetch notifications.' });
     }
 });
+
+// Route to upload profile picture
+router.post('/uploadProfilePicture', authenticate, upload.single('image'), async (req, res) => {
+    try {
+        const userId = req.user._id;
+
+        // Check if an image file is provided
+        if (!req.file) {
+            return res.status(400).json({ message: 'No image file provided.' });
+        }
+
+        // Retrieve the user's current image URL and key from the database
+        const user = await User.findById(userId);
+
+        if (!user) {
+            return res.status(404).json({ message: 'User not found.' });
+        }
+
+        // If the user already has an image, delete it from S3
+        if (user.imageKey) {
+            const deleteParams = {
+                Bucket: 'dogmeet', // Replace with your actual bucket name
+                Key: user.imageKey,
+            };
+
+            await s3.deleteObject(deleteParams).promise();
+            console.log(`Deleted old profile picture: ${user.imageKey}`);
+        }
+
+        // Prepare the file for S3 upload
+        const fileContent = req.file.buffer;
+        const fileExt = req.file.originalname.split('.').pop();
+        const fileName = `${uuidv4()}.${fileExt}`;
+        const newImageKey = `profilePictures/${fileName}`;
+
+        // Define S3 upload parameters
+        const uploadParams = {
+            Bucket: 'dogmeet', // Replace with your actual bucket name
+            Key: newImageKey,
+            Body: fileContent,
+            ContentType: req.file.mimetype,
+        };
+
+        // Upload the new file to S3
+        const s3Response = await s3.upload(uploadParams).promise();
+        const newImageUrl = s3Response.Location;
+
+        // Update the user's profile with the new image URL and key
+        user.image = newImageUrl;
+        user.imageKey = newImageKey;
+        await user.save();
+
+        res.status(200).json({ message: 'Profile picture updated successfully.', imageUrl: newImageUrl });
+    } catch (error) {
+        console.error('Error uploading profile picture:', error);
+        res.status(500).json({ message: 'Error uploading profile picture.' });
+    }
+});
+
+router.delete('/deleteProfilePicture', authenticate, async (req, res) => {
+    try {
+        const userId = req.user._id;
+
+        // Retrieve user's current image URL and key from DB
+        const user = await User.findById(userId);
+
+        if (!user) {
+            res.status(404).json({ message: 'User not found.' });
+        }
+
+        // Check if user has an image
+        if (user.imageKey) {
+            // Delete image from S3
+            const deleteParams = {
+                Bucket: 'dogmeet',
+                Key: user.imageKey,
+            }
+
+            await s3.deleteObject(deleteParams).promise();
+
+            // Remove image fields from the user document
+            user.image = undefined;
+            user.imageKey = undefined;
+            await user.save();
+
+            res.status(200).json({ message: 'Profile picture deleted successfully.' });
+
+        } else {
+            res.status(400).json({ message: 'No profile picture to delete.' });
+        }
+    } catch (error) {
+        console.error('Error deleting profile picture:', error);
+        res.status(500).json({ message: 'Error deleting profile picture.' });
+    }
+
+
+})
+
+
 
 // ============== Dynamic routes ==============
 
