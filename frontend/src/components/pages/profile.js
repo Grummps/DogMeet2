@@ -28,6 +28,7 @@ const Profile = () => {
     const [hasReceivedFriendRequest, setHasReceivedFriendRequest] = useState(false);
     const [feedbackMessage, setFeedbackMessage] = useState('');
     const [feedbackType, setFeedbackType] = useState(''); // 'success' or 'error'
+    const [isHovering, setIsHovering] = useState(false);
 
     // Modal states
     const [isModalOpen, setIsModalOpen] = useState(false);
@@ -272,6 +273,15 @@ const Profile = () => {
         setIsEventsModalOpen(false);
     };
 
+    const handleMouseEnter = () => {
+        setIsHovering(true);
+    };
+    
+    const handleMouseLeave = () => {
+        setIsHovering(false);
+    };
+    
+
     if (loading || !user || !currentUser) {
         return <div className="text-center text-lg text-gray-600">Loading...</div>;
     }
@@ -292,84 +302,58 @@ const Profile = () => {
                 {/* Profile image and username in a row */}
                 <div className="flex items-center relative -mb-20 ml-56">
                     {/* Profile Image */}
-                    <div className="flex-shrink-0 relative mt-4 z-10">
-                        {user.image ? (
-                            <img
-                                src={user.image}
-                                alt={`${user.username}'s profile`}
-                                className="w-48 h-48 qhd:w-52 qhd:h-52 rounded-full object-cover border-4 border-white shadow-lg"
-                            />
-                        ) : (
-                            <div className="w-48 h-48 qhd:w-52 qhd:h-52 bg-gray-300 rounded-full flex items-center justify-center border-4 border-white shadow-lg">
-                                <span className="text-gray-500 text-xl">No Image</span>
-                            </div>
-                        )}
-
-                        {isCurrentUser && (
-                            <>
-                                {/* Edit Profile Picture Button */}
-                                <button
-                                    className="absolute bottom-2 right-2 bg-gray-800 hover:bg-gray-700 text-white rounded-full p-2 focus:outline-none"
-                                    onClick={() => document.getElementById('profileImageInput').click()}
-                                >
-                                    {/* Edit Icon */}
-                                    <svg
-                                        xmlns="http://www.w3.org/2000/svg"
-                                        className="h-6 w-6"
-                                        fill="none"
-                                        viewBox="0 0 24 24"
-                                        stroke="currentColor"
-                                    >
-                                        <path
-                                            strokeLinecap="round"
-                                            strokeLinejoin="round"
-                                            strokeWidth={2}
-                                            d="M15.232 5.232l3.536 3.536M16 13V7a2 2 0 00-2-2H7a2 2 0 00-2 2v9a2 2 0 002 2h6"
-                                        />
-                                    </svg>
-                                </button>
-                                <input
-                                    type="file"
-                                    id="profileImageInput"
-                                    accept="image/*"
-                                    style={{ display: 'none' }}
-                                    onChange={handleImageChange}
+                    <div
+                        className="flex-shrink-0 relative mt-4 z-10"
+                        onMouseEnter={handleMouseEnter}
+                        onMouseLeave={handleMouseLeave}
+                    >
+                        <div className="relative">
+                            {user.image ? (
+                                <img
+                                    src={user.image}
+                                    alt={`${user.username}'s profile`}
+                                    className={`w-48 h-48 qhd:w-52 qhd:h-52 rounded-full object-cover border-4 border-white shadow-lg transition duration-300 ${
+                                        isHovering && isCurrentUser ? 'blur-sm' : ''
+                                    }`}
                                 />
-                                {/* Delete Profile Picture Button */}
-                                {user.image && (
-                                    <>
+                            ) : (
+                                <div
+                                    className={`w-48 h-48 qhd:w-52 qhd:h-52 bg-gray-300 rounded-full flex items-center justify-center border-4 border-white shadow-lg transition duration-300 ${
+                                        isHovering && isCurrentUser ? 'blur-sm' : ''
+                                    }`}
+                                >
+                                    <span className="text-gray-500 text-xl">No Image</span>
+                                </div>
+                            )}
+                            {/* Overlay Options */}
+                            {isCurrentUser && isHovering && (
+                                <div className="absolute inset-0 flex flex-col items-center justify-center">
+                                    <button
+                                        className="bg-white bg-opacity-80 hover:bg-opacity-100 text-gray-800 font-semibold py-2 px-4 rounded mb-2"
+                                        onClick={() =>
+                                            document.getElementById('profileImageInput').click()
+                                        }
+                                    >
+                                        Replace Image
+                                    </button>
+                                    {user.image && (
                                         <button
-                                            className="absolute bottom-2 left-2 bg-red-500 hover:bg-red-600 text-white rounded-full p-2 focus:outline-none"
+                                            className="bg-red-500 bg-opacity-80 hover:bg-opacity-100 text-white font-semibold py-2 px-4 rounded"
                                             onClick={openDeleteModal}
                                         >
-                                            {/* Delete Icon */}
-                                            <svg
-                                                xmlns="http://www.w3.org/2000/svg"
-                                                className="h-6 w-6"
-                                                fill="none"
-                                                viewBox="0 0 24 24"
-                                                stroke="currentColor"
-                                            >
-                                                <path
-                                                    strokeLinecap="round"
-                                                    strokeLinejoin="round"
-                                                    strokeWidth={2}
-                                                    d="M6 18L18 6M6 6l12 12"
-                                                />
-                                            </svg>
+                                            Delete Image
                                         </button>
-                                        {/* Confirmation Modal */}
-                                        <ConfirmationModal
-                                            isOpen={isDeleteModalOpen}
-                                            title="Delete Profile Picture"
-                                            message="Are you sure you want to delete your profile picture?"
-                                            onConfirm={handleDeleteProfilePicture}
-                                            onCancel={() => setIsDeleteModalOpen(false)}
-                                        />
-                                    </>
-                                )}
-                            </>
-                        )}
+                                    )}
+                                    <input
+                                        type="file"
+                                        id="profileImageInput"
+                                        accept="image/*"
+                                        style={{ display: 'none' }}
+                                        onChange={handleImageChange}
+                                    />
+                                </div>
+                            )}
+                        </div>
                     </div>
 
                     {/* User's name */}
@@ -378,7 +362,8 @@ const Profile = () => {
                             {user.username}
                         </h1>
                         <p className="pl-16 -ml-12 text-gray-600 mt-2 text-sm">
-                            Member since: {new Date(user.createdAt).toLocaleDateString()}
+                            Member since:{' '}
+                            {new Date(user.createdAt).toLocaleDateString()}
                         </p>
                     </div>
 
@@ -416,7 +401,7 @@ const Profile = () => {
                             )}
 
                             {/* Feedback Message */}
-                            {feedbackMessage && (
+                            {feedbackMessage && feedbackType && (
                                 <div className="mt-4">
                                     <Alert
                                         type={feedbackType}
@@ -470,7 +455,16 @@ const Profile = () => {
                 onCancel={() => setIsModalOpen(false)}
             />
 
-            {/* Feedback Message for Profile Picture Upload */}
+            {/* Delete Confirmation Modal */}
+            <ConfirmationModal
+                isOpen={isDeleteModalOpen}
+                title="Delete Profile Picture"
+                message="Are you sure you want to delete your profile picture?"
+                onConfirm={handleDeleteProfilePicture}
+                onCancel={() => setIsDeleteModalOpen(false)}
+            />
+
+            {/* Feedback Message */}
             {feedbackMessage && feedbackType && (
                 <div className="fixed bottom-4 right-4">
                     <Alert
