@@ -9,6 +9,8 @@ import Alert from '../ui/alert';
 import FriendsModal from '../ui/friendList';
 import EventsModal from '../ui/eventList';
 import { motion, AnimatePresence } from 'framer-motion';
+import Spinner from '../ui/spinner';
+import { ClipLoader } from 'react-spinners';
 
 
 const Profile = () => {
@@ -31,6 +33,7 @@ const Profile = () => {
     const [feedbackMessage, setFeedbackMessage] = useState('');
     const [feedbackType, setFeedbackType] = useState(''); // 'success' or 'error'
     const [isHovering, setIsHovering] = useState(false);
+    const [isNewImageLoaded, setIsNewImageLoaded] = useState(false);
 
     // Modal states
     const [isModalOpen, setIsModalOpen] = useState(false);
@@ -208,27 +211,46 @@ const Profile = () => {
                 },
             });
 
-            // Update the user's image URL
+            // Get the new image URL from the response
             const newImageUrl = response.data.imageUrl;
 
-            // Update the user state with the new image
-            setUser((prevUser) => ({
-                ...prevUser,
-                image: newImageUrl,
-            }));
+            // Preload the new image
+            const img = new Image();
+            img.src = newImageUrl;
 
-            // Reset selected image
-            setSelectedImage(null);
-            setFeedbackMessage('Profile picture updated successfully');
-            setFeedbackType('success');
+            img.onload = () => {
+                // Update the user state with the new image after it has fully loaded
+                setUser((prevUser) => ({
+                    ...prevUser,
+                    image: newImageUrl,
+                }));
+
+                setSelectedImage(null);
+                setFeedbackMessage('Profile picture updated successfully');
+                setFeedbackType('success');
+                setUploading(false);
+                // Set flag to trigger fade-in effect
+                setIsNewImageLoaded(true);
+
+                // Reset the flag after the fade-in effect completes
+                setTimeout(() => setIsNewImageLoaded(false), 500); // 500ms matches the transition duration
+            };
+
+            img.onerror = () => {
+                // Handle image loading error
+                console.error('Error loading the new profile picture.');
+                setFeedbackMessage('Error loading the new profile picture');
+                setFeedbackType('error');
+                setUploading(false);
+            };
         } catch (error) {
             console.error('Error uploading profile picture:', error);
             setFeedbackMessage('Error uploading profile picture');
             setFeedbackType('error');
-        } finally {
             setUploading(false);
         }
     };
+
 
     // Function to handle the deletion of the profile picture
     const handleDeleteProfilePicture = async () => {
@@ -302,10 +324,10 @@ const Profile = () => {
             {/* Profile content */}
             <div className="">
                 {/* Profile image and username in a row */}
-                <div className="flex items-center relative -mb-20 ml-56">
+                <div className="flex items-center relative -mb-20 ml-56 ">
                     {/* Profile Image */}
                     <div
-                        className="flex-shrink-0 relative mt-4 z-10 rounded-full"
+                        className="flex-shrink-0 relative mt-4 -mb-4 qhd:mt-4 z-10 rounded-full bg-gray-300 shadow-lg"
                         onMouseEnter={handleMouseEnter}
                         onMouseLeave={handleMouseLeave}
                     >
@@ -314,17 +336,16 @@ const Profile = () => {
                                 <motion.img
                                     src={user.image}
                                     alt={`${user.username}'s profile`}
-                                    className="w-48 h-48 qhd:w-52 qhd:h-52 rounded-full object-cover border-4 border-white shadow-lg"
-                                    animate={
-                                        isHovering && isCurrentUser
-                                            ? { filter: 'blur(4px)', opacity: 1 }
-                                            : { filter: 'blur(0px)', opacity: 1 }
-                                    }
-                                    transition={{ duration: 0.3 }}
+                                    className="w-48 h-48 qhd:w-52 qhd:h-52 rounded-full object-cover"
+                                    animate={{
+                                        filter: isHovering && isCurrentUser ? 'blur(4px)' : 'blur(0px)',
+                                        opacity: isNewImageLoaded ? [0, 1] : 1,
+                                    }}
+                                    transition={{ duration: isNewImageLoaded ? 0.5 : 0.3 }}
                                 />
                             ) : (
                                 <motion.div
-                                    className="w-48 h-48 qhd:w-52 qhd:h-52 bg-gray-300 rounded-full flex items-center justify-center border-4 border-white shadow-lg"
+                                    className="w-48 h-48 qhd:w-52 qhd:h-52 rounded-full flex items-center justify-center"
                                     animate={
                                         isHovering && isCurrentUser
                                             ? { filter: 'blur(4px)', opacity: 1 }
@@ -335,6 +356,19 @@ const Profile = () => {
                                     <span className="text-gray-500 text-xl">No Image</span>
                                 </motion.div>
                             )}
+
+                            {/* Loading Spinner */}
+                            {uploading && (
+                                <div className="absolute inset-0 flex items-center justify-center bg-white bg-opacity-75 rounded-full">
+                                    {/* Use Spinner component or ClipLoader */}
+                                    {/* If using custom Spinner */}
+                                    {/* <Spinner /> */}
+
+                                    {/* If using react-spinners ClipLoader */}
+                                    <ClipLoader color="#000" size={40} />
+                                </div>
+                            )}
+
                             {/* Overlay Options */}
                             <AnimatePresence>
                                 {isCurrentUser && isHovering && (
@@ -392,42 +426,31 @@ const Profile = () => {
                             {isFriend ? (
                                 <button
                                     onClick={removeFriend}
-                                    className="bg-red-500 hover:bg-red-600 text-white font-semibold py-2 px-4 rounded"
+                                    className="bg-red-500 hover:bg-red-600 text-white font-semibold py-2 mt-14 ml-10 px-4 rounded"
                                 >
                                     Remove Friend
                                 </button>
                             ) : isFriendRequestPending ? (
                                 <button
                                     onClick={openCancelFriendRequestModal}
-                                    className="bg-yellow-500 hover:bg-yellow-600 text-white font-semibold py-2 px-4 rounded"
+                                    className="bg-yellow-500 hover:bg-yellow-600 text-white font-semibold py-2 mt-14 ml-10 px-4 rounded"
                                 >
                                     Cancel Friend Request
                                 </button>
                             ) : hasReceivedFriendRequest ? (
                                 <button
                                     onClick={acceptFriendRequest}
-                                    className="bg-green-500 hover:bg-green-600 text-white font-semibold py-2 px-4 rounded"
+                                    className="bg-green-500 hover:bg-green-600 text-white font-semibold py-2 mt-14 ml-10 px-4 rounded"
                                 >
                                     Accept Friend Request
                                 </button>
                             ) : (
                                 <button
                                     onClick={sendFriendRequest}
-                                    className="bg-blue-500 hover:bg-blue-600 text-white font-semibold py-2 px-4 rounded"
+                                    className="bg-blue-500 hover:bg-blue-600 text-white font-semibold py-2 mt-14 ml-10 px-4 rounded"
                                 >
                                     Add Friend
                                 </button>
-                            )}
-
-                            {/* Feedback Message */}
-                            {feedbackMessage && feedbackType && (
-                                <div className="mt-4">
-                                    <Alert
-                                        type={feedbackType}
-                                        message={feedbackMessage}
-                                        onClose={() => setFeedbackMessage('')}
-                                    />
-                                </div>
                             )}
                         </div>
                     )}
@@ -437,13 +460,13 @@ const Profile = () => {
                         <div className="flex space-x-4 ml-auto mt-20">
                             <button
                                 onClick={openFriendsModal}
-                                className="bg-blue-500 hover:bg-blue-600 text-white font-semibold py-2 px-4 rounded"
+                                className="bg-blue-500 hover:bg-blue-600 text-white font-semibold py-2 px-4 mt-14 ml-10 rounded"
                             >
                                 Friends
                             </button>
                             <button
                                 onClick={openEventsModal}
-                                className="bg-blue-500 hover:bg-blue-600 text-white font-semibold py-2 px-4 rounded"
+                                className="bg-blue-500 hover:bg-blue-600 text-white font-semibold py-2 px-4 mt-14 ml-10 rounded"
                             >
                                 Your Events
                             </button>
@@ -452,7 +475,7 @@ const Profile = () => {
                 </div>
 
                 {/* Dog Form or User's Dogs */}
-                <div className="mt-10 px-4 ml-56">
+                <div className="mt-14 px-4 ml-56">
                     {isCurrentUser ? (
                         <DogForm updateUser={updateUser} />
                     ) : (
@@ -481,17 +504,6 @@ const Profile = () => {
                 onConfirm={handleDeleteProfilePicture}
                 onCancel={() => setIsDeleteModalOpen(false)}
             />
-
-            {/* Feedback Message */}
-            {feedbackMessage && feedbackType && (
-                <div className="fixed bottom-4 right-4">
-                    <Alert
-                        type={feedbackType}
-                        message={feedbackMessage}
-                        onClose={() => setFeedbackMessage('')}
-                    />
-                </div>
-            )}
         </div>
     );
 };
