@@ -7,7 +7,7 @@ const Alert = ({ message, onClose }) => {
       role="alert"
     >
       <p className="flex-1">
-        {message} <span className="font-semibold">successfully</span>.
+        {message} <span className="font-semibold"></span>
       </p>
       {onClose && (
         <button
