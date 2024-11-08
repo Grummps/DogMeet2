@@ -7,6 +7,7 @@ import {
   ArrowLeftOnRectangleIcon,
   BellIcon,
   TrashIcon,
+  ChatBubbleLeftRightIcon,
 } from "@heroicons/react/24/solid";
 import { useNavigate, useLocation, Link } from "react-router-dom";
 import getUserInfo from "../../utilities/decodeJwt";
@@ -25,6 +26,7 @@ export default function Navbar() {
   const [friendRequests, setFriendRequests] = useState([]);
   const [friendRequestNotifications, setFriendRequestNotifications] = useState([]);
   const [eventNotifications, setEventNotifications] = useState([]);
+  const [messageNotifications, setMessageNotifications] = useState([]);
   const [unreadCount, setUnreadCount] = useState(0);
   const [showDropdown, setShowDropdown] = useState(false);
   const dropdownRef = useRef(null);
@@ -69,9 +71,13 @@ export default function Navbar() {
         const eventNotifs = allNotifications.filter(
           (n) => n.type === 'event_created'
         );
+        const messageNotifs = allNotifications.filter(
+          (n) => n.type === 'message_received'
+        );
 
         setFriendRequestNotifications(friendRequestsNotifs);
         setEventNotifications(eventNotifs);
+        setMessageNotifications(messageNotifs);
 
         // Calculate unread notifications count (combined)
         const unread = allNotifications.filter((n) => !n.read).length;
@@ -170,6 +176,23 @@ export default function Navbar() {
     try {
       await apiClient.post(`/users/notifications/${notificationId}/read`);
       setEventNotifications((prev) =>
+        prev.map((notif) =>
+          notif._id === notificationId ? { ...notif, read: true } : notif
+        )
+      );
+      setUnreadCount((prev) => Math.max(prev - 1, 0));
+    } catch (error) {
+      console.error("Error marking notification as read:", error);
+      setFeedbackMessage("Failed to mark notification as read.");
+      setFeedbackType("error");
+    }
+  };
+
+  // Function to mark a message notification as read
+  const markMessageNotificationAsRead = async (notificationId) => {
+    try {
+      await apiClient.post(`/users/notifications/${notificationId}/read`);
+      setMessageNotifications((prev) =>
         prev.map((notif) =>
           notif._id === notificationId ? { ...notif, read: true } : notif
         )
@@ -296,6 +319,15 @@ export default function Navbar() {
                 >
                   Events
                 </button>
+                <button
+                  className={`flex-1 py-2 ${activeTab === 'message_notifications'
+                    ? 'border-b-2 border-blue-500 text-blue-500'
+                    : 'text-gray-500'
+                    }`}
+                  onClick={() => setActiveTab('message_notifications')}
+                >
+                  Messages
+                </button>
               </div>
 
               {/* Tab Content */}
@@ -353,7 +385,7 @@ export default function Navbar() {
                       <div className="text-gray-500">No new friend requests.</div>
                     )}
                   </div>
-                ) : (
+                ) : activeTab === 'event_notifications' ? (
                   <div>
                     {eventNotifications.length > 0 ? (
                       <ul>
@@ -396,6 +428,37 @@ export default function Navbar() {
                       </ul>
                     ) : (
                       <div className="text-gray-500">No new event notifications.</div>
+                    )}
+                  </div>
+                ) : (
+                  // Message Notifications Tab
+                  <div>
+                    {messageNotifications.length > 0 ? (
+                      <ul>
+                        {messageNotifications.map((notification) => (
+                          <li key={notification._id} className="px-2 py-1 border-b">
+                            <div className="flex items-center justify-between">
+                              <Link
+                                to={`/profile/${notification.sender._id}`}
+                                className="text-blue-600 no-underline"
+                                onClick={() => markMessageNotificationAsRead(notification._id)}
+                              >
+                                {notification.sender.username} sent you a message.
+                              </Link>
+                              {/* Delete Button */}
+                              <button
+                                onClick={() => deleteNotification(notification._id)}
+                                className="text-gray-500 hover:text-gray-700"
+                                title="Delete Notification"
+                              >
+                                <TrashIcon className="h-5 w-5" />
+                              </button>
+                            </div>
+                          </li>
+                        ))}
+                      </ul>
+                    ) : (
+                      <div className="text-gray-500">No new messages.</div>
                     )}
                   </div>
                 )}

@@ -3,7 +3,7 @@ const mongoose = require('mongoose');
 const notificationSchema = new mongoose.Schema({
     type: {
         type: String,
-        enum: ['friend_request', 'event_created'],
+        enum: ['friend_request', 'event_created', 'message_received'],
         required: true,
     },
     sender: {
@@ -18,6 +18,10 @@ const notificationSchema = new mongoose.Schema({
         type: mongoose.Schema.Types.ObjectId,
         ref: 'events',
     },
+    message: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'messages',
+    },
     createdAt: {
         type: Date,
         default: Date.now,
@@ -27,6 +31,5 @@ const notificationSchema = new mongoose.Schema({
         default: false,
     },
 });
-
 
 module.exports = mongoose.model('notifications', notificationSchema);

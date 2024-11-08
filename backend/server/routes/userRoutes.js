@@ -110,6 +110,7 @@ router.get('/notifications', authenticate, async (req, res) => {
                     select: 'parkName', // Only retrieve parkName to limit data transfer
                 },
             })
+            .populate('message', 'content _id')
             .sort({ createdAt: -1 })
             .skip(skip)
             .limit(limit);

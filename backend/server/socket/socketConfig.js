@@ -3,6 +3,7 @@ const jwt = require('jsonwebtoken');
 const Message = require('../models/messageModel'); // Adjust the path as necessary
 const getOrCreateConversation = require('./getOrCreateConvo');
 const checkFriendship = require('../utilities/checkFriendship'); // Adjust the path as necessary
+const Notification = require('../models/notificationModel');
 
 // Function to initialize Socket.IO
 function initializeSocket(httpServer) {
@@ -15,6 +16,8 @@ function initializeSocket(httpServer) {
     });
 
     const onlineUsers = new Map();
+    const usersInConversations = new Map(); // Key: userId, Value: Set of conversationIds
+
 
     // Socket.IO authentication middleware
     io.use(async (socket, next) => {
@@ -53,6 +56,22 @@ function initializeSocket(httpServer) {
         // Join user to a room based on their user ID
         socket.join(userId);
 
+        // Initialize user's conversation set
+        if (!usersInConversations.has(userId)) {
+            usersInConversations.set(userId, new Set());
+        }
+
+        socket.on('joinConversation', ({ conversationId }) => {
+            const convSet = usersInConversations.get(userId);
+            convSet.add(conversationId.toString());
+        });
+
+        socket.on('leaveConversation', ({ conversationId }) => {
+            const convSet = usersInConversations.get(userId);
+            convSet.delete(conversationId.toString());
+        });
+
+
         // Handle sendMessage event
         socket.on('sendMessage', async (data) => {
             const { receiverId, content } = data;
@@ -82,11 +101,45 @@ function initializeSocket(httpServer) {
                 conversation.updatedAt = Date.now();
                 await conversation.save();
 
-                // Emit message to receiver if they're connected
-                const recipientSocketId = onlineUsers.get(receiverId.toString());
+                // Check if the recipient is currently viewing the conversation
+                const recipientIdStr = receiverId.toString();
+                const isRecipientInConversation =
+                    usersInConversations.has(recipientIdStr) &&
+                    usersInConversations.get(recipientIdStr).has(conversation._id.toString());
 
-                if (recipientSocketId) {
-                    io.to(recipientSocketId).emit('receiveMessage', message);
+                // Create a notification for the receiver
+                if (!isRecipientInConversation) {
+                    // Recipient is not viewing the conversation
+                    // Check for existing unread notification
+                    let notification = await Notification.findOne({
+                        type: 'message_received',
+                        sender: senderId,
+                        receiver: receiverId,
+                        read: false,
+                    });
+
+                    if (!notification) {
+                        // Create a new notification
+                        notification = new Notification({
+                            type: 'message_received',
+                            sender: senderId,
+                            receiver: receiverId,
+                            message: message._id,
+                        });
+                    } else {
+                        // Update the existing notification's timestamp
+                        notification.createdAt = Date.now();
+                    }
+
+                    await notification.save();
+
+
+                    // Emit message to receiver if they're connected
+                    const recipientSocketId = onlineUsers.get(recipientIdStr);
+
+                    if (recipientSocketId) {
+                        io.to(recipientSocketId).emit('receiveMessage', message);
+                    }
                 }
 
                 // Emit message to sender (confirmation)
@@ -104,10 +157,22 @@ function initializeSocket(httpServer) {
                     { _id: { $in: messageIds } },
                     { $set: { readStatus: true } }
                 );
+
+                // Mark related notifications as read
+                await Notification.updateMany(
+                    {
+                        type: 'message_received',
+                        sender: { $in: messageIds.map((id) => id.senderId) },
+                        receiver: userId,
+                        read: false,
+                    },
+                    { $set: { read: true } }
+                );
             } catch (error) {
                 console.error('Error in markMessagesRead:', error);
             }
         });
+
 
         // Handle disconnect event
         socket.on('disconnect', () => {
@@ -119,7 +184,4 @@ function initializeSocket(httpServer) {
     return io;
 }
 
-module.exports = { 
-    initializeSocket,
-    io,
-};
+module.exports = initializeSocket;
