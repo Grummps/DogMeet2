@@ -1,54 +1,53 @@
-import React, { useState, useEffect } from 'react';
-import { io } from 'socket.io-client';
+import React, { useState, useEffect, useContext } from 'react';
+import { SocketContext } from './SocketContext'; // Adjust the path accordingly
 
-const ChatWindow = ({ receiverId, onClose }) => {
-    const [socket, setSocket] = useState(null);
+const ChatWindow = ({ receiverId, onClose, conversationId, otherUserId, currentUser }) => {
+    const socket = useContext(SocketContext);
     const [messages, setMessages] = useState([]);
     const [input, setInput] = useState('');
 
     useEffect(() => {
-        // Initialize Socket.IO client
-        const newSocket = io('http://localhost:8081', {
-            auth: {
-                token: localStorage.getItem('accessToken'),
-            },
-        });
-
-        setSocket(newSocket);
+        if (!socket) return;
 
         // Listen for incoming messages
-        newSocket.on('receiveMessage', (message) => {
-            if (message.senderId === receiverId) {
+        socket.on('receiveMessage', (message) => {
+            if (message.senderId === receiverId || message.receiverId === receiverId) {
                 setMessages((prevMessages) => [...prevMessages, message]);
             }
         });
 
         return () => {
-            newSocket.disconnect();
+            socket.off('receiveMessage');
         };
-    }, [receiverId]);
+    }, [socket, receiverId]);
 
     useEffect(() => {
-        if (socket && conversationId) {
-            socket.emit('joinConversation', { conversationId });
+        if (socket && conversationId && otherUserId) {
+            socket.emit('joinConversation', { conversationId, otherUserId });
 
             return () => {
                 socket.emit('leaveConversation', { conversationId });
             };
         }
-    }, [socket, conversationId]);
+    }, [socket, conversationId, otherUserId]);
 
+    // Add the markMessagesRead useEffect here
     useEffect(() => {
-        if (isChatOpen && messages.length > 0) {
+        const isChatOpen = true; // Since this component represents the open chat
+
+        if (isChatOpen && messages.length > 0 && socket) {
             const unreadMessageIds = messages
                 .filter((msg) => msg.receiverId === currentUser._id && !msg.readStatus)
                 .map((msg) => msg._id);
 
-            if (unreadMessageIds.length > 0 && socket) {
-                socket.emit('markMessagesRead', unreadMessageIds);
+            if (unreadMessageIds.length > 0) {
+                socket.emit('markMessagesRead', {
+                    messageIds: unreadMessageIds,
+                    senderId: otherUserId,
+                });
             }
         }
-    }, [isChatOpen, messages, currentUser, socket]);
+    }, [messages, currentUser, socket, otherUserId]);
 
 
     const sendMessage = () => {
@@ -56,7 +55,7 @@ const ChatWindow = ({ receiverId, onClose }) => {
             const messageData = {
                 receiverId,
                 content: input,
-                conversationId: 'some_conversation_id', // You need to manage or create conversation IDs
+                conversationId,
             };
 
             socket.emit('sendMessage', messageData);
@@ -64,7 +63,11 @@ const ChatWindow = ({ receiverId, onClose }) => {
             // Optimistically update UI
             setMessages((prevMessages) => [
                 ...prevMessages,
-                { ...messageData, senderId: 'your_user_id', timestamp: new Date() },
+                {
+                    ...messageData,
+                    senderId: currentUser._id,
+                    timestamp: new Date(),
+                },
             ]);
 
             setInput('');
@@ -78,7 +81,8 @@ const ChatWindow = ({ receiverId, onClose }) => {
                 {messages.map((msg, index) => (
                     <div
                         key={index}
-                        className={`message ${msg.senderId === 'your_user_id' ? 'sent' : 'received'}`}
+                        className={`message ${msg.senderId === currentUser._id ? 'sent' : 'received'
+                            }`}
                     >
                         {msg.content}
                     </div>

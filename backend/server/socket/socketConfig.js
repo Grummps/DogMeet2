@@ -61,16 +61,32 @@ function initializeSocket(httpServer) {
             usersInConversations.set(userId, new Set());
         }
 
-        socket.on('joinConversation', ({ conversationId }) => {
+        // Handle joinConversation event
+        socket.on('joinConversation', async ({ conversationId, otherUserId }) => {
             const convSet = usersInConversations.get(userId);
             convSet.add(conversationId.toString());
+
+            try {
+                // Mark related notifications as read
+                await Notification.updateMany(
+                    {
+                        type: 'message_received',
+                        sender: otherUserId,
+                        receiver: userId,
+                        read: false,
+                    },
+                    { $set: { read: true } }
+                );
+            } catch (error) {
+                console.error('Error marking notifications as read in joinConversation:', error);
+            }
         });
 
+        // Handle leaveConversation event
         socket.on('leaveConversation', ({ conversationId }) => {
             const convSet = usersInConversations.get(userId);
             convSet.delete(conversationId.toString());
         });
-
 
         // Handle sendMessage event
         socket.on('sendMessage', async (data) => {
@@ -101,15 +117,20 @@ function initializeSocket(httpServer) {
                 conversation.updatedAt = Date.now();
                 await conversation.save();
 
-                // Check if the recipient is currently viewing the conversation
+                // Emit message to receiver if they're connected
                 const recipientIdStr = receiverId.toString();
+                const recipientSocketId = onlineUsers.get(recipientIdStr);
+                if (recipientSocketId) {
+                    io.to(recipientSocketId).emit('receiveMessage', message);
+                }
+
+                // Check if the recipient is currently viewing the conversation
                 const isRecipientInConversation =
                     usersInConversations.has(recipientIdStr) &&
                     usersInConversations.get(recipientIdStr).has(conversation._id.toString());
 
-                // Create a notification for the receiver
+                // Create a notification for the receiver if they're not in the conversation
                 if (!isRecipientInConversation) {
-                    // Recipient is not viewing the conversation
                     // Check for existing unread notification
                     let notification = await Notification.findOne({
                         type: 'message_received',
@@ -133,12 +154,13 @@ function initializeSocket(httpServer) {
 
                     await notification.save();
 
+                    // Populate the sender field before emitting
+                    const populatedNotification = await Notification.findById(notification._id)
+                        .populate('sender', 'username');
 
-                    // Emit message to receiver if they're connected
-                    const recipientSocketId = onlineUsers.get(recipientIdStr);
-
+                    // Emit new notification event to receiver if they're connected
                     if (recipientSocketId) {
-                        io.to(recipientSocketId).emit('receiveMessage', message);
+                        io.to(recipientSocketId).emit('newNotification', populatedNotification);
                     }
                 }
 
@@ -150,8 +172,8 @@ function initializeSocket(httpServer) {
             }
         });
 
-        // Handle markMessagesRead event
-        socket.on('markMessagesRead', async (messageIds) => {
+        // Handle markMessagesRead event (optional, if still used)
+        socket.on('markMessagesRead', async ({ messageIds, senderId }) => {
             try {
                 await Message.updateMany(
                     { _id: { $in: messageIds } },
@@ -162,7 +184,7 @@ function initializeSocket(httpServer) {
                 await Notification.updateMany(
                     {
                         type: 'message_received',
-                        sender: { $in: messageIds.map((id) => id.senderId) },
+                        sender: senderId,
                         receiver: userId,
                         read: false,
                     },
@@ -173,11 +195,11 @@ function initializeSocket(httpServer) {
             }
         });
 
-
         // Handle disconnect event
         socket.on('disconnect', () => {
             console.log(`User disconnected: ${socket.id}`);
             onlineUsers.delete(userId.toString());
+            usersInConversations.delete(userId);
         });
     });
 

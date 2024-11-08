@@ -15,9 +15,12 @@ import apiClient from "../../utilities/apiClient";
 import Alert from "./alert"; // Ensure this path is correct
 import { useContext } from "react";
 import { UserContext } from "../contexts/userContext";
+import { SocketContext } from "../contexts/socketContext";
+
 
 export default function Navbar() {
   const { user, setUser } = useContext(UserContext);
+  const socket = useContext(SocketContext);
 
   const location = useLocation();
   const navigate = useNavigate();
@@ -107,6 +110,28 @@ export default function Navbar() {
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
+
+  // Listen for new notifications via socket
+  useEffect(() => {
+    if (!socket) return; // Wait until the socket is initialized
+
+    socket.on('newNotification', (notification) => {
+      // Update your notifications state based on the notification type
+      if (notification.type === 'friend_request') {
+        setFriendRequestNotifications((prev) => [notification, ...prev]);
+      } else if (notification.type === 'event_created') {
+        setEventNotifications((prev) => [notification, ...prev]);
+      } else if (notification.type === 'message_received') {
+        setMessageNotifications((prev) => [notification, ...prev]);
+      }
+      setUnreadCount((prev) => prev + 1);
+    });
+
+    // Clean up the event listener when the component unmounts or socket changes
+    return () => {
+      socket.off('newNotification');
+    };
+  }, [socket]);
 
   // Function to accept a friend request
   const acceptFriendRequest = async (friendId, notificationId) => {

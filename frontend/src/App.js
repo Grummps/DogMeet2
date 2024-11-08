@@ -15,12 +15,13 @@ import ProtectedRoute from "./components/ui/protectedRoute";
 import ParksList from "./components/pages/parkList";
 import ParkDetail from "./components/pages/parkDetail";
 import useRefreshTokenOnActivity from "./components/hooks/refreshTokenOnActivity";
+import { SocketProvider } from "./components/contexts/socketContext";
 
 import L from 'leaflet';
 import markerIcon2x from 'leaflet/dist/images/marker-icon-2x.png';
 import markerIcon from 'leaflet/dist/images/marker-icon.png';
 import markerShadow from 'leaflet/dist/images/marker-shadow.png';
-import { TokenRefreshProvider } from "./components/contexts/tokenRefreshContext";
+
 
 // Fix Leaflet's default icon paths
 delete L.Icon.Default.prototype._getIconUrl;
@@ -37,31 +38,31 @@ const App = () => {
 
   return (
     <div className="bg-blue-50">
+      <SocketProvider>
+        <Navbar />
+        <Routes>
+          <Route exact path="/" element={<LandingPage />} />
+          <Route exact path="/home" element={<HomePage />} />
+          <Route exact path="/login" element={<Login />} />
+          <Route exact path="/signup" element={<Signup />} />
+          <Route path="/profile/:_id?" element={<Profile />} />
+          <Route path="/parks" element={<ParksList />} />
+          <Route path="/parks/:_id" element={<ParkDetail />} />
 
-      <Navbar />
-      <Routes>
-        <Route exact path="/" element={<LandingPage />} />
-        <Route exact path="/home" element={<HomePage />} />
-        <Route exact path="/login" element={<Login />} />
-        <Route exact path="/signup" element={<Signup />} />
-        <Route path="/profile/:_id?" element={<Profile />} />
-        <Route path="/parks" element={<ParksList />} />
-        <Route path="/parks/:_id" element={<ParkDetail />} />
+          {/* Protected Admin Dashboard Route */}
+          <Route
+            path="/admin"
+            element={
+              <ProtectedRoute isAdminOnly={true}>
+                <AdminDashboard />
+              </ProtectedRoute>
+            }
+          />
 
-        {/* Protected Admin Dashboard Route */}
-        <Route
-          path="/admin"
-          element={
-            <ProtectedRoute isAdminOnly={true}>
-              <AdminDashboard />
-            </ProtectedRoute>
-          }
-        />
-
-        {/* Unauthorized Access Route */}
-        <Route path="/unauthorized" element={<Unauthorized />} />
-      </Routes>
-
+          {/* Unauthorized Access Route */}
+          <Route path="/unauthorized" element={<Unauthorized />} />
+        </Routes>
+      </SocketProvider>
     </div>
   );
 };
