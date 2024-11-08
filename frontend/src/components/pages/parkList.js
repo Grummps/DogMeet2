@@ -34,7 +34,6 @@ const ParksList = () => {
                     <li key={park._id} className="p-4 border rounded-md shadow-sm">
                         <Link to={`/parks/${park._id}`}>
                             <h2 className="text-xl font-semibold">{park.parkName}</h2>
-                            <p className="text-gray-600">{park.location.coordinates[1]}, {park.location.coordinates[0]}</p>
                         </Link>
                     </li>
                 ))}
