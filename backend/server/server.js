@@ -11,7 +11,7 @@ const { Server } = require('socket.io');
 const socketAuth = require('./middleware/socketAuth'); // Import Socket.IO middleware
 const Message = require('./models/messageModel'); // Import your Message model
 const checkFriendship = require('./utilities/checkFriendship');
-const getOrCreateConversation = require('./utilities/getOrCreateConvo');
+const getOrCreateConversation = require('./socket/getOrCreateConvo');
 
 // Import routes
 const userRoutes = require("./routes/userRoutes");
@@ -56,74 +56,8 @@ app.use("/messages", messageRoutes);// For message routes
 const server = http.createServer(app);
 
 // Initialize Socket.IO server
-const io = new Server(server, {
-  cors: {
-    origin: process.env.CLIENT_URL || 'http://localhost:8096',
-    methods: ['GET', 'POST'],
-    credentials: true,
-  },
-});
-
-// Apply Socket.IO authentication middleware
-io.use(socketAuth);
-
-// Socket.IO Connection Handler
-io.on('connection', async (socket) => {
-  console.log(`User connected: ${socket.id}, User ID: ${socket.user._id}`);
-
-  // Join user to a room based on their user ID
-  const userId = socket.user._id;
-  socket.join(userId);
-
-  // Fetch unread messages for this user
-  const unreadMessages = await Message.find({
-    receiverId: userId,
-    readStatus: false,
-  });
-
-  // Send unread messages to the user
-  socket.emit('unreadMessages', unreadMessages);
-
-  // After sending unread messages
-  await Message.updateMany(
-    { receiverId: userId, readStatus: false },
-    { $set: { readStatus: true } }
-  );
-
-  // Listen for messages
-  socket.on('sendMessage', async (data) => {
-    const { receiverId, content, conversationId } = data;
-    const senderId = socket.user._id;
-
-    // Check if the sender and receiver are friends
-    const isFriend = await checkFriendship(senderId, receiverId);
-    if (!isFriend) {
-      return socket.emit('error', { message: 'You are not friends with this user.' });
-    }
-
-    // Get or create conversation
-    const conversation = await getOrCreateConversation([senderId, receiverId]);
-
-    // Save message to database
-    const message = new Message({
-      senderId,
-      receiverId,
-      content,
-      conversationId: conversation._id,
-    });
-    await message.save();
-
-    // Emit message to receiver
-    io.to(receiverId).emit('receiveMessage', message);
-  });
-
-
-  // Handle disconnection
-  socket.on('disconnect', () => {
-    console.log(`User disconnected: ${socket.id}`);
-  });
-});
-
+const initializeSocket = require('./socket/socketConfig');
+initializeSocket(server);
 
 // S3 Upload Route using Multer
 app.post('/upload', upload.single('file'), (req, res) => {
