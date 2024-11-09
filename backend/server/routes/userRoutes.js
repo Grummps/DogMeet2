@@ -10,6 +10,8 @@ const Notification = require("../models/notificationModel");
 const upload = require('../config/multerConfig');  // Import the Multer configuration
 const s3 = require('../config/s3Config');  // Import the S3 configuration
 const { v4: uuidv4 } = require('uuid');  // For generating unique file names
+const { getIo, onlineUsers } = require('../socket/socketConfig');
+
 
 // Route to delete all users
 router.post('/deleteAll', async (req, res) => {
@@ -494,6 +496,18 @@ router.post('/:_id/send-friend-request', authenticate, async (req, res) => {
             return res.status(400).json({ error: 'User has already sent you a friend request' });
         }
 
+        // **Check for existing unread notification to prevent duplicates**
+        const existingNotification = await Notification.findOne({
+            type: 'friend_request',
+            sender: userId,
+            receiver: friendId,
+            read: false,
+        });
+
+        if (existingNotification) {
+            return res.status(400).json({ error: 'Friend request already sent and pending' });
+        }
+
         // Add userId to friend's friendRequests array
         friend.friendRequests.push(userId);
         await friend.save();
@@ -511,12 +525,23 @@ router.post('/:_id/send-friend-request', authenticate, async (req, res) => {
         friend.notifications.push(notification._id);
         await friend.save();
 
+        // **Emit the new notification via Socket.IO if the friend is online**
+        const recipientSocketId = onlineUsers.get(friendId.toString());
+        if (recipientSocketId) {
+            // Populate the sender's username before emitting
+            const populatedNotification = await Notification.findById(notification._id)
+                .populate('sender', 'username');
+
+            getIo().to(recipientSocketId).emit('newNotification', populatedNotification);
+        }
+
         res.json({ message: 'Friend request sent' });
     } catch (error) {
         console.error("Error sending friend request:", error);
         res.status(500).json({ error: 'Server error' });
     }
 });
+
 
 // Route to accept a friend request
 router.post('/:_id/accept-friend-request', authenticate, async (req, res) => {
@@ -554,9 +579,31 @@ router.post('/:_id/accept-friend-request', authenticate, async (req, res) => {
         }
 
         // Remove friendId from user's friendRequests array
-        user.friendRequests = user.friendRequests.filter(_id => _id.toString() !== friendId);
+        user.friendRequests = user.friendRequests.filter(_id => _id.toString() !== friendId.toString());
 
         await Promise.all([user.save(), friend.save()]);
+
+        // **Find and delete the corresponding notification**
+        const notification = await Notification.findOne({
+            type: 'friend_request',
+            sender: friendId,
+            receiver: userId,
+            read: false,
+        });
+
+        if (notification) {
+            await Notification.deleteOne({ _id: notification._id });
+
+            // Remove the notification from user's notifications array
+            user.notifications = user.notifications.filter(_id => _id.toString() !== notification._id.toString());
+            await user.save();
+
+            // **Emit a deleteNotification event via Socket.IO if the user is online**
+            const userSocketId = onlineUsers.get(userId.toString());
+            if (userSocketId) {
+                getIo().to(userSocketId).emit('deleteNotification', notification._id.toString());
+            }
+        }
 
         res.json({ message: 'Friend request accepted' });
     } catch (error) {
@@ -564,6 +611,7 @@ router.post('/:_id/accept-friend-request', authenticate, async (req, res) => {
         res.status(500).json({ error: 'Server error' });
     }
 });
+
 
 // Route to decline a friend request
 router.post('/:_id/decline-friend-request', authenticate, async (req, res) => {
@@ -583,9 +631,31 @@ router.post('/:_id/decline-friend-request', authenticate, async (req, res) => {
         }
 
         // Remove friendId from user's friendRequests array
-        user.friendRequests = user.friendRequests.filter(_id => _id.toString() !== friendId);
+        user.friendRequests = user.friendRequests.filter(_id => _id.toString() !== friendId.toString());
 
         await user.save();
+
+        // **Find and delete the corresponding notification**
+        const notification = await Notification.findOne({
+            type: 'friend_request',
+            sender: friendId,
+            receiver: userId,
+            read: false,
+        });
+
+        if (notification) {
+            await Notification.deleteOne({ _id: notification._id });
+
+            // Remove the notification from user's notifications array
+            user.notifications = user.notifications.filter(_id => _id.toString() !== notification._id.toString());
+            await user.save();
+
+            // **Emit a deleteNotification event via Socket.IO if the user is online**
+            const userSocketId = onlineUsers.get(userId.toString());
+            if (userSocketId) {
+                getIo().to(userSocketId).emit('deleteNotification', notification._id.toString());
+            }
+        }
 
         res.json({ message: 'Friend request declined' });
     } catch (error) {
@@ -593,6 +663,7 @@ router.post('/:_id/decline-friend-request', authenticate, async (req, res) => {
         res.status(500).json({ error: 'Server error' });
     }
 });
+
 
 // Route to cancel a friend request
 router.post('/:_id/cancel-friend-request', authenticate, async (req, res) => {
@@ -620,9 +691,31 @@ router.post('/:_id/cancel-friend-request', authenticate, async (req, res) => {
         }
 
         // Remove userId from recipient's friendRequests array
-        recipient.friendRequests = recipient.friendRequests.filter(_id => _id.toString() !== userId);
+        recipient.friendRequests = recipient.friendRequests.filter(_id => _id.toString() !== userId.toString());
 
         await recipient.save();
+
+        // **Find and delete the corresponding notification**
+        const notification = await Notification.findOne({
+            type: 'friend_request',
+            sender: userId,
+            receiver: recipientId,
+            read: false,
+        });
+
+        if (notification) {
+            await Notification.deleteOne({ _id: notification._id });
+
+            // Remove the notification from recipient's notifications array
+            recipient.notifications = recipient.notifications.filter(_id => _id.toString() !== notification._id.toString());
+            await recipient.save();
+
+            // **Emit a deleteNotification event via Socket.IO if the recipient is online**
+            const recipientSocketId = onlineUsers.get(recipientId.toString());
+            if (recipientSocketId) {
+                getIo().to(recipientSocketId).emit('deleteNotification', notification._id.toString());
+            }
+        }
 
         res.json({ message: 'Friend request cancelled' });
     } catch (error) {
@@ -630,5 +723,6 @@ router.post('/:_id/cancel-friend-request', authenticate, async (req, res) => {
         res.status(500).json({ error: 'Server error' });
     }
 });
+
 
 module.exports = router;

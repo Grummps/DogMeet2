@@ -21,11 +21,10 @@ export default function Navbar() {
   const location = useLocation();
   const navigate = useNavigate();
 
-  // **Updated State for Notifications**
+  // Updated State for Notifications
   const [notifications, setNotifications] = useState({});
   const [unreadCount, setUnreadCount] = useState(0);
 
-  const [friendRequests, setFriendRequests] = useState([]);
   const [showDropdown, setShowDropdown] = useState(false);
   const dropdownRef = useRef(null);
 
@@ -43,7 +42,7 @@ export default function Navbar() {
     navigate("/");
   };
 
-  // Fetch friend requests and notifications when the component mounts
+  // Fetch notifications when the component mounts
   useEffect(() => {
     const fetchData = async () => {
       if (!user) {
@@ -52,16 +51,12 @@ export default function Navbar() {
       }
 
       try {
-        // Fetch friend requests
-        const friendResponse = await apiClient.get("/users/friend-requests");
-        setFriendRequests(friendResponse.data.friendRequests);
-
         // Fetch notifications
         const notifResponse = await apiClient.get("/users/notifications");
 
         const allNotifications = notifResponse.data.notifications || [];
 
-        // **Normalize notifications into an object with IDs as keys**
+        // Normalize notifications into an object with IDs as keys
         const notificationsById = {};
         allNotifications.forEach((notif) => {
           notificationsById[notif._id] = notif;
@@ -69,7 +64,7 @@ export default function Navbar() {
 
         setNotifications(notificationsById);
 
-        // **Calculate unread notifications count**
+        // Calculate unread notifications count
         const unread = allNotifications.filter((n) => !n.read).length;
         setUnreadCount(unread);
       } catch (error) {
@@ -115,6 +110,37 @@ export default function Navbar() {
     // Clean up the event listener when the component unmounts or socket changes
     return () => {
       socket.off("newNotification");
+    };
+  }, [socket]);
+
+  // Handle 'deleteNotification' events
+  useEffect(() => {
+    if (!socket) return; // Ensure the socket is initialized
+
+    const handleDeleteNotification = (notificationId) => {
+      setNotifications((prev) => {
+        const updatedNotifications = { ...prev };
+        const notification = updatedNotifications[notificationId];
+
+        if (notification) {
+          // If the notification was unread, decrement the unread count
+          if (!notification.read) {
+            setUnreadCount((prevCount) => Math.max(prevCount - 1, 0));
+          }
+          // Remove the notification from the state
+          delete updatedNotifications[notificationId];
+        }
+
+        return updatedNotifications;
+      });
+    };
+
+    // Listen for the 'deleteNotification' event
+    socket.on("deleteNotification", handleDeleteNotification);
+
+    // Cleanup the listener on component unmount or socket change
+    return () => {
+      socket.off("deleteNotification", handleDeleteNotification);
     };
   }, [socket]);
 
@@ -212,10 +238,13 @@ export default function Navbar() {
 
     setNotifications((prev) => {
       const updated = { ...prev };
+      const notification = updated[notificationId];
+      if (notification && !notification.read) {
+        setUnreadCount((prevCount) => Math.max(prevCount - 1, 0));
+      }
       delete updated[notificationId];
       return updated;
     });
-    setUnreadCount((prev) => Math.max(prev - 1, 0));
 
     try {
       await apiClient.delete(`/users/notifications/${notificationId}`);
@@ -225,7 +254,9 @@ export default function Navbar() {
       console.error("Error deleting notification:", error);
       // Revert UI changes
       setNotifications(originalNotifications);
-      setUnreadCount((prev) => prev + 1);
+      // Recalculate unread count
+      const unread = Object.values(originalNotifications).filter((n) => !n.read).length;
+      setUnreadCount(unread);
       setFeedbackMessage("Failed to delete notification.");
       setFeedbackType("error");
     }
@@ -236,12 +267,12 @@ export default function Navbar() {
     return null;
   }
 
-  // **Prepare Notifications for Rendering**
+  // Prepare Notifications for Rendering
   const notificationList = Object.values(notifications).sort(
     (a, b) => new Date(b.createdAt) - new Date(a.createdAt)
   );
 
-  // **Separate notifications based on type for rendering**
+  // Separate notifications based on type for rendering
   const friendRequestNotifications = notificationList.filter(
     (n) => n.type === "friend_request"
   );
@@ -326,8 +357,8 @@ export default function Navbar() {
               <div className="flex border-b">
                 <button
                   className={`flex-1 py-2 ${activeTab === "friend_requests"
-                    ? "border-b-2 border-blue-500 text-blue-500"
-                    : "text-gray-500"
+                      ? "border-b-2 border-blue-500 text-blue-500"
+                      : "text-gray-500"
                     }`}
                   onClick={() => setActiveTab("friend_requests")}
                 >
@@ -335,8 +366,8 @@ export default function Navbar() {
                 </button>
                 <button
                   className={`flex-1 py-2 ${activeTab === "event_notifications"
-                    ? "border-b-2 border-blue-500 text-blue-500"
-                    : "text-gray-500"
+                      ? "border-b-2 border-blue-500 text-blue-500"
+                      : "text-gray-500"
                     }`}
                   onClick={() => setActiveTab("event_notifications")}
                 >
@@ -344,8 +375,8 @@ export default function Navbar() {
                 </button>
                 <button
                   className={`flex-1 py-2 ${activeTab === "message_notifications"
-                    ? "border-b-2 border-blue-500 text-blue-500"
-                    : "text-gray-500"
+                      ? "border-b-2 border-blue-500 text-blue-500"
+                      : "text-gray-500"
                     }`}
                   onClick={() => setActiveTab("message_notifications")}
                 >

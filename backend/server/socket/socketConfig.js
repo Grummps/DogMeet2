@@ -5,9 +5,12 @@ const getOrCreateConversation = require('./getOrCreateConvo');
 const checkFriendship = require('../utilities/checkFriendship'); // Adjust the path as necessary
 const Notification = require('../models/notificationModel');
 
+const onlineUsers = new Map();
+let io;
+
 // Function to initialize Socket.IO
 function initializeSocket(httpServer) {
-    const io = new Server(httpServer, {
+    io = new Server(httpServer, {
         cors: {
             origin: process.env.CLIENT_URL || 'http://localhost:8096',
             methods: ['GET', 'POST'],
@@ -15,7 +18,7 @@ function initializeSocket(httpServer) {
         },
     });
 
-    const onlineUsers = new Map();
+    
     const usersInConversations = new Map(); // Key: userId, Value: Set of conversationIds
 
 
@@ -206,4 +209,4 @@ function initializeSocket(httpServer) {
     return io;
 }
 
-module.exports = initializeSocket;
+module.exports = { initializeSocket, getIo: () => io, onlineUsers };

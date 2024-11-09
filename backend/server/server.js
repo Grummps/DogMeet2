@@ -56,7 +56,7 @@ app.use("/messages", messageRoutes);// For message routes
 const server = http.createServer(app);
 
 // Initialize Socket.IO server
-const initializeSocket = require('./socket/socketConfig');
+const { initializeSocket } = require('./socket/socketConfig');
 initializeSocket(server);
 
 // S3 Upload Route using Multer
