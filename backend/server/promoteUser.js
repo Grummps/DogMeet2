@@ -37,6 +37,5 @@ const promoteUser = async (username) => {
     }
 };
 
-// Replace 'john_doe' with the actual username you want to promote
-const usernameToPromote = 'beepers';
+const usernameToPromote = 'Beepers';
 promoteUser(usernameToPromote);

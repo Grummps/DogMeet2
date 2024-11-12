@@ -73,7 +73,7 @@ router.post('/signup', async (req, res) => {
 
   try {
     // Check if username already exists
-    const existingUser = await newUserModel.findOne({ username });
+    const existingUser = await newUserModel.findOne({ username: { $regex: `^${username}$`, $options: 'i' } });
     if (existingUser) {
       return res.status(409).send({ message: "Username is taken, pick another" });
     }

@@ -14,7 +14,6 @@ import { ClipLoader } from 'react-spinners';
 import { io } from 'socket.io-client';
 
 
-
 const Profile = () => {
     const navigate = useNavigate();
     const { _id } = useParams(); // Get user _id from URL params
@@ -196,8 +195,6 @@ const Profile = () => {
             setMessageInput('');
         }
     };
-
-
 
     const sendFriendRequest = async () => {
         try {

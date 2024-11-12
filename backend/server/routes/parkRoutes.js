@@ -92,7 +92,7 @@ router.get('/:_id/events/upcoming', async (req, res) => {
     })
       .populate({
         path: 'dogs',
-        select: 'dogName size',
+        select: 'dogName size image ownerId',
       })
       .sort({ date: 1, time: 1 }); // Optional: sort events by date and time
 
@@ -197,5 +197,39 @@ router.post('/:_id/check-in', authenticate, async (req, res) => {
     res.status(500).json({ message: 'Error during check-in.' });
   }
 });
+
+// POST /parks/:_id/check-out
+router.post('/:_id/check-out', authenticate, async (req, res) => {
+  try {
+    const parkId = req.params._id;
+    const userId = req.user._id;
+
+    // Find the user's active event at this park
+    const activeEvent = await Event.findOne({ userId, parkId });
+
+    if (!activeEvent) {
+      return res.status(400).json({ message: 'You are not checked in at this park.' });
+    }
+
+    // Remove the event from the Event collection
+    await Event.findByIdAndDelete(activeEvent._id);
+
+    // Remove the eventId from the user's eventId array
+    await User.findByIdAndUpdate(userId, {
+      $pull: { eventId: activeEvent._id },
+    });
+
+    // Remove the eventId from the park's eventId array
+    await Park.findByIdAndUpdate(parkId, {
+      $pull: { eventId: activeEvent._id },
+    });
+
+    res.status(200).json({ message: 'Checked out successfully.' });
+  } catch (error) {
+    console.error('Error during check-out:', error);
+    res.status(500).json({ message: 'Error during check-out.' });
+  }
+});
+
 
 module.exports = router;

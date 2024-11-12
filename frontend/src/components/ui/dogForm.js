@@ -2,6 +2,8 @@ import React, { useEffect, useState } from 'react';
 import axios from 'axios';
 import getUserInfo from '../../utilities/decodeJwt';  // Import getUserInfo
 import apiClient from '../../utilities/apiClient';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { faDog } from '@fortawesome/free-solid-svg-icons';
 
 const DogForm = ({ updateUser, userId }) => {
     const [dogName, setDogName] = useState('');
@@ -145,7 +147,7 @@ const DogForm = ({ updateUser, userId }) => {
                                         />
                                     ) : (
                                         <div className="w-full h-40 bg-gray-300 rounded-lg flex items-center justify-center mb-2 border-4 border-gray-200">
-                                            <span className="text-gray-500 text-sm">No Image</span>
+                                            <FontAwesomeIcon icon={faDog} className="size-20" />
                                         </div>
                                     )}
                                     {/* Dog Info */}

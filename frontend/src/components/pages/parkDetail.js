@@ -7,6 +7,9 @@ import CreateEventForm from '../ui/eventForm';
 import CheckInForm from '../ui/checkInForm'; // Import the CheckInForm component
 import getUserInfo from '../../utilities/decodeJwt';
 import { Link } from 'react-router-dom';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { faDog } from '@fortawesome/free-solid-svg-icons';
+import apiClient from '../../utilities/apiClient';
 
 // Fix Leaflet's default icon paths if not already done
 delete L.Icon.Default.prototype._getIconUrl;
@@ -27,6 +30,7 @@ const ParkDetail = () => {
     const [upcomingEvents, setUpcomingEvents] = useState([]); // Store upcoming events
     const [checkedInDogs, setCheckedInDogs] = useState([]); // Store checked-in dogs
     const [dogsWithTimeLeft, setDogsWithTimeLeft] = useState([]);
+    const [isCheckedIn, setCheckedInUser] = useState(false);
 
     // Fetch data on component mount
     useEffect(() => {
@@ -41,6 +45,19 @@ const ParkDetail = () => {
             console.error('User info not found');
         }
     }, []); // Runs once on mount
+
+    // Fetch data that doesn't depend on currentUserId
+    useEffect(() => {
+        fetchParkDetails();
+        fetchUpcomingEvents();
+    }, []);
+
+    // Fetch checked-in dogs after currentUserId is set
+    useEffect(() => {
+        if (currentUserId) {
+            fetchCheckedInDogs();
+        }
+    }, [currentUserId]); // Runs when currentUserId changes
 
     // Update remaining time whenever `checkedInDogs` changes
     useEffect(() => {
@@ -96,7 +113,6 @@ const ParkDetail = () => {
         }
     };
 
-    // Fetch checked-in dogs (active events)
     const fetchCheckedInDogs = async () => {
         try {
             const eventsResponse = await axios.get(`${process.env.REACT_APP_BACKEND_URI}/parks/${parkId}/events/active`);
@@ -108,16 +124,33 @@ const ParkDetail = () => {
                     ...dog,
                     expiresAt: event.expiresAt,
                     duration: event.duration,
+                    ownerId: dog.ownerId, // Ensure ownerId is included
                 })));
             }, []);
 
             setCheckedInDogs(dogs);
+
+            // Check if the current user has an active event at this park
+            const userCheckedIn = activeEvents.some(event => event.userId === currentUserId);
+            setCheckedInUser(userCheckedIn);
+
         } catch (err) {
             console.error('Error fetching checked-in dogs:', err);
         }
     };
 
-    if (loading) return <div>Loading park details...</div>;
+    const handleCheckOut = async () => {
+        try {
+            await apiClient.post(`${process.env.REACT_APP_BACKEND_URI}/parks/${parkId}/check-out`);
+            setCheckedInUser(false); // Update the state to reflect that the user is no longer checked in
+            fetchCheckedInDogs();    // Refresh the list of checked-in dogs
+        } catch (err) {
+            console.error('Error checking out:', err);
+        }
+    };
+
+
+    if (loading) return <div className='ml-52 mt-4'>Loading park details...</div>;
     if (error) return <div className="text-red-500">{error}</div>;
     if (!park) return <div>No park found.</div>;
 
@@ -149,14 +182,23 @@ const ParkDetail = () => {
                 >
                     Create Event
                 </button>
-
-                <button
-                    className="px-6 py-2 bg-green-500 text-white rounded-md"
-                    onClick={() => setShowCheckInModal(true)}
-                >
-                    Check-in
-                </button>
+                {!isCheckedIn ? (
+                    <button
+                        className="px-6 py-2 bg-green-500 text-white rounded-md"
+                        onClick={() => setShowCheckInModal(true)}
+                    >
+                        Check-in
+                    </button>
+                ) : (
+                    <button
+                        className="px-6 py-2 bg-red-500 text-white rounded-md"
+                        onClick={handleCheckOut}
+                    >
+                        Check-out
+                    </button>
+                )}
             </div>
+
 
             {/* Main content area */}
             <div className="mt-8 flex">
@@ -176,12 +218,12 @@ const ParkDetail = () => {
                                             className="w-20 h-20 rounded-full object-cover mr-4 border-2 border-gray-300"
                                         />
                                     ) : (
-                                        <div className="w-20 h-20 bg-gray-300 rounded-full flex items-center justify-center mr-4 border-2 border-gray-300">
-                                            <span className="text-gray-500 text-xs">No Image</span>
+                                        <div className="w-20 h-20 bg-gray-300 rounded-full flex items-center justify-center mr-2">
+                                            <FontAwesomeIcon icon={faDog} className="size-12" />
                                         </div>
                                     )}
                                     <div>
-                                        <p><strong>Size:</strong> {dog.size} <strong>Name:</strong> {dog.dogName} <strong>Owner:</strong><Link to={`/profile/${dog.ownerId._id}`}>{dog.ownerId.username}</Link> </p>
+                                        <p><strong>Size:</strong> {dog.size} <strong>Name:</strong> {dog.dogName} <strong>Owner: </strong><Link to={`/profile/${dog.ownerId._id}`}>{dog.ownerId.username}</Link> </p>
                                         <p>Here for another: {dog.remainingTime} minute(s)</p>
                                     </div>
                                 </li>
@@ -199,21 +241,32 @@ const ParkDetail = () => {
                         <ul>
                             {upcomingEvents.map(event => (
                                 <li key={event._id} className="mb-4 border-b pb-2">
-                                    <p><strong>Date:</strong> {new Date(event.date).toLocaleDateString()}</p>
-                                    <p><strong>Time:</strong> {new Date(event.date).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })}</p>
-                                    {event.dogs && event.dogs.length > 0 && (
-                                        <div>
-                                            <p><strong>Dogs Attending:</strong>
+                                    <p>
+                                        <strong>Date:</strong> {new Date(event.date).toLocaleDateString()}
+                                        <strong> Time:</strong> {new Date(event.date).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })}
+                                        {event.dogs && event.dogs.length > 0 && (
+                                            <div>
+                                                <strong>Dogs Attending:</strong>
                                                 <ul className="ml-4">
                                                     {event.dogs.map(dog => (
-                                                        <li key={dog._id}>
-                                                            {dog.dogName} ({dog.size})
+                                                        <li key={dog._id} className='flex items-center space-x-2'>
+                                                            {dog.image ? (
+                                                                <img
+                                                                    src={dog.image}
+                                                                    alt={dog.dogName}
+                                                                    className="w-9 h-9 rounded-full flex items-center justify-center mr-2"
+                                                                />
+                                                            ) : (
+                                                                <div className="w-9 h-9 bg-gray-300 rounded-full flex items-center justify-center mr-2">
+                                                                    <FontAwesomeIcon icon={faDog} className="size-6" />
+                                                                </div>
+                                                            )} {dog.dogName} ({dog.size})
                                                         </li>
                                                     ))}
                                                 </ul>
-                                            </p>
-                                        </div>
-                                    )}
+                                            </div>
+                                        )}
+                                    </p>
                                 </li>
                             ))}
                         </ul>
@@ -262,6 +315,7 @@ const ParkDetail = () => {
                             onSuccess={() => {
                                 setShowCheckInModal(false);
                                 // Refresh the checked-in dogs list
+                                setCheckedInUser(true);
                                 fetchCheckedInDogs();
                             }}
                         />
