@@ -51,45 +51,72 @@ const CheckInForm = ({ userId, parkId, onSuccess }) => {
       onSuccess(duration);
     } catch (error) {
       console.error(error);
-      setError('Failed to check in. Please try again.');
+      // Check if the error response contains a message
+      if (error.response && error.response.data && error.response.data.message) {
+        setError(error.response.data.message);
+      } else if (error.message) {
+        // Fallback to error.message if available
+        setError(error.message);
+      } else {
+        // Generic fallback message
+        setError('Failed to check in. Please try again.');
+      }
     }
   };
 
+
   return (
-    <form onSubmit={handleSubmit}>
-      {error && <p className="text-red-500">{error}</p>}
-      <div className="form-group mt-4">
-        <label className="font-semibold">How long you'll be here:</label>
-        <input
-          type="number"
-          min="1"
-          max="300"
-          value={duration}
-          onChange={(e) => setDuration(e.target.value)}
-          className="border rounded px-2 py-1 w-full"
-          required
-        />
+    <form onSubmit={handleSubmit} className="space-y-6">
+      <div className="form-group">
+        <h2 className="text-2xl font-semibold mb-6 text-center">Check-In</h2>
+        {error && <p className="text-red-500 mb-4 text-center">{error}</p>}
+        <label className="block text-gray-700 font-medium mb-2">
+          How long you'll be here:
+        </label>
+        <div className="relative">
+          <input
+            type="number"
+            min="1"
+            max="300"
+            value={duration}
+            onChange={(e) => setDuration(e.target.value)}
+            required
+            className="w-full border border-gray-300 rounded px-4 pr-16 py-2 focus:outline-none focus:ring-2 focus:ring-green-500"
+            placeholder="Enter duration"
+          />
+          <span className="absolute inset-y-0 right-11 flex items-center text-gray-500 pointer-events-none">
+            minutes
+          </span>
+        </div>
       </div>
       <div className="form-group">
-        <label>Select Dogs:</label>
-        {dogs.map((dog) => (
-          <div key={dog._id}>
-            <input
-              type="checkbox"
-              value={dog._id}
-              onChange={handleDogSelection}
-              checked={selectedDogs.includes(dog._id)}
-            />
-            <label className="ml-2">
-              {dog.dogName} ({dog.size})
-            </label>
-          </div>
-        ))}
+        <label className="block text-gray-700 font-medium mb-2">Select Dogs:</label>
+        <div className="space-y-2">
+          {dogs.map((dog) => (
+            <div key={dog._id} className="flex items-center">
+              <input
+                type="checkbox"
+                value={dog._id}
+                onChange={handleDogSelection}
+                checked={selectedDogs.includes(dog._id)}
+                className="h-4 w-4 text-green-600 focus:ring-green-500 border-gray-300 rounded"
+                id={`dog-${dog._id}`}
+              />
+              <label htmlFor={`dog-${dog._id}`} className="ml-3 text-gray-700">
+                {dog.dogName} ({dog.size})
+              </label>
+            </div>
+          ))}
+        </div>
       </div>
-      <button type="submit" className="mt-4 px-4 py-2 bg-green-500 text-white rounded">
-        Check-in
-      </button>
-    </form>
+      <button
+        type="submit"
+        className="w-full px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700 transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-green-500"
+      >
+        Check-In
+
+      </button >
+    </form >
   );
 };
 

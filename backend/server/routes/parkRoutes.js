@@ -42,6 +42,39 @@ router.get('/all', async (req, res) => {
   }
 });
 
+// GET /parks/nearby
+router.get('/nearby', async (req, res) => {
+  const { latitude, longitude } = req.query;
+
+  if (!latitude || !longitude) {
+    return res.status(400).json({ message: 'Latitude and longitude are required.' });
+  }
+
+  try {
+    const userLocation = {
+      type: 'Point',
+      coordinates: [parseFloat(longitude), parseFloat(latitude)], // [longitude, latitude]
+    };
+
+    const nearbyParks = await Park.aggregate([
+      {
+        $geoNear: {
+          near: userLocation,
+          distanceField: 'distance',
+          spherical: true,
+          maxDistance: 5000, // Adjust as needed
+        },
+      },
+    ]);
+
+
+    res.status(200).json(nearbyParks);
+  } catch (error) {
+    console.error('Error fetching nearby parks:', error);
+    res.status(500).json({ message: 'Error fetching nearby parks.' });
+  }
+});
+
 // Get a specific park by _id
 router.get('/:_id', getPark, (req, res) => {
   res.status(200).json(req.park);
@@ -146,13 +179,11 @@ router.post('/:_id/check-in', authenticate, async (req, res) => {
 
     // Verify that the dogs belong to the user
     const userDogs = await User.findById(userId).select('dogId');
-
     if (!userDogs || !userDogs.dogId) {
       return res.status(400).json({ message: 'No dogs found for this user.' });
     }
 
     const userDogIds = userDogs.dogId.map((_id) => _id.toString());
-
     const invalidDogs = dogIds.filter((dogId) => !userDogIds.includes(dogId));
 
     if (invalidDogs.length > 0) {
@@ -168,12 +199,29 @@ router.post('/:_id/check-in', authenticate, async (req, res) => {
     // Calculate the expiration time
     const expiresAt = new Date(eventStartTime.getTime() + eventDuration * 60000);
 
+    // **New Validation: Prevent Overlapping Check-Ins**
+    // This ensures that the new check-in does not overlap with any existing active events for the user.
+
+    const overlappingEvent = await Event.findOne({
+      userId: userId,
+      expiresAt: { $gt: eventStartTime }, // Events that end after the new event starts
+      $or: [
+        { date: { $lte: eventStartTime }, expiresAt: { $gt: eventStartTime } }, // Overlaps start
+        { date: { $lt: expiresAt }, expiresAt: { $gte: expiresAt } },         // Overlaps end
+        { date: { $gte: eventStartTime }, expiresAt: { $lte: expiresAt } },   // Completely within
+      ],
+    });
+
+    if (overlappingEvent) {
+      return res.status(400).json({ message: 'The check-in time overlaps with an existing event.' });
+    }
+
     // Create a new event instance
     const newEvent = new Event({
       userId,
       parkId,
       dogs: dogIds,
-      time: eventStartTime.toTimeString().substr(0, 5),
+      time: eventStartTime.toTimeString().substr(0, 5), // Extract HH:mm format
       date: eventStartTime,
       duration: eventDuration,
       expiresAt,
@@ -183,18 +231,22 @@ router.post('/:_id/check-in', authenticate, async (req, res) => {
     const savedEvent = await newEvent.save();
 
     // Update user and park documents
-    await User.findByIdAndUpdate(userId, {
-      $addToSet: { eventId: savedEvent._id },
-    });
+    await Promise.all([
+      User.findByIdAndUpdate(userId, {
+        $addToSet: { eventId: savedEvent._id },
+      }),
+      Park.findByIdAndUpdate(parkId, {
+        $addToSet: { eventId: savedEvent._id },
+      }),
+    ]);
 
-    await Park.findByIdAndUpdate(parkId, {
-      $addToSet: { eventId: savedEvent._id },
-    });
+    // **Optional: Send Notifications to Friends**
+    // If you have a notification system similar to the create event route, you can integrate it here as well.
 
     res.status(200).json({ message: 'Checked in successfully.', event: savedEvent });
   } catch (error) {
     console.error('Error during check-in:', error);
-    res.status(500).json({ message: 'Error during check-in.' });
+    res.status(500).json({ message: 'Server error. Could not complete check-in.' });
   }
 });
 
@@ -203,12 +255,18 @@ router.post('/:_id/check-out', authenticate, async (req, res) => {
   try {
     const parkId = req.params._id;
     const userId = req.user._id;
+    const now = new Date(); // Current time
 
     // Find the user's active event at this park
-    const activeEvent = await Event.findOne({ userId, parkId });
+    const activeEvent = await Event.findOne({
+      userId,
+      parkId,
+      date: { $lte: now },
+      expiresAt: { $gt: now },
+    });
 
     if (!activeEvent) {
-      return res.status(400).json({ message: 'You are not checked in at this park.' });
+      return res.status(400).json({ message: 'You are not currently checked in at this park.' });
     }
 
     // Remove the event from the Event collection
@@ -227,9 +285,10 @@ router.post('/:_id/check-out', authenticate, async (req, res) => {
     res.status(200).json({ message: 'Checked out successfully.' });
   } catch (error) {
     console.error('Error during check-out:', error);
-    res.status(500).json({ message: 'Error during check-out.' });
+    res.status(500).json({ message: 'An unexpected error occurred during check-out. Please try again later.' });
   }
 });
+
 
 
 module.exports = router;

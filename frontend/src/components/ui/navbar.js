@@ -287,6 +287,15 @@ export default function Navbar() {
     <div className="fixed top-0 left-0 h-screen w-36 qhd:w-36 bg-gray-900 flex flex-col items-center py-4 z-50">
       {/* Icons Container */}
       <div className="flex flex-col mt-24 items-start space-y-6 flex-1">
+        
+        {/* Profile Icon */}
+        <Link to="/profile" className="flex items-center no-underline">
+          <UserIcon className="h-6 w-6 fill-white hover:fill-blue-500 cursor-pointer" />
+          <span className="ml-4 text-white text-lg hidden md:inline">
+            Profile
+          </span>
+        </Link>
+
         {/* Play Icon */}
         <Link to="/" className="flex items-center no-underline">
           <PlayCircleIcon className="h-6 w-6 fill-white hover:fill-blue-500 cursor-pointer" />
@@ -299,15 +308,7 @@ export default function Navbar() {
         <Link to="/home" className="flex items-center no-underline">
           <HomeIcon className="h-6 w-6 fill-white hover:fill-blue-500 cursor-pointer" />
           <span className="ml-4 text-white text-lg hidden md:inline">
-            Near You
-          </span>
-        </Link>
-
-        {/* Profile Icon */}
-        <Link to="/profile" className="flex items-center no-underline">
-          <UserIcon className="h-6 w-6 fill-white hover:fill-blue-500 cursor-pointer" />
-          <span className="ml-4 text-white text-lg hidden md:inline">
-            Profile
+            Nearby
           </span>
         </Link>
 

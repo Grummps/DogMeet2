@@ -1,7 +1,7 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import axios from 'axios';
 import MapWithDirections from '../ui/mapWithDirections';
-import { Link } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom'; // Import useNavigate
 import debounce from 'lodash.debounce';
 import { ClipLoader } from 'react-spinners';
 import { ToastContainer, toast } from 'react-toastify';
@@ -9,13 +9,16 @@ import 'react-toastify/dist/ReactToastify.css';
 
 // Import utility functions
 import { generateCacheKey } from '../../utilities/coordinateUtils';
+import { kmToMiles, milesToKm } from '../../utilities/distanceUtils';
 
 const HomePage = () => {
+    const navigate = useNavigate(); // Initialize navigate
     const [userLocation, setUserLocation] = useState(null);
     const [nearbyParks, setNearbyParks] = useState([]);
     const [error, setError] = useState('');
     const [routes, setRoutes] = useState({}); // Store routes per parkId
     const [isLoading, setIsLoading] = useState(false); // Loading state for spinner
+    const [unit, setUnit] = useState(''); // State for unit selection
 
     const CACHE_KEY = 'routeCache'; // Key for localStorage
     const MAX_CACHE_SIZE = 50; // Maximum number of cached routes
@@ -25,6 +28,19 @@ const HomePage = () => {
         const cachedRoutes = JSON.parse(localStorage.getItem(CACHE_KEY) || '{}');
         setRoutes(cachedRoutes);
     }, []);
+
+    // Load preferred unit from localStorage on mount
+    useEffect(() => {
+        const storedUnit = localStorage.getItem('preferredUnit');
+        if (storedUnit) {
+            setUnit(storedUnit);
+        }
+    }, []);
+
+    // Persist preferred unit to localStorage whenever it changes
+    useEffect(() => {
+        localStorage.setItem('preferredUnit', unit);
+    }, [unit]);
 
     useEffect(() => {
         // Check if geolocation is available
@@ -93,9 +109,18 @@ const HomePage = () => {
             } catch (e) {
                 if (e.name === 'QuotaExceededError') {
                     console.error('localStorage quota exceeded.');
-                    toast.error('Cache size exceeded. Please clear some cached routes.');
+                    toast.error('Cache size exceeded. Please try removing some directions.');
                 }
             }
+        }
+    };
+
+    // Helper function to convert distance based on selected unit
+    const convertDistance = (distanceInKm) => {
+        if (unit === 'km') {
+            return distanceInKm.toFixed(2);
+        } else if (unit === 'mi') {
+            return kmToMiles(distanceInKm).toFixed(2);
         }
     };
 
@@ -131,7 +156,7 @@ const HomePage = () => {
                 } catch (e) {
                     if (e.name === 'QuotaExceededError') {
                         console.error('localStorage quota exceeded.');
-                        toast.error('Cache size exceeded. Please clear some cached routes.');
+                        toast.error('Cache size exceeded. Please try removing some directions.');
                     }
                 }
                 return;
@@ -174,7 +199,7 @@ const HomePage = () => {
                 } catch (e) {
                     if (e.name === 'QuotaExceededError') {
                         console.error('localStorage quota exceeded.');
-                        toast.error('Cache size exceeded. Please clear some cached routes.');
+                        toast.error('Cache size exceeded. Please try removing some directions.');
                     }
                 }
 
@@ -193,7 +218,7 @@ const HomePage = () => {
                 setIsLoading(false); // End loading spinner
             }
         }, 300), // 300ms debounce interval
-        [routes, userLocation]
+        [routes, userLocation, unit]
     );
 
     const handleShowDirections = (parkId, parkLat, parkLng) => {
@@ -209,19 +234,43 @@ const HomePage = () => {
 
     return (
         <div className="p-6">
-            <h1 className="text-3xl font-bold mb-4 ml-40">Parks Near You</h1>
+            {/* Header with Title and Unit Toggle */}
+            <div className="flex justify-between items-center mb-4 mr-40">
+                <h1 className="text-3xl font-bold ml-40">Parks Near You</h1>
+                {/* Unit Toggle Switch */}
+                <label htmlFor="unit-toggle" className="flex items-center cursor-pointer">
+                    {/* Toggle Label */}
+                    <span className="mr-2 text-gray-700">Km</span>
+                    {/* Toggle Switch */}
+                    <div className="relative">
+                        <input
+                            type="checkbox"
+                            id="unit-toggle"
+                            className="sr-only"
+                            checked={unit === 'mi'}
+                            onChange={() => setUnit(unit === 'km' ? 'mi' : 'km')}
+                        />
+                        <div className="w-10 h-4 bg-gray-400 rounded-full shadow-inner"></div>
+                        <div
+                            className={`dot absolute w-6 h-6 bg-white rounded-full shadow -left-1 -top-1 transition ${unit === 'mi' ? 'transform translate-x-full bg-blue-500' : ''
+                                }`}
+                        ></div>
+                    </div>
+                    {/* Toggle Label */}
+                    <span className="ml-2 text-gray-700">Mi</span>
+                </label>
+            </div>
+
             {error && <div className="text-red-500">{error}</div>}
-            {!error && nearbyParks.length === 0 && <p>Loading nearby parks...</p>}
+            {!error && nearbyParks.length === 0 && <p className='ml-56'>Loading nearby parks...</p>}
             {!error && nearbyParks.length > 0 && (
                 <ul>
                     {nearbyParks.map(park => (
                         <li key={park._id} className="mb-8">
                             <div className="ml-48">
                                 <h2 className="text-2xl font-semibold">{park.parkName}</h2>
-                                <p>Distance: {(park.distance / 1000).toFixed(2)} km</p>
-                                <p>
-                                    <strong>Location:</strong> Latitude: {park.location.coordinates[1]}, Longitude: {park.location.coordinates[0]}
-                                </p>
+                                <p>Distance: {convertDistance(park.distance / 1000)} {unit}</p>
+
                                 {/* Directions Map */}
                                 <div className="mt-4">
                                     {userLocation && park.location.coordinates && (
@@ -236,8 +285,8 @@ const HomePage = () => {
                                         />
                                     )}
                                 </div>
-                                {/* Show Directions Button */}
-                                <div className="mt-2">
+                                {/* Show Directions Button and View Park Details Button */}
+                                <div className="mt-2 flex items-center">
                                     <button
                                         onClick={() => handleShowDirections(park._id, park.location.coordinates[1], park.location.coordinates[0])}
                                         disabled={routes[park._id]}
@@ -248,12 +297,14 @@ const HomePage = () => {
                                     >
                                         {routes[park._id] ? 'Directions Shown' : 'Show Directions'}
                                     </button>
-                                </div>
-                                {/* Additional Park Details or Actions */}
-                                <div className="mt-2">
-                                    <Link to={`/parks/${park._id}`} className="text-blue-500 underline">
+
+                                    {/* View Park Details Button */}
+                                    <button
+                                        onClick={() => navigate(`/parks/${park._id}`)}
+                                        className="ml-4 px-4 py-2 bg-green-500 hover:bg-green-700 text-white rounded"
+                                    >
                                         View Park Details
-                                    </Link>
+                                    </button>
                                 </div>
                             </div>
                         </li>
@@ -270,6 +321,7 @@ const HomePage = () => {
             <ToastContainer position="top-right" autoClose={5000} hideProgressBar={false} newestOnTop closeOnClick pauseOnFocusLoss draggable pauseOnHover />
         </div>
     );
+
 };
 
 export default HomePage;

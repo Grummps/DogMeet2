@@ -42,6 +42,27 @@ router.post("/create", authenticate, async (req, res) => {
         // Calculate the expiration time
         const expiresAt = new Date(eventStartTime.getTime() + eventDuration * 60000);
 
+        // **New Validation: Ensure the New Event Starts After All Active Events Expire**
+        const now = new Date();
+
+        // This ensures that the new event does not overlap with any existing events
+        // regardless of the park. Uncomment if multiple events across parks should also not overlap.
+
+        const overlappingEvent = await Event.findOne({
+            userId: userId,
+            expiresAt: { $gt: eventStartTime }, // Events that end after the new event starts
+            $or: [
+                { date: { $lte: eventStartTime }, expiresAt: { $gt: eventStartTime } }, // Overlaps start
+                { date: { $lt: expiresAt }, expiresAt: { $gte: expiresAt } },         // Overlaps end
+                { date: { $gte: eventStartTime }, expiresAt: { $lte: expiresAt } },   // Completely within
+            ],
+        });
+
+        if (overlappingEvent) {
+            return res.status(400).json({ message: "The event time overlaps with an existing event." });
+        }
+
+
         // Create a new event instance
         const newEvent = new Event({
             userId,
@@ -96,6 +117,7 @@ router.post("/create", authenticate, async (req, res) => {
         res.status(500).json({ message: "Server error. Could not create the event." });
     }
 });
+
 
 // GET route to fetch all events
 router.get("/all", async (req, res) => {

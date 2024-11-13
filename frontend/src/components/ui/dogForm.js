@@ -137,7 +137,7 @@ const DogForm = ({ updateUser, userId }) => {
                     <div className="overflow-x-auto py-6 scrollbar-hide">
                         <div className="grid grid-flow-col qhd:grid-rows-2 gap-6">
                             {dogs.map(dog => (
-                                <div key={dog._id} className="bg-gray-300 rounded-lg shadow-md p-4 w-64 qhd:w-[300px] mb-2">
+                                <div key={dog._id} className="bg-white rounded-lg shadow-md p-4 w-64 qhd:w-[300px] mb-2">
                                     {/* Dog Image with nicer border */}
                                     {dog.image ? (
                                         <img

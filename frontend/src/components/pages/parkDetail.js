@@ -1,12 +1,11 @@
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
-import { useParams } from 'react-router-dom';
+import { useParams, Link } from 'react-router-dom';
 import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
 import L from 'leaflet';
 import CreateEventForm from '../ui/eventForm';
 import CheckInForm from '../ui/checkInForm'; // Import the CheckInForm component
 import getUserInfo from '../../utilities/decodeJwt';
-import { Link } from 'react-router-dom';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faDog } from '@fortawesome/free-solid-svg-icons';
 import apiClient from '../../utilities/apiClient';
@@ -31,6 +30,7 @@ const ParkDetail = () => {
     const [checkedInDogs, setCheckedInDogs] = useState([]); // Store checked-in dogs
     const [dogsWithTimeLeft, setDogsWithTimeLeft] = useState([]);
     const [isCheckedIn, setCheckedInUser] = useState(false);
+    const [currentCheckInEvent, setCurrentCheckInEvent] = useState(null); // Track current check-in event
 
     // Fetch data on component mount
     useEffect(() => {
@@ -45,12 +45,6 @@ const ParkDetail = () => {
             console.error('User info not found');
         }
     }, []); // Runs once on mount
-
-    // Fetch data that doesn't depend on currentUserId
-    useEffect(() => {
-        fetchParkDetails();
-        fetchUpcomingEvents();
-    }, []);
 
     // Fetch checked-in dogs after currentUserId is set
     useEffect(() => {
@@ -125,14 +119,21 @@ const ParkDetail = () => {
                     expiresAt: event.expiresAt,
                     duration: event.duration,
                     ownerId: dog.ownerId, // Ensure ownerId is included
+                    eventId: event._id, // Include event ID
                 })));
             }, []);
 
             setCheckedInDogs(dogs);
 
             // Check if the current user has an active event at this park
-            const userCheckedIn = activeEvents.some(event => event.userId === currentUserId);
-            setCheckedInUser(userCheckedIn);
+            const userActiveEvent = activeEvents.find(event => event.userId === currentUserId);
+            if (userActiveEvent) {
+                setCheckedInUser(true);
+                setCurrentCheckInEvent(userActiveEvent);
+            } else {
+                setCheckedInUser(false);
+                setCurrentCheckInEvent(null);
+            }
 
         } catch (err) {
             console.error('Error fetching checked-in dogs:', err);
@@ -143,6 +144,7 @@ const ParkDetail = () => {
         try {
             await apiClient.post(`${process.env.REACT_APP_BACKEND_URI}/parks/${parkId}/check-out`);
             setCheckedInUser(false); // Update the state to reflect that the user is no longer checked in
+            setCurrentCheckInEvent(null);
             fetchCheckedInDogs();    // Refresh the list of checked-in dogs
         } catch (err) {
             console.error('Error checking out:', err);
@@ -177,21 +179,21 @@ const ParkDetail = () => {
             {/* Buttons to trigger the modals */}
             <div className="mt-4 flex space-x-4">
                 <button
-                    className="px-6 py-2 bg-blue-500 text-white rounded-md"
+                    className="px-6 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600"
                     onClick={() => setShowModal(true)}
                 >
                     Create Event
                 </button>
                 {!isCheckedIn ? (
                     <button
-                        className="px-6 py-2 bg-green-500 text-white rounded-md"
+                        className="px-6 py-2 bg-green-500 text-white rounded-md hover:bg-green-600"
                         onClick={() => setShowCheckInModal(true)}
                     >
                         Check-in
                     </button>
                 ) : (
                     <button
-                        className="px-6 py-2 bg-red-500 text-white rounded-md"
+                        className="px-6 py-2 bg-red-500 text-white rounded-md hover:bg-red-600"
                         onClick={handleCheckOut}
                     >
                         Check-out
@@ -223,7 +225,12 @@ const ParkDetail = () => {
                                         </div>
                                     )}
                                     <div>
-                                        <p><strong>Size:</strong> {dog.size} <strong>Name:</strong> {dog.dogName} <strong>Owner: </strong><Link to={`/profile/${dog.ownerId._id}`}>{dog.ownerId.username}</Link> </p>
+                                        <p>
+                                            <strong>Size:</strong> {dog.size} <strong>Name:</strong> {dog.dogName} <strong>Owner: </strong>
+                                            <Link to={`/profile/${dog.ownerId._id}`}>
+                                                {dog.ownerId.username}
+                                            </Link>
+                                        </p>
                                         <p>Here for another: {dog.remainingTime} minute(s)</p>
                                     </div>
                                 </li>
@@ -260,7 +267,8 @@ const ParkDetail = () => {
                                                                 <div className="w-9 h-9 bg-gray-300 rounded-full flex items-center justify-center mr-2">
                                                                     <FontAwesomeIcon icon={faDog} className="size-6" />
                                                                 </div>
-                                                            )} {dog.dogName} ({dog.size})
+                                                            )}
+                                                            <span>{dog.dogName} ({dog.size})</span>
                                                         </li>
                                                     ))}
                                                 </ul>
@@ -279,20 +287,21 @@ const ParkDetail = () => {
                 <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
                     <div className="bg-white p-6 rounded-md w-full max-w-md relative">
                         <button
-                            className="absolute top-2 right-2 text-gray-500"
+                            className="absolute top-2 right-2 text-gray-500 hover:text-gray-700"
                             onClick={() => setShowModal(false)}
                         >
                             &times;
                         </button>
                         <h2 className="text-2xl font-semibold mb-4">Create Event for {parkName}</h2>
                         <CreateEventForm
-                            userId={currentUserId}
                             parkId={parkId}
                             onSuccess={() => {
                                 setShowModal(false);
                                 // Refresh the upcoming list
                                 fetchUpcomingEvents();
                             }}
+                            isCheckedIn={isCheckedIn} // Passed as a prop for validation
+                            currentCheckInEvent={currentCheckInEvent} // Passed as a prop for validation
                         />
                     </div>
                 </div>
@@ -303,7 +312,7 @@ const ParkDetail = () => {
                 <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
                     <div className="bg-white p-6 rounded-md w-full max-w-md relative">
                         <button
-                            className="absolute top-2 right-2 text-gray-500"
+                            className="absolute top-2 right-2 text-gray-500 hover:text-gray-700"
                             onClick={() => setShowCheckInModal(false)}
                         >
                             &times;
@@ -324,6 +333,7 @@ const ParkDetail = () => {
             )}
         </div>
     );
+
 };
 
 export default ParkDetail;
