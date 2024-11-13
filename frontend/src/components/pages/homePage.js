@@ -1,21 +1,29 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import axios from 'axios';
 import MapWithDirections from '../ui/mapWithDirections';
 import { Link } from 'react-router-dom';
+import debounce from 'lodash.debounce';
+import { ClipLoader } from 'react-spinners';
+import { ToastContainer, toast } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
+
+// Import utility functions
+import { generateCacheKey } from '../../utilities/coordinateUtils';
 
 const HomePage = () => {
     const [userLocation, setUserLocation] = useState(null);
     const [nearbyParks, setNearbyParks] = useState([]);
     const [error, setError] = useState('');
     const [routes, setRoutes] = useState({}); // Store routes per parkId
-    const [clickCount, setClickCount] = useState(0); // Track total clicks
+    const [isLoading, setIsLoading] = useState(false); // Loading state for spinner
 
-    const MAX_CLICKS = 5;
+    const CACHE_KEY = 'routeCache'; // Key for localStorage
+    const MAX_CACHE_SIZE = 50; // Maximum number of cached routes
 
+    // Initialize routeCache with cached routes
     useEffect(() => {
-        // Initialize click count from localStorage
-        const storedClicks = parseInt(localStorage.getItem('showDirectionsClicks') || '0', 10);
-        setClickCount(storedClicks);
+        const cachedRoutes = JSON.parse(localStorage.getItem(CACHE_KEY) || '{}');
+        setRoutes(cachedRoutes);
     }, []);
 
     useEffect(() => {
@@ -24,6 +32,7 @@ const HomePage = () => {
             navigator.geolocation.getCurrentPosition(
                 position => {
                     const { latitude, longitude } = position.coords;
+                    console.log('User Location:', { latitude, longitude }); // For debugging
                     setUserLocation({ latitude, longitude });
                 },
                 err => {
@@ -58,55 +67,145 @@ const HomePage = () => {
         }
     };
 
-    const handleShowDirections = async (parkId, parkLat, parkLng) => {
-        // Check if user has remaining clicks
-        if (clickCount >= MAX_CLICKS) {
-            alert('You have reached the maximum number of direction requests.');
-            return;
-        }
+    // In-memory cache for routes
+    const routeCache = React.useRef({}); // Using useRef to persist across renders
 
-        // Check if directions are already shown for this park
-        if (routes[parkId]) {
-            alert('Directions already shown for this park.');
-            return;
-        }
+    // Initialize routeCache with cached routes
+    useEffect(() => {
+        const cachedRoutes = JSON.parse(localStorage.getItem(CACHE_KEY) || '{}');
+        routeCache.current = cachedRoutes;
+    }, []);
 
-        try {
-            const response = await axios.post(`${process.env.REACT_APP_BACKEND_URI}/directions`, {
-                startLat: userLocation.latitude,
-                startLng: userLocation.longitude,
-                endLat: parkLat,
-                endLng: parkLng,
-            });
-
-            const geojson = response.data;
-
-            if (!geojson.features || geojson.features.length === 0) {
-                throw new Error('No routes found');
+    // Helper function to manage cache size
+    const manageCacheSize = () => {
+        const entries = Object.entries(routeCache.current);
+        if (entries.length > MAX_CACHE_SIZE) {
+            // Sort entries by lastAccessed timestamp
+            entries.sort((a, b) => a[1].lastAccessed - b[1].lastAccessed);
+            // Remove the least recently used entries
+            const excess = entries.length - MAX_CACHE_SIZE;
+            for (let i = 0; i < excess; i++) {
+                delete routeCache.current[entries[i][0]];
             }
-
-            // Extract coordinates
-            const coords = geojson.features[0].geometry.coordinates.map(coord => [coord[1], coord[0]]); // [lat, lng]
-
-            // Update routes state
-            setRoutes(prevRoutes => ({
-                ...prevRoutes,
-                [parkId]: coords,
-            }));
-
-            // Increment click count
-            const newClickCount = clickCount + 1;
-            setClickCount(newClickCount);
-            localStorage.setItem('showDirectionsClicks', newClickCount.toString());
-
-            if (newClickCount >= MAX_CLICKS) {
-                alert('You have reached the maximum number of direction requests.');
+            // Update localStorage
+            try {
+                localStorage.setItem(CACHE_KEY, JSON.stringify(routeCache.current));
+            } catch (e) {
+                if (e.name === 'QuotaExceededError') {
+                    console.error('localStorage quota exceeded.');
+                    toast.error('Cache size exceeded. Please clear some cached routes.');
+                }
             }
-        } catch (error) {
-            console.error('Error fetching directions:', error);
-            alert('Failed to load directions.');
         }
     };
+
+    // Debounced handleShowDirections with caching and LRU management
+    const debouncedHandleShowDirections = useCallback(
+        debounce(async (parkId, parkLat, parkLng) => {
+            // Check if directions are already shown for this park
+            if (routes[parkId]) {
+                toast.info('Directions already shown for this park.');
+                return;
+            }
+
+            // Create a unique cache key based on start and end coordinates
+            const cacheKey = generateCacheKey(
+                userLocation.latitude,
+                userLocation.longitude,
+                parkLat,
+                parkLng
+            );
+
+            // Check if route is in cache
+            if (routeCache.current[cacheKey]) {
+                console.log('Using cached route for:', cacheKey);
+                // Update lastAccessed timestamp
+                routeCache.current[cacheKey].lastAccessed = Date.now();
+                setRoutes(prevRoutes => ({
+                    ...prevRoutes,
+                    [parkId]: routeCache.current[cacheKey].coords,
+                }));
+                // Update localStorage with new timestamp
+                try {
+                    localStorage.setItem(CACHE_KEY, JSON.stringify(routeCache.current));
+                } catch (e) {
+                    if (e.name === 'QuotaExceededError') {
+                        console.error('localStorage quota exceeded.');
+                        toast.error('Cache size exceeded. Please clear some cached routes.');
+                    }
+                }
+                return;
+            }
+
+            setIsLoading(true); // Start loading spinner
+
+            try {
+                const response = await axios.post(`${process.env.REACT_APP_BACKEND_URI}/directions`, {
+                    startLat: userLocation.latitude,
+                    startLng: userLocation.longitude,
+                    endLat: parkLat,
+                    endLng: parkLng,
+                });
+
+                const geojson = response.data;
+
+                if (!geojson.features || geojson.features.length === 0) {
+                    throw new Error('No routes found');
+                }
+
+                // Extract coordinates
+                const coords = geojson.features[0].geometry.coordinates.map(coord => [coord[1], coord[0]]); // [lat, lng]
+
+                // Update cache with lastAccessed timestamp
+                routeCache.current[cacheKey] = {
+                    coords: coords,
+                    lastAccessed: Date.now(),
+                };
+
+                // Update routes state
+                setRoutes(prevRoutes => ({
+                    ...prevRoutes,
+                    [parkId]: coords,
+                }));
+
+                // Update localStorage
+                try {
+                    localStorage.setItem(CACHE_KEY, JSON.stringify(routeCache.current));
+                } catch (e) {
+                    if (e.name === 'QuotaExceededError') {
+                        console.error('localStorage quota exceeded.');
+                        toast.error('Cache size exceeded. Please clear some cached routes.');
+                    }
+                }
+
+                // Manage cache size
+                manageCacheSize();
+
+                toast.success('Directions loaded successfully!');
+            } catch (error) {
+                console.error('Error fetching directions:', error);
+                if (error.response && error.response.status === 429) {
+                    toast.error('Too many requests. Please try again later.');
+                } else {
+                    toast.error('Failed to load directions.');
+                }
+            } finally {
+                setIsLoading(false); // End loading spinner
+            }
+        }, 300), // 300ms debounce interval
+        [routes, userLocation]
+    );
+
+    const handleShowDirections = (parkId, parkLat, parkLng) => {
+        debouncedHandleShowDirections(parkId, parkLat, parkLng);
+    };
+
+    // Cleanup debounced function on unmount
+    useEffect(() => {
+        return () => {
+            debouncedHandleShowDirections.cancel();
+        };
+    }, [debouncedHandleShowDirections]);
 
     return (
         <div className="p-6">
@@ -125,22 +224,24 @@ const HomePage = () => {
                                 </p>
                                 {/* Directions Map */}
                                 <div className="mt-4">
-                                    <MapWithDirections
-                                        parkName={park.parkName}
-                                        parkLocation={{
-                                            latitude: park.location.coordinates[1],
-                                            longitude: park.location.coordinates[0]
-                                        }}
-                                        userLocation={userLocation}
-                                        route={routes[park._id]} // Pass route if available
-                                    />
+                                    {userLocation && park.location.coordinates && (
+                                        <MapWithDirections
+                                            parkName={park.parkName}
+                                            parkLocation={{
+                                                latitude: park.location.coordinates[1],
+                                                longitude: park.location.coordinates[0]
+                                            }}
+                                            userLocation={userLocation}
+                                            route={routes[park._id]} // Pass route if available
+                                        />
+                                    )}
                                 </div>
                                 {/* Show Directions Button */}
                                 <div className="mt-2">
                                     <button
                                         onClick={() => handleShowDirections(park._id, park.location.coordinates[1], park.location.coordinates[0])}
-                                        disabled={routes[park._id] || clickCount >= MAX_CLICKS}
-                                        className={`px-4 py-2 rounded ${routes[park._id] || clickCount >= MAX_CLICKS
+                                        disabled={routes[park._id]}
+                                        className={`px-4 py-2 rounded ${routes[park._id]
                                             ? 'bg-gray-400 cursor-not-allowed'
                                             : 'bg-blue-500 hover:bg-blue-700 text-white'
                                             }`}
@@ -159,6 +260,14 @@ const HomePage = () => {
                     ))}
                 </ul>
             )}
+            {/* Loading Spinner */}
+            {isLoading && (
+                <div className="fixed top-0 left-0 right-0 bottom-0 flex items-center justify-center bg-gray-800 bg-opacity-50 z-50">
+                    <ClipLoader color="#ffffff" size={50} />
+                </div>
+            )}
+            {/* Toast Notifications */}
+            <ToastContainer position="top-right" autoClose={5000} hideProgressBar={false} newestOnTop closeOnClick pauseOnFocusLoss draggable pauseOnHover />
         </div>
     );
 };

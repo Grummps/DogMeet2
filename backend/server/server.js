@@ -7,11 +7,7 @@ const s3 = require('./config/s3Config');  // Import AWS S3 config
 const dbConnection = require("./config/db.config");
 const cookieParser = require('cookie-parser');
 const http = require('http');
-const { Server } = require('socket.io');
-const socketAuth = require('./middleware/socketAuth'); // Import Socket.IO middleware
-const Message = require('./models/messageModel'); // Import your Message model
-const checkFriendship = require('./utilities/checkFriendship');
-const getOrCreateConversation = require('./socket/getOrCreateConvo');
+const rateLimit = require('express-rate-limit');
 
 // Import routes
 const userRoutes = require("./routes/userRoutes");
@@ -27,6 +23,16 @@ const mapRoutes = require("./routes/mapRoutes");
 require("dotenv").config();
 
 const SERVER_PORT = process.env.SERVER_PORT || 8081;
+
+// Define rate limiter for /directions
+const directionsLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 20, // Limit each IP to 100 requests per windowMs
+  message: {
+    status: 429,
+    message: 'Too many requests from this IP, please try again after 15 minutes.'
+  }
+});
 
 // Connect to the database
 dbConnection();
@@ -52,7 +58,7 @@ app.use("/parks", parkRoutes);      // For park routes
 app.use("/dogs", dogRoutes);        // For dog routes
 app.use("/auth", refreshToken);     // Refresh token route
 app.use("/messages", messageRoutes);// For message routes
-app.use("/directions", mapRoutes);  // For map routes
+app.use("/directions", directionsLimiter, mapRoutes);  // For map routes
 
 // Create HTTP server
 const server = http.createServer(app);
