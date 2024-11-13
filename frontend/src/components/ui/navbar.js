@@ -299,7 +299,7 @@ export default function Navbar() {
         <Link to="/home" className="flex items-center no-underline">
           <HomeIcon className="h-6 w-6 fill-white hover:fill-blue-500 cursor-pointer" />
           <span className="ml-4 text-white text-lg hidden md:inline">
-            Home
+            Near You
           </span>
         </Link>
 
@@ -357,8 +357,8 @@ export default function Navbar() {
               <div className="flex border-b">
                 <button
                   className={`flex-1 py-2 ${activeTab === "friend_requests"
-                      ? "border-b-2 border-blue-500 text-blue-500"
-                      : "text-gray-500"
+                    ? "border-b-2 border-blue-500 text-blue-500"
+                    : "text-gray-500"
                     }`}
                   onClick={() => setActiveTab("friend_requests")}
                 >
@@ -366,8 +366,8 @@ export default function Navbar() {
                 </button>
                 <button
                   className={`flex-1 py-2 ${activeTab === "event_notifications"
-                      ? "border-b-2 border-blue-500 text-blue-500"
-                      : "text-gray-500"
+                    ? "border-b-2 border-blue-500 text-blue-500"
+                    : "text-gray-500"
                     }`}
                   onClick={() => setActiveTab("event_notifications")}
                 >
@@ -375,8 +375,8 @@ export default function Navbar() {
                 </button>
                 <button
                   className={`flex-1 py-2 ${activeTab === "message_notifications"
-                      ? "border-b-2 border-blue-500 text-blue-500"
-                      : "text-gray-500"
+                    ? "border-b-2 border-blue-500 text-blue-500"
+                    : "text-gray-500"
                     }`}
                   onClick={() => setActiveTab("message_notifications")}
                 >

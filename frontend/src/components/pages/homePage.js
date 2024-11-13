@@ -1,61 +1,164 @@
-import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
-import getUserInfo from '../../utilities/decodeJwt';
+import React, { useEffect, useState } from 'react';
+import axios from 'axios';
+import MapWithDirections from '../ui/mapWithDirections';
+import { Link } from 'react-router-dom';
 
 const HomePage = () => {
-    const [user, setUser] = useState(null);
-    const navigate = useNavigate();
+    const [userLocation, setUserLocation] = useState(null);
+    const [nearbyParks, setNearbyParks] = useState([]);
+    const [error, setError] = useState('');
+    const [routes, setRoutes] = useState({}); // Store routes per parkId
+    const [clickCount, setClickCount] = useState(0); // Track total clicks
 
-    const handleLogout = (e) => {
-        e.preventDefault();
-        localStorage.removeItem('accessToken');
-        setUser(null); // Clear user state
-        navigate('/');
-    };
+    const MAX_CLICKS = 5;
 
     useEffect(() => {
-        const token = localStorage.getItem("accessToken");
-        if (token) {
-            const obj = getUserInfo(token);
-            console.log('Decoded User:', obj); // For debugging
-            setUser(obj);
+        // Initialize click count from localStorage
+        const storedClicks = parseInt(localStorage.getItem('showDirectionsClicks') || '0', 10);
+        setClickCount(storedClicks);
+    }, []);
+
+    useEffect(() => {
+        // Check if geolocation is available
+        if ('geolocation' in navigator) {
+            navigator.geolocation.getCurrentPosition(
+                position => {
+                    const { latitude, longitude } = position.coords;
+                    setUserLocation({ latitude, longitude });
+                },
+                err => {
+                    console.error('Error obtaining location:', err);
+                    setError('Unable to retrieve your location.');
+                }
+            );
+        } else {
+            setError('Geolocation is not supported by your browser.');
         }
     }, []);
 
-    if (!user) {
-        return (
-            <div className="flex items-center justify-center min-h-screen bg-gray-100">
-                <h4 className="text-xl font-semibold">Log in to view this page.</h4>
-            </div>
-        );
-    }
+    // Fetch nearby parks when userLocation is available
+    useEffect(() => {
+        if (userLocation) {
+            fetchNearbyParks(userLocation);
+        }
+    }, [userLocation]);
 
-    // Destructure only the fields present in the token
-    const { _id, email, username, isAdmin } = user;
+    const fetchNearbyParks = async ({ latitude, longitude }) => {
+        try {
+            const response = await axios.get(`${process.env.REACT_APP_BACKEND_URI}/parks/nearby`, {
+                params: {
+                    latitude,
+                    longitude,
+                },
+            });
+            setNearbyParks(response.data);
+        } catch (err) {
+            console.error('Error fetching nearby parks:', err);
+            setError('Failed to load nearby parks.');
+        }
+    };
+
+    const handleShowDirections = async (parkId, parkLat, parkLng) => {
+        // Check if user has remaining clicks
+        if (clickCount >= MAX_CLICKS) {
+            alert('You have reached the maximum number of direction requests.');
+            return;
+        }
+
+        // Check if directions are already shown for this park
+        if (routes[parkId]) {
+            alert('Directions already shown for this park.');
+            return;
+        }
+
+        try {
+            const response = await axios.post(`${process.env.REACT_APP_BACKEND_URI}/directions`, {
+                startLat: userLocation.latitude,
+                startLng: userLocation.longitude,
+                endLat: parkLat,
+                endLng: parkLng,
+            });
+
+            const geojson = response.data;
+
+            if (!geojson.features || geojson.features.length === 0) {
+                throw new Error('No routes found');
+            }
+
+            // Extract coordinates
+            const coords = geojson.features[0].geometry.coordinates.map(coord => [coord[1], coord[0]]); // [lat, lng]
+
+            // Update routes state
+            setRoutes(prevRoutes => ({
+                ...prevRoutes,
+                [parkId]: coords,
+            }));
+
+            // Increment click count
+            const newClickCount = clickCount + 1;
+            setClickCount(newClickCount);
+            localStorage.setItem('showDirectionsClicks', newClickCount.toString());
+
+            if (newClickCount >= MAX_CLICKS) {
+                alert('You have reached the maximum number of direction requests.');
+            }
+        } catch (error) {
+            console.error('Error fetching directions:', error);
+            alert('Failed to load directions.');
+        }
+    };
 
     return (
-        <div className="min-h-screen bg-gray-100 flex flex-col items-center justify-center">
-            <div className="p-6 bg-white rounded-lg shadow-lg w-3/4 md:w-1/2 lg:w-1/3">
-                <h3 className="text-2xl font-semibold mb-4">
-                    Welcome <span className='text-pink-600'>@{username}</span>!
-                </h3>
-                <p className="mb-2"><strong>User ID:</strong> {_id}</p>
-                <p className="mb-2"><strong>Email:</strong> {email}</p>
-                <p className="mb-4"><strong>Admin:</strong> {isAdmin ? 'Yes' : 'No'}</p>
-                {isAdmin && (
-                    <div className="mb-4 p-4 bg-pink-100 rounded-md">
-                        <h4 className="text-lg font-semibold mb-2">Admin Panel</h4>
-                        {/* Add admin-specific features here */}
-                        <p>You have administrative privileges.</p>
-                    </div>
-                )}
-                <button
-                    onClick={handleLogout}
-                    className="mt-4 px-4 py-2 bg-red-500 text-white rounded-md hover:bg-red-600 transition duration-300"
-                >
-                    Log Out
-                </button>
-            </div>
+        <div className="p-6">
+            <h1 className="text-3xl font-bold mb-4 ml-40">Parks Near You</h1>
+            {error && <div className="text-red-500">{error}</div>}
+            {!error && nearbyParks.length === 0 && <p>Loading nearby parks...</p>}
+            {!error && nearbyParks.length > 0 && (
+                <ul>
+                    {nearbyParks.map(park => (
+                        <li key={park._id} className="mb-8">
+                            <div className="ml-48">
+                                <h2 className="text-2xl font-semibold">{park.parkName}</h2>
+                                <p>Distance: {(park.distance / 1000).toFixed(2)} km</p>
+                                <p>
+                                    <strong>Location:</strong> Latitude: {park.location.coordinates[1]}, Longitude: {park.location.coordinates[0]}
+                                </p>
+                                {/* Directions Map */}
+                                <div className="mt-4">
+                                    <MapWithDirections
+                                        parkName={park.parkName}
+                                        parkLocation={{
+                                            latitude: park.location.coordinates[1],
+                                            longitude: park.location.coordinates[0]
+                                        }}
+                                        userLocation={userLocation}
+                                        route={routes[park._id]} // Pass route if available
+                                    />
+                                </div>
+                                {/* Show Directions Button */}
+                                <div className="mt-2">
+                                    <button
+                                        onClick={() => handleShowDirections(park._id, park.location.coordinates[1], park.location.coordinates[0])}
+                                        disabled={routes[park._id] || clickCount >= MAX_CLICKS}
+                                        className={`px-4 py-2 rounded ${routes[park._id] || clickCount >= MAX_CLICKS
+                                            ? 'bg-gray-400 cursor-not-allowed'
+                                            : 'bg-blue-500 hover:bg-blue-700 text-white'
+                                            }`}
+                                    >
+                                        {routes[park._id] ? 'Directions Shown' : 'Show Directions'}
+                                    </button>
+                                </div>
+                                {/* Additional Park Details or Actions */}
+                                <div className="mt-2">
+                                    <Link to={`/parks/${park._id}`} className="text-blue-500 underline">
+                                        View Park Details
+                                    </Link>
+                                </div>
+                            </div>
+                        </li>
+                    ))}
+                </ul>
+            )}
         </div>
     );
 };

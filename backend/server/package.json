@@ -18,6 +18,7 @@
   "homepage": "https://github.com/Tochey/User_Service#readme",
   "dependencies": {
     "aws-sdk": "^2.1691.0",
+    "axios": "^1.7.7",
     "bcrypt": "^5.1.0",
     "cookie-parser": "^1.4.7",
     "cors": "^2.8.5",

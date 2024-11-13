@@ -4,6 +4,7 @@ import App from "./App";
 import "bootstrap/dist/css/bootstrap.min.css";
 import { BrowserRouter } from "react-router-dom";
 import "./index.css";
+import 'leaflet-routing-machine/dist/leaflet-routing-machine.css';
 import { UserProvider } from "./components/contexts/userContext";
 import { TokenRefreshProvider } from "./components/contexts/tokenRefreshContext";
 

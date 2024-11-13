@@ -21,6 +21,7 @@ const parkRoutes = require("./routes/parkRoutes");
 const dogRoutes = require("./routes/dogRoutes");
 const refreshToken = require("./routes/refreshToken");
 const messageRoutes = require("./routes/messageRoutes");
+const mapRoutes = require("./routes/mapRoutes");
 
 // Load environment variables
 require("dotenv").config();
@@ -51,6 +52,7 @@ app.use("/parks", parkRoutes);      // For park routes
 app.use("/dogs", dogRoutes);        // For dog routes
 app.use("/auth", refreshToken);     // Refresh token route
 app.use("/messages", messageRoutes);// For message routes
+app.use("/directions", mapRoutes);  // For map routes
 
 // Create HTTP server
 const server = http.createServer(app);
