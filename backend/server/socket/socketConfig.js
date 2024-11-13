@@ -18,9 +18,7 @@ function initializeSocket(httpServer) {
         },
     });
 
-
     const usersInConversations = new Map(); // Key: userId, Value: Set of conversationIds
-
 
     // Socket.IO authentication middleware
     io.use(async (socket, next) => {
