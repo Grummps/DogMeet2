@@ -22,7 +22,7 @@ const mapRoutes = require("./routes/mapRoutes");
 // Load environment variables
 require("dotenv").config();
 
-const SERVER_PORT = process.env.SERVER_PORT || 8081;
+const port = process.env.PORT || 8081;
 
 // Define rate limiter for /directions
 const directionsLimiter = rateLimit({
@@ -96,6 +96,6 @@ app.post('/upload', upload.single('file'), (req, res) => {
 });
 
 // Start the server
-server.listen(SERVER_PORT, () => {
-  console.log(`The backend service is running on port ${SERVER_PORT} and waiting for requests.`);
+server.listen(port, () => {
+  console.log(`The backend service is running on port ${port} and waiting for requests.`);
 });
