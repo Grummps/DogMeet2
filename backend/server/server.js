@@ -97,6 +97,6 @@ app.post('/upload', upload.single('file'), (req, res) => {
 });
 
 // Start the server
-server.listen(port, () => {
+server.listen(port, '0.0.0.0', () => {
   console.log(`The backend service is running on port ${port} and waiting for requests.`);
 });
