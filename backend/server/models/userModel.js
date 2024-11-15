@@ -1,6 +1,8 @@
 const mongoose = require("mongoose");
 const { Schema } = mongoose;
 
+const MAX_DOGS = 8; // Define the maximum number of dogs allowed per user
+
 const newUserSchema = new mongoose.Schema(
   {
     username: {
@@ -71,11 +73,15 @@ const newUserSchema = new mongoose.Schema(
       required: false,
     },
   },
-  { 
+  {
     collection: "users",
     timestamps: true,
   }
 );
 
+// Add a custom validator to ensure a user can't have more than MAX_DOGS
+newUserSchema.path('dogId').validate(function (value) {
+  return value.length <= MAX_DOGS;
+}, `A user cannot have more than ${MAX_DOGS} dogs.`);
 
-module.exports = mongoose.model('users', newUserSchema);
+module.exports = mongoose.model('users', newUserSchema); 

@@ -94,11 +94,25 @@ const DogForm = ({ updateUser, userId }) => {
             setShowModal(false);  // Close modal after successful form submission
         } catch (error) {
             console.error('Error adding dog:', error);
-            setError('Failed to add the dog. Please try again.');
+
+            // Check if the error response exists
+            if (error.response) {
+                // Handle specific error messages
+                if (error.response.status === 400 && error.response.data.message.includes('Dog limit reached')) {
+                    setError(`You cannot have more than 8 dogs.`);
+                } else if (error.response.data.message) {
+                    setError(error.response.data.message);
+                } else {
+                    setError('Failed to add the dog. Please try again.');
+                }
+            } else {
+                setError('Failed to add the dog. Please try again.');
+            }
         } finally {
             setLoading(false);
         }
     };
+
 
     return (
         <div className="max-w-6xl mx-auto p-6 relative">

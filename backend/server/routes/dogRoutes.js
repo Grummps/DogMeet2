@@ -8,6 +8,7 @@ const s3 = require('../config/s3Config');  // Import the S3 configuration
 const { v4: uuidv4 } = require('uuid');  // For generating unique file names
 const { URL } = require('url');
 const authenticate = require('../middleware/auth');
+const Event = require('../models/eventModel');
 
 // Create a new dog and assign it to the user
 router.post('/create', authenticate, upload.single('image'), async (req, res) => {
@@ -26,8 +27,20 @@ router.post('/create', authenticate, upload.single('image'), async (req, res) =>
             return res.status(400).json({ message: 'Invalid size. Must be small, medium, or large.' });
         }
 
+        // Retrieve the user to check the number of dogs
+        const user = await newUserModel.findById(userId).populate('dogId');
+
+        if (!user) {
+            return res.status(404).json({ message: 'User not found.' });
+        }
+
+        if (user.dogId.length >= 8) {
+            return res.status(400).json({ message: 'Dog limit reached. You cannot have more than 8 dogs.' });
+        }
+
         // Prepare for S3 upload if an image is provided
         let imageUrl = null;
+        let imageKey = null;
         if (req.file) {
             const fileContent = req.file.buffer;
             const fileExt = req.file.originalname.split('.').pop();
@@ -44,6 +57,7 @@ router.post('/create', authenticate, upload.single('image'), async (req, res) =>
             // Upload the file to S3
             const s3Response = await s3.upload(params).promise();
             imageUrl = s3Response.Location; // Get the public URL of the uploaded file
+            imageKey = s3Response.Key; // Store the key if needed for future deletion
         }
 
         // Create a new dog document with ownerId
@@ -51,6 +65,7 @@ router.post('/create', authenticate, upload.single('image'), async (req, res) =>
             dogName,
             size,
             image: imageUrl,
+            imageKey: imageKey, // Optionally store the S3 key
             ownerId: userId, // Set the ownerId to the authenticated user's _id
         });
 
@@ -62,6 +77,12 @@ router.post('/create', authenticate, upload.single('image'), async (req, res) =>
         res.status(201).json({ message: 'Dog created and assigned to user successfully.', dog: savedDog });
     } catch (error) {
         console.error('Error creating dog:', error);
+
+        // Handle Mongoose validation error for dog limit
+        if (error.name === 'ValidationError') {
+            return res.status(400).json({ message: error.message });
+        }
+
         res.status(500).json({ message: 'Error creating dog.' });
     }
 });
@@ -138,7 +159,7 @@ router.delete('/delete/:_id', async (req, res) => {
             try {
                 const imageUrl = dog.image;
                 const url = new URL(imageUrl);
-                const key = decodeURIComponent(url.pathname.substring(1));  // Remove leading '/'
+                const key = decodeURIComponent(url.pathname.substring(1)); 
 
                 // Define S3 delete parameters
                 const params = {
@@ -152,6 +173,13 @@ router.delete('/delete/:_id', async (req, res) => {
                 console.error('Error deleting image from S3:', s3Error);
             }
         }
+
+        // Remove the Dog from Associated Events
+        await Event.updateMany(
+            { dogs: dogId },
+            { $pull: { dogs: dogId } }
+        );
+
 
         // Now delete the dog from the database
         await dogModel.findByIdAndDelete(dogId);

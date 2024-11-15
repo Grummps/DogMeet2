@@ -118,7 +118,14 @@ router.get('/:_id/events/upcoming', async (req, res) => {
     const parkId = req.params._id;
     const now = new Date();
 
-    // Find upcoming events for this park
+    // Step 1: Delete events that have no associated dogs
+    Event.deleteMany({
+      parkId: parkId,
+      date: { $gte: now },
+      dogs: { $size: 0 }, // Assumes 'dogs' is an array field in the Event model
+    });
+
+    // Step 2: Fetch the remaining upcoming events
     const upcomingEvents = await Event.find({
       parkId: parkId,
       date: { $gte: now },
@@ -136,13 +143,29 @@ router.get('/:_id/events/upcoming', async (req, res) => {
   }
 });
 
+
 // Get active (checked-in) events for a specific park
 router.get('/:_id/events/active', async (req, res) => {
   try {
     const parkId = req.params._id;
+
+    // Validate parkId
+    if (!mongoose.Types.ObjectId.isValid(parkId)) {
+      return res.status(400).json({ message: 'Invalid park ID.' });
+    }
+
     const now = new Date();
 
-    // Find events that have started but not yet expired
+    // Delete Active Events with No Dogs
+    await Event.deleteMany({
+      parkId: parkId,
+      date: { $lte: now },
+      expiresAt: { $gt: now },
+      dogs: { $size: 0 },
+    });
+
+
+    // **Fetch Active Events**
     const activeEvents = await Event.find({
       parkId,
       date: { $lte: now },
@@ -158,12 +181,15 @@ router.get('/:_id/events/active', async (req, res) => {
       })
       .sort({ date: 1, time: 1 });
 
+    console.log(`Fetched ${activeEvents.length} active event(s).`);
+
     res.status(200).json(activeEvents);
   } catch (error) {
     console.error('Error fetching active events:', error);
     res.status(500).json({ message: 'Error fetching active events.' });
   }
 });
+
 
 // POST /parks/:_id/check-in
 router.post('/:_id/check-in', authenticate, async (req, res) => {

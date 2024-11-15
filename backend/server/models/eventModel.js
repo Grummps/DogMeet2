@@ -18,6 +18,7 @@ const eventSchema = new mongoose.Schema(
         type: Schema.Types.ObjectId,
         ref: 'dogs',
         required: true,
+        default: [],
       }
     ],
     time: {
