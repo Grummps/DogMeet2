@@ -4,7 +4,7 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "start": "node server.js",
+    "start": "node --max_old_space_size=2048 server.js",
     "server": "nodemon server.js"
   },
   "repository": {
