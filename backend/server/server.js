@@ -23,6 +23,7 @@ const mapRoutes = require("./routes/mapRoutes");
 require("dotenv").config();
 
 const port = process.env.PORT || 8081;
+const allowedOrigin = process.env.CLIENT_ORIGIN || 'http://localhost:8096';
 
 // Define rate limiter for /directions
 const directionsLimiter = rateLimit({
@@ -40,7 +41,7 @@ dbConnection();
 // Middleware
 app.use(
   cors({
-    origin: process.env.CLIENT_URL || 'http://localhost:8096', // Update with your frontend URL
+    origin: allowedOrigin, // Update with your frontend URL
     credentials: true, // Allow cookies to be sent
   })
 );
