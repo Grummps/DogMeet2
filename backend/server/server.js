@@ -22,7 +22,7 @@ const mapRoutes = require("./routes/mapRoutes");
 // Load environment variables
 require("dotenv").config();
 
-const port = process.env.PORT || 8081;
+const port = process.env.PORT  // || 8081;
 const allowedOrigin = process.env.CLIENT_ORIGIN || 'http://localhost:8096';
 
 // Define rate limiter for /directions
