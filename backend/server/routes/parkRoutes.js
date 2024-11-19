@@ -166,7 +166,7 @@ router.get('/:_id/events/active', async (req, res) => {
 
 
     // **Fetch Active Events**
-    await Event.find({
+    const activeEvents = await Event.find({
       parkId,
       date: { $lte: now },
       expiresAt: { $gt: now },

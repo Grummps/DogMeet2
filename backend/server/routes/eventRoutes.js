@@ -5,6 +5,7 @@ const authenticate = require("../middleware/auth");
 const User = require('../models/userModel');
 const Park = require('../models/parkModel');
 const Notification = require('../models/notificationModel');
+const { getIo, onlineUsers } = require('../socket/socketConfig');
 
 // POST route to create a new event
 router.post("/create", authenticate, async (req, res) => {
@@ -102,12 +103,29 @@ router.post("/create", authenticate, async (req, res) => {
             // Save notifications and update friends' notification lists
             const savedNotifications = await Notification.insertMany(notifications);
 
+            // Emit socket events to online friends
+            const io = getIo();
+            for (const notification of savedNotifications) {
+                const friendIdStr = notification.receiver.toString();
+                const recipientSocketId = onlineUsers.get(friendIdStr);
+                if (recipientSocketId) {
+                    const populatedNotification = await Notification.findById(notification._id)
+                        .populate('sender', 'username')
+                        .populate('event')
+                        .populate({
+                            path: 'event',
+                            populate: { path: 'parkId', select: 'parkName' }
+                        });
+                    io.to(recipientSocketId).emit('newNotification', populatedNotification);
+                }
+            }
+
             // Update each friend's notifications
-            const friendIds = userFriends.map(friend => friend._id);
+           /* const friendIds = userFriends.map(friend => friend._id);
             await User.updateMany(
                 { _id: { $in: friendIds } },
                 { $push: { notifications: { $each: savedNotifications.map(n => n._id) } } }
-            );
+            ); */
         }
 
         // Respond with the saved event
