@@ -1,5 +1,6 @@
 // Unlike dogform, this component gathers a list of other user's dogs
-
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { faDog } from '@fortawesome/free-solid-svg-icons';
 import React from 'react';
 
 const ListDogs = ({ user }) => (
@@ -17,8 +18,8 @@ const ListDogs = ({ user }) => (
                                     className="w-16 h-16 rounded-full mr-4"
                                 />
                             ) : (
-                                <div className="w-16 h-16 bg-gray-300 rounded-full flex items-center justify-center mr-4">
-                                    <span className="text-gray-500 text-sm">No Image</span>
+                                <div className="w-16 h-16 bg-gray-300 rounded-full flex items-center justify-center mr-2">
+                                    <FontAwesomeIcon icon={faDog} className="size-12" />
                                 </div>
                             )}
                             <div>
