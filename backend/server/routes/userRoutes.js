@@ -144,7 +144,7 @@ router.post('/uploadProfilePicture', authenticate, upload.single('image'), async
         // If the user already has an image, delete it from S3
         if (user.imageKey) {
             const deleteParams = {
-                Bucket: 'dogmeet', // Replace with your actual bucket name
+                Bucket: process.env.AWS_BUCKET_NAME, // Replace with your actual bucket name
                 Key: user.imageKey,
             };
 
@@ -156,11 +156,11 @@ router.post('/uploadProfilePicture', authenticate, upload.single('image'), async
         const fileContent = req.file.buffer;
         const fileExt = req.file.originalname.split('.').pop();
         const fileName = `${uuidv4()}.${fileExt}`;
-        const newImageKey = `profilePictures/${fileName}`;
+        const newImageKey = `${process.env.AWS_PROFILE_FOLDER}/${fileName}`;
 
         // Define S3 upload parameters
         const uploadParams = {
-            Bucket: 'dogmeet', // Replace with your actual bucket name
+            Bucket: process.env.AWS_BUCKET_NAME, // Replace with your actual bucket name
             Key: newImageKey,
             Body: fileContent,
             ContentType: req.file.mimetype,
@@ -197,7 +197,7 @@ router.delete('/deleteProfilePicture', authenticate, async (req, res) => {
         if (user.imageKey) {
             // Delete image from S3
             const deleteParams = {
-                Bucket: 'dogmeet',
+                Bucket: process.env.AWS_BUCKET_NAME,
                 Key: user.imageKey,
             }
 

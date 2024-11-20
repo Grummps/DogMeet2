@@ -48,8 +48,8 @@ router.post('/create', authenticate, upload.single('image'), async (req, res) =>
 
             // Define S3 upload parameters
             const params = {
-                Bucket: 'dogmeet', // Replace with your actual bucket name
-                Key: `dogs/${fileName}`,
+                Bucket: process.env.AWS_BUCKET_NAME , // Replace with your actual bucket name
+                Key: `${process.env.AWS_DOG_FOLDER}/${fileName}`,
                 Body: fileContent,
                 ContentType: req.file.mimetype,
             };
@@ -163,7 +163,7 @@ router.delete('/delete/:_id', async (req, res) => {
 
                 // Define S3 delete parameters
                 const params = {
-                    Bucket: 'dogmeet',  // Replace with your actual bucket name
+                    Bucket: process.env.AWS_BUCKET_NAME,  // Replace with your actual bucket name
                     Key: key
                 };
 
