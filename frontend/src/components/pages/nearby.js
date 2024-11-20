@@ -298,7 +298,7 @@ const HomePage = () => {
                     </div>
                     <button
                         onClick={requestGeolocation}
-                        className="mt-4 px-4 py-2 bg-blue-500 hover:bg-blue-700 text-white rounded"
+                        className="mt-4 ml-40 px-4 py-2 bg-blue-500 hover:bg-blue-700 text-white rounded"
                     >
                         Allow location access
                     </button>
