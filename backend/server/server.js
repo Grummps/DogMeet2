@@ -18,12 +18,13 @@ const dogRoutes = require("./routes/dogRoutes");
 const refreshToken = require("./routes/refreshToken");
 const messageRoutes = require("./routes/messageRoutes");
 const mapRoutes = require("./routes/mapRoutes");
+const conversationRoutes = require("./routes/conversationRoutes");
 
 // Load environment variables
 require("dotenv").config();
 
 const port = process.env.PORT || 8081;
-const allowedOrigin = 'http://localhost:8096' || process.env.CLIENT_ORIGIN  ;
+const allowedOrigin = process.env.CLIENT_ORIGIN || 'http://localhost:8096';
 
 // Define rate limiter for /directions
 const directionsLimiter = rateLimit({
@@ -60,6 +61,7 @@ app.use("/dogs", dogRoutes);        // For dog routes
 app.use("/auth", refreshToken);     // Refresh token route
 app.use("/messages", messageRoutes);// For message routes
 app.use("/directions", directionsLimiter, mapRoutes);  // For map routes
+app.use("/conversations", conversationRoutes);
 
 // Create HTTP server
 const server = http.createServer(app);
