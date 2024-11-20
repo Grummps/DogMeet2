@@ -286,7 +286,7 @@ const HomePage = () => {
 
             {/* Conditional Rendering Based on Permission Status */}
             {permissionStatus === 'denied' && (
-                <div className="text-red-500">
+                <div className="text-red-500 ml-40">
                     Location access has been denied. Please enable location access in your browser settings.
                 </div>
             )}
