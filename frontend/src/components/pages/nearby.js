@@ -285,20 +285,20 @@ const HomePage = () => {
             </div>
 
             {/* Conditional Rendering Based on Permission Status */}
-            {/* {permissionStatus === 'denied' && (
+            {permissionStatus === 'denied' && (
                 <div className="text-red-500 ml-40">
                     Location access has been denied. Please enable location access in your browser settings.
                 </div>
-            )} */}
+            )}
 
-            {(permissionStatus === 'denied' || permissionStatus === 'unknown') && (
+            {(permissionStatus === 'prompt' || permissionStatus === 'unknown') && (
                 <div>
                     <div className="text-gray-700 ml-40">
                         We need your location to show nearby parks.
                     </div>
                     <button
                         onClick={requestGeolocation}
-                        className="mt-4 ml-40 px-4 py-2 bg-blue-500 hover:bg-blue-700 text-white rounded"
+                        className="mt-4 px-4 py-2 bg-blue-500 hover:bg-blue-700 text-white rounded"
                     >
                         Allow location access
                     </button>
