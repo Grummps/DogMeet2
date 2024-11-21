@@ -210,8 +210,8 @@ const Chat = ({ targetChatUser, setTargetChatUser }) => {
         const isUserReceivedMessage = data.receiverId === user._id;
         const isUserSentMessage = data.senderId === user._id;
 
-        // Update messages state
-        setMessages((prevMessages) => [...prevMessages, data]);
+        // Update messages state 
+        //setMessages((prevMessages) => [...prevMessages, data]);
 
         if (isUserReceivedMessage) {
             playChatNotificationSound();

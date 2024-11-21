@@ -58,31 +58,20 @@ const ChatTab = ({
 
         if (message === "") return;
 
-        const messageData = {
-            chatRoomId: chatRoom._id,
-            senderId: currentUser._id,
-            receiverId: chatUser._id,
-            content: message,
-            isRead: false,
-        };
+        const response = await saveMessage(message);
+        const savedMessage = response.data;
 
-        try {
-            // Emit the message via Socket.IO
-            socket.emit('sendMessage', messageData);
-            console.log("Sent message via socket:", messageData);
+        console.log("Sent message via socket:", message);
 
-            // Save the message to the backend API
-            const savedMessage = await saveMessage(message);
-            if (savedMessage) {
-                console.log("Message saved successfully:", savedMessage);
-                // Optionally, you can update your local state with the saved message
-                // setMessages((prev) => [...prev, savedMessage]);
-            }
-        } catch (error) {
-            console.error("Error sending or saving message:", error);
+        if (!savedMessage) {
+            setNewMessage(message);
+            return;
         }
 
+        socket.emit("sendMessage", savedMessage);
+
         scrollEffect = "smooth";
+
         scrollToBottom(scrollEffect);
     };
 
