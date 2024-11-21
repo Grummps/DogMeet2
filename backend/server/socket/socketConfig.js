@@ -15,6 +15,7 @@ function initializeSocket(httpServer) {
             methods: ['GET', 'POST'],
             credentials: true,
         },
+        transports: ['websocket'], // Ensure 'websocket' is included
     });
 
     io.on("connection", (socket) => {

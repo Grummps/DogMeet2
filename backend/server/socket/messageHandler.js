@@ -10,7 +10,7 @@ module.exports = (io, socket, onlineUsers) => {
 
         try {
             // Save the message to the database
-            const Message = require('../../models/messageModel');
+            const Message = require('../models/messageModel');
             const newMessage = new Message({
                 chatRoomId,
                 senderId,
@@ -27,7 +27,7 @@ module.exports = (io, socket, onlineUsers) => {
         } catch (error) {
             console.error("Error in sendMessage handler:", error);
             // Optionally, emit an error back to the client
-        }
+        } 
     });
 
     // Additional message-related events can be handled here

@@ -59,23 +59,33 @@ const ChatTab = ({
         if (message === "") return;
 
         const messageData = {
-            chatRoomId: chatRoom._id, // Corrected
-            senderId: currentUser._id, // Corrected
+            chatRoomId: chatRoom._id,
+            senderId: currentUser._id,
             receiverId: chatUser._id,
             content: message,
             isRead: false,
         };
 
         try {
-            socket.emit('sendMessage', messageData); // Correctly imported socket
+            // Emit the message via Socket.IO
+            socket.emit('sendMessage', messageData);
             console.log("Sent message via socket:", messageData);
+
+            // Save the message to the backend API
+            const savedMessage = await saveMessage(message);
+            if (savedMessage) {
+                console.log("Message saved successfully:", savedMessage);
+                // Optionally, you can update your local state with the saved message
+                // setMessages((prev) => [...prev, savedMessage]);
+            }
         } catch (error) {
-            console.error("Error sending message via socket:", error);
+            console.error("Error sending or saving message:", error);
         }
 
         scrollEffect = "smooth";
         scrollToBottom(scrollEffect);
     };
+
 
     const getChatHistoryStr = () => {
         let chatHistory = "";
@@ -152,8 +162,8 @@ const ChatTab = ({
                         </div>
                         <div
                             className={`flex p-2 font-display text-sm rounded-lg break-words ${message.senderId === currentUser._id
-                                    ? "bg-orange-500 text-white self-end ml-40"
-                                    : "bg-gray-300 text-gray-900 self-start mr-40"
+                                ? "bg-orange-500 text-white self-end ml-40"
+                                : "bg-gray-300 text-gray-900 self-start mr-40"
                                 }`}
                         >
                             <div className="w-40">
@@ -217,7 +227,7 @@ const ChatTab = ({
                 </div>
                 {/* Send button */}
                 <button
-                    onClick={saveMessage}
+                    onClick={handleSendMessage}
                     className="ml-2 p-2 bg-orange-500 text-white rounded-lg hover:bg-orange-600 font-menu"
                 >
                     <FontAwesomeIcon
