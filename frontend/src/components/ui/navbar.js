@@ -2,7 +2,6 @@ import React, { useEffect, useState, useRef, useContext } from "react";
 import {
   HomeIcon,
   UserIcon,
-  PlayCircleIcon,
   MapPinIcon,
   ArrowLeftOnRectangleIcon,
   BellIcon,
@@ -12,12 +11,11 @@ import { useNavigate, useLocation, Link } from "react-router-dom";
 import apiClient from "../../utilities/apiClient";
 import Alert from "./alert"; // Ensure this path is correct
 import { UserContext } from "../contexts/userContext";
-import { SocketContext } from "../contexts/socketContext";
+import socket, { connectSocket } from "../../utilities/socket"; // Import the socket directly
+import Chat from "../chat/chat";
 
 export default function Navbar() {
   const { user, setUser } = useContext(UserContext);
-  const socket = useContext(SocketContext);
-
   const location = useLocation();
   const navigate = useNavigate();
 
@@ -33,15 +31,16 @@ export default function Navbar() {
   const [feedbackType, setFeedbackType] = useState(""); // 'success' or 'error'
 
   // State for active tab
-  const [activeTab, setActiveTab] = useState("friend_requests"); // 'friend_requests', 'event_notifications', 'message_notifications'
+  const [activeTab, setActiveTab] = useState("friend_requests");
 
   const handleLogout = (e) => {
     e.preventDefault();
     localStorage.removeItem("accessToken");
     setUser(null);
-    navigate("/");
+    socket.disconnect(); // Disconnect the socket
+    navigate("/login");
   };
-
+  
   // Fetch notifications when the component mounts
   useEffect(() => {
     const fetchData = async () => {
@@ -98,20 +97,22 @@ export default function Navbar() {
   useEffect(() => {
     if (!socket) return; // Wait until the socket is initialized
 
-    socket.on("newNotification", (notification) => {
+    const handleNewNotification = (notification) => {
       // Add the new notification to the state while preventing duplicates
       setNotifications((prev) => ({
         ...prev,
         [notification._id]: notification,
       }));
       setUnreadCount((prev) => prev + 1);
-    });
+    };
+
+    socket.on("newNotification", handleNewNotification);
 
     // Clean up the event listener when the component unmounts or socket changes
     return () => {
-      socket.off("newNotification");
+      socket.off("newNotification", handleNewNotification);
     };
-  }, [socket]);
+  }, []);
 
   // Handle 'deleteNotification' events
   useEffect(() => {
@@ -142,7 +143,7 @@ export default function Navbar() {
     return () => {
       socket.off("deleteNotification", handleDeleteNotification);
     };
-  }, [socket]);
+  }, []);
 
   // Function to accept a friend request
   const acceptFriendRequest = async (friendId, notificationId) => {
@@ -287,20 +288,11 @@ export default function Navbar() {
     <div className="fixed top-0 left-0 h-screen w-36 qhd:w-36 bg-gray-900 flex flex-col items-center py-4 z-50">
       {/* Icons Container */}
       <div className="flex flex-col mt-24 items-start space-y-6 flex-1">
-        
         {/* Profile Icon */}
         <Link to="/profile" className="flex items-center no-underline">
           <UserIcon className="h-6 w-6 fill-white hover:fill-blue-500 cursor-pointer" />
           <span className="ml-4 text-white text-lg hidden md:inline">
             Profile
-          </span>
-        </Link>
-
-        {/* Play Icon */}
-        <Link to="/" className="flex items-center no-underline">
-          <PlayCircleIcon className="h-6 w-6 fill-white hover:fill-blue-500 cursor-pointer" />
-          <span className="ml-4 text-white text-lg hidden md:inline">
-            Start
           </span>
         </Link>
 
@@ -567,6 +559,8 @@ export default function Navbar() {
           )}
         </div>
       </div>
+
+      <Chat />
 
       {/* Logout Button */}
       <div className="mb-4">

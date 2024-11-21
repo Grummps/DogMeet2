@@ -7,27 +7,33 @@ const messageSchema = new mongoose.Schema(
             type: Schema.Types.ObjectId,
             ref: "users",
             required: true,
+            immutable: true,
         },
         receiverId: {
             type: Schema.Types.ObjectId,
             ref: "users",
             required: true,
+            immutable: true,
         },
-        conversationId: {
+        chatRoomId: {
             type: Schema.Types.ObjectId,
-            ref: "conversations",
+            ref: "chatRooms",
             required: true,
+            immutable: true,
         },
         content: {
             type: String,
             required: true,
+            trim: true,
+            minlength: 1,
+            maxlength: 255,
         },
         timestamp: {
             type: Date,
             default: Date.now,
             required: true,
         },
-        readStatus: {
+        isRead: {
             type: Boolean,
             default: false,
             required: true,
@@ -37,8 +43,22 @@ const messageSchema = new mongoose.Schema(
             enum: ["text", "image", "video", "file"],
             default: "text",
         },
+        readBy: [
+            {
+                userId: {
+                    type: Schema.Types.ObjectId,
+                    ref: 'users',
+                },
+                readAt: {
+                    type: Date,
+                    default: Date.now,
+                },
+            },
+        ],
     },
     { collection: "messages" }
 );
+
+messageSchema.index({ chatRoomId: 1, senderId: 1, receiverId: 1 });
 
 module.exports = mongoose.model("messages", messageSchema);

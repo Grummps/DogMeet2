@@ -11,13 +11,8 @@ const upload = require('../config/multerConfig');  // Import the Multer configur
 const s3 = require('../config/s3Config');  // Import the S3 configuration
 const { v4: uuidv4 } = require('uuid');  // For generating unique file names
 const { getIo, onlineUsers } = require('../socket/socketConfig');
+const fuzzysort = require("fuzzysort");
 
-
-// Route to delete all users
-router.post('/deleteAll', async (req, res) => {
-    const user = await User.deleteMany();
-    return res.json(user);
-});
 
 // Route to get all users
 router.get('/getAll', async (req, res) => {
@@ -32,6 +27,43 @@ router.get('/getAll', async (req, res) => {
     } catch (error) {
         console.error("Error fetching users:", error);
         res.status(500).send({ message: 'Error fetching users.' });
+    }
+});
+
+router.post("/getUsersByIds", async (req, res) => {
+    const { userIds } = req.body;
+
+    if (!Array.isArray(userIds)) {
+        return res.status(400).json({ message: "User IDs are required." });
+    }
+
+    if (userIds.length === 0) {
+        return res.json({});
+    }
+
+    try {
+        // Fetch all users by their IDs
+        const users = await User.find({ _id: { $in: userIds } }).lean();
+
+        if (users.length === 0) {
+            return res.status(404).json({ message: "No users found" });
+        }
+
+        const updatedUsers = await Promise.all(
+            users.map(async (user) => {
+                return {
+                    _id: user._id,
+                    username: user.username,
+                    email: user.email,
+                    image: user.image,
+                };
+            })
+        );
+
+        return res.json(updatedUsers);
+    } catch (error) {
+        console.error("Error fetching users:", error);
+        return res.status(500).json({ message: "Server error" });
     }
 });
 
@@ -227,7 +259,7 @@ router.delete('/deleteProfilePicture', authenticate, async (req, res) => {
 
 // ============== Notif routes ==============
 
-// DELETE /users/notifications/:id
+// DELETE /users/notifications/:_id
 router.delete('/notifications/:_id', authenticate, async (req, res) => {
     try {
         const userId = req.user._id;
@@ -290,13 +322,35 @@ router.post('/notifications/:_id/read', authenticate, async (req, res) => {
     }
 });
 
-module.exports = router;
-
 
 // ============== Other routes ==============
 
+router.get('/search/:searchInput', async (req, res) => {
+    const searchInput = req.params.searchInput;
+
+    if (!searchInput) {
+        return res.json({});
+    }
+
+    try {
+        const users = await User.find();
+
+        const results = fuzzysort.go(searchInput, users, {
+            key: "username",
+            threshold: -1000,
+        });
+
+        const matchedUsers = results.map((result) => result.obj);
+
+        return res.json(matchedUsers);
+    } catch (error) {
+        console.error("Error searching for users:", error);
+        return res.status(500).json({ error: "Internal server error" });
+    }
+});
+
 // Route to get a user by ID
-router.get("/:_id", async (req, res) => {
+router.get('/:_id', async (req, res) => {
     console.log("_ID:", req.params._id);
     const userId = req.params._id;
 
@@ -319,6 +373,30 @@ router.get("/:_id", async (req, res) => {
     } catch (error) {
         console.error("Error fetching user:", error);
         res.status(500).send({ message: 'Error fetching user.' });
+    }
+});
+
+// Get user by username
+router.get('/getUserByUsername/:username', async (req, res) => {
+    const { username } = req.params;
+
+    try {
+        // Find user by username
+        const user = await User.findOne({ username: username });
+
+        if (!user) {
+            return res.status(404).json({ message: "User not found" });
+        }
+
+        // Return user data (excluding sensitive information like password)
+        return res.json({
+            _id: user._id,
+            username: user.username,
+            image: user.image,
+        });
+    } catch (error) {
+        console.error("Error fetching user by username:", error.message);
+        return res.status(500).json({ message: "Server error" });
     }
 });
 

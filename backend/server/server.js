@@ -18,7 +18,7 @@ const dogRoutes = require("./routes/dogRoutes");
 const refreshToken = require("./routes/refreshToken");
 const messageRoutes = require("./routes/messageRoutes");
 const mapRoutes = require("./routes/mapRoutes");
-const conversationRoutes = require("./routes/conversationRoutes");
+const chatRoomRoutes = require("./routes/chatRoomRoutes");
 
 // Load environment variables
 require("dotenv").config();
@@ -61,7 +61,7 @@ app.use("/dogs", dogRoutes);        // For dog routes
 app.use("/auth", refreshToken);     // Refresh token route
 app.use("/messages", messageRoutes);// For message routes
 app.use("/directions", directionsLimiter, mapRoutes);  // For map routes
-app.use("/conversations", conversationRoutes);
+app.use("/chatRooms", chatRoomRoutes);
 
 // Create HTTP server
 const server = http.createServer(app);
