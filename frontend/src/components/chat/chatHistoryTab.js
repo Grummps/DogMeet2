@@ -90,7 +90,7 @@ const ChatHistoryTab = ({
                     {chatRoomsWithUserInfo.map((chatRoom) => (
                         <div
                             key={chatRoom._id}
-                            className="flex p-2 mt-1 font-title group hover:bg-orange-500 cursor-pointer hover:text-white"
+                            className="flex p-2 mt-1 font-title group hover:bg-blue-600 bg-opacity-20 cursor-pointer hover:text-white"
                             onClick={() => handleChatRoomClick(chatRoom)}
                         >
                             <div className="flex ml-2 w-60">
@@ -130,7 +130,7 @@ const ChatHistoryTab = ({
                                 </div>
                                 <div className="flex-1 font-display text-xs text-gray-300 truncate overflow-hidden whitespace-nowrap w-full text-end">
                                     {getUnreadMessageCount(chatRoom._id) > 0 && (
-                                        <span className="chat-unread-chat-count">
+                                        <span className="chat-unread-chat-count font-bold text-green-500 mr-6 -mt-2">
                                             {getUnreadMessageCount(chatRoom._id)}
                                         </span>
                                     )}
@@ -140,7 +140,7 @@ const ChatHistoryTab = ({
                                             e.stopPropagation(); // Prevent triggering handleChatRoomClick
                                             handleHideChat(chatRoom._id);
                                         }}
-                                        className="text-red-500 hover:text-red-700"
+                                        className="scale-0 group-hover:scale-100 transition-transform duration-200 text-red-500 hover:text-red-700 ml-1"
                                         title="Delete Chat Room"
                                     >
                                         <TrashIcon className="h-5 w-5 mt-2" />

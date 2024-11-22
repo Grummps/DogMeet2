@@ -56,14 +56,14 @@ const ChatTitleBar = ({
                         alt="Profile Image"
                         className="h-9 w-9 rounded-full bg-white cursor-pointer mr-2"
                         onClick={() => {
-                            chatUser.username === user.username
-                                ? navigate("/privateUserProfile")
-                                : navigate(`/publicProfilePage/${chatUser.username}`);
+                            chatUser._id === user._id
+                                ? navigate("/profile")
+                                : navigate(`/profile/${chatUser._id}`);
                         }}
                     />
                     {/* Chat Username */}
                     <a
-                        href={`/publicProfilePage/${chatUser.username}`}
+                        href={`/profile/${chatUser._id}`}
                         className="font-title font-bold text-lg no-underline text-white hover:text-orange-500 w-60 truncate overflow-hidden whitespace-nowrap"
                     >
                         @{chatUser.username}
@@ -80,12 +80,12 @@ const ChatTitleBar = ({
                             alt="Profile Image"
                             className="h-9 w-9 rounded-full bg-white cursor-pointer mr-2"
                             onClick={() => {
-                                navigate("/privateUserProfile");
+                                navigate("/profile");
                             }}
                         />
                         {/* Username */}
                         <a
-                            href={"/privateUserProfile"}
+                            href={"/profile"}
                             className="font-title font-bold text-lg no-underline text-white hover:text-orange-500 w-48 truncate overflow-hidden whitespace-nowrap"
                         >
                             @{user.username}

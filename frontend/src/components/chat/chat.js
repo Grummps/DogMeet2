@@ -46,6 +46,7 @@ const Chat = ({ targetChatUser, setTargetChatUser }) => {
     const [currentChatRoom, setCurrentChatRoom] = useState({});
     const currentChatRoomRef = useRef(currentChatRoom);
     const [messages, setMessages] = useState([]);
+    const handlerAttachedRef = useRef(false);
 
     useEffect(() => {
         currentChatRoomRef.current = currentChatRoom;
@@ -134,56 +135,59 @@ const Chat = ({ targetChatUser, setTargetChatUser }) => {
             chatNotificationAudioRef.current = new Audio(ChatNotificationSound);
             chatNotificationAudioRef.current.preload = "auto";
 
-            // Listen for new messages
-            socket.on("newMessage", (data) => {
-                console.log("Received newMessage:", data);
-                const isUserReceivedMessage = data.receiverId === user._id;
-                if (isUserReceivedMessage) {
-                    const chatRoomExists = chatRooms.some(
-                        (chatRoom) => chatRoom._id === data.chatRoomId
-                    );
-
-                    if (!chatRoomExists) {
-                        fetchChatRooms();
-                    }
-                }
-
-                const isUserSendOrReceivedMessage =
-                    data.receiverId === user._id || data.senderId === user._id;
-                if (isUserSendOrReceivedMessage) {
-                    const newMessage = data;
-
-                    const isUserReceivedMessageAndChatWindowOpenInChatTabWithSameChatRoomId =
-                        data.receiverId === user._id &&
-                        data.chatRoomId === currentChatRoomRef.current._id &&
-                        chatOpenRef.current &&
-                        currentTabRef.current === TABS.chat;
-
-                    if (
-                        isUserReceivedMessageAndChatWindowOpenInChatTabWithSameChatRoomId
-                    ) {
-                        newMessage.isRead = true;
-                        markMessagesAsReadInDb([newMessage._id]);
-                    }
-
+            if (!handlerAttachedRef.current) {
+                // Listen for new messages
+                socket.on("newMessage", (data) => {
+                    console.log("Received newMessage:", data);
                     const isUserReceivedMessage = data.receiverId === user._id;
                     if (isUserReceivedMessage) {
-                        playChatNotificationSound();
+                        const chatRoomExists = chatRooms.some(
+                            (chatRoom) => chatRoom._id === data.chatRoomId
+                        );
+
+                        if (!chatRoomExists) {
+                            fetchChatRooms();
+                        }
                     }
 
-                    setMessages((prevMessages) => [...prevMessages, newMessage]);
-                }
-            });
+                    const isUserSendOrReceivedMessage =
+                        data.receiverId === user._id || data.senderId === user._id;
+                    if (isUserSendOrReceivedMessage) {
+                        const newMessage = data;
 
-            // Listen for message read events
-            socket.on("messageRead", (readMessageIds) => {
-                console.log("Received messageRead:", readMessageIds);
-                setMessages((prevMessages) =>
-                    prevMessages.map((m) =>
-                        readMessageIds.includes(m._id) ? { ...m, isRead: true } : m
-                    )
-                );
-            });
+                        const isUserReceivedMessageAndChatWindowOpenInChatTabWithSameChatRoomId =
+                            data.receiverId === user._id &&
+                            data.chatRoomId === currentChatRoomRef.current._id &&
+                            chatOpenRef.current &&
+                            currentTabRef.current === TABS.chat;
+
+                        if (
+                            isUserReceivedMessageAndChatWindowOpenInChatTabWithSameChatRoomId
+                        ) {
+                            newMessage.isRead = true;
+                            markMessagesAsReadInDb([newMessage._id]);
+                        }
+
+                        const isUserReceivedMessage = data.receiverId === user._id;
+                        if (isUserReceivedMessage) {
+                            playChatNotificationSound();
+                        }
+
+                        setMessages((prevMessages) => [...prevMessages, newMessage]);
+                    }
+                });
+
+                // Listen for message read events
+                socket.on("messageRead", (readMessageIds) => {
+                    console.log("Received messageRead:", readMessageIds);
+                    setMessages((prevMessages) =>
+                        prevMessages.map((m) =>
+                            readMessageIds.includes(m._id) ? { ...m, isRead: true } : m
+                        )
+                    );
+                });
+                handlerAttachedRef.current = true;
+            }
         };
 
         initializeChat();
@@ -191,9 +195,9 @@ const Chat = ({ targetChatUser, setTargetChatUser }) => {
         return () => {
             socket.off("newMessage");
             socket.off("messageRead");
+            handlerAttachedRef.current = false;
         };
     }, []);
-
 
     const toggleChat = () => {
         if (setTargetChatUser) setTargetChatUser(null);
@@ -205,27 +209,6 @@ const Chat = ({ targetChatUser, setTargetChatUser }) => {
             markMessagesAsReadByChatRoomId(currentChatRoom._id);
         }
     };
-
-    const handleNewMessage = (data) => {
-        const isUserReceivedMessage = data.receiverId === user._id;
-        const isUserSentMessage = data.senderId === user._id;
-
-        // Update messages state 
-        //setMessages((prevMessages) => [...prevMessages, data]);
-
-        if (isUserReceivedMessage) {
-            playChatNotificationSound();
-            // If the chat window is open and the correct chat room is active, mark the message as read
-            if (
-                chatOpenRef.current &&
-                currentTabRef.current === TABS.chat &&
-                data.chatRoomId === currentChatRoomRef.current._id
-            ) {
-                markMessagesAsReadInDb([data._id]);
-            }
-        }
-    };
-
 
     const handleChatClick = () => {
         toggleChat();
