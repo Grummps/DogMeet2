@@ -40,7 +40,7 @@ const ChatSearchTab = ({
                     >
                         <div className="flex ml-2 mr-2">
                             <img
-                                src={user.profileImage || defaultProfileImageUrl}
+                                src={user.image || defaultProfileImageUrl}
                                 alt="Profile Image"
                                 className="h-9 w-9 rounded-full bg-white cursor-pointer mr-2 my-auto"
                             />

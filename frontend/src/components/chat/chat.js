@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from "react";
+import { Rnd } from "react-rnd";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faMessage as chatIcon } from "@fortawesome/free-regular-svg-icons";
 import getUserInfo from "../../utilities/decodeJwt";
@@ -11,7 +12,6 @@ import apiClient from "../../utilities/apiClient";
 import socket from "../../utilities/socket";
 import { connectSocket } from "../../utilities/socket";
 const ChatNotificationSound = "/ChatNotificationSound.mp3";
-
 
 const Chat = ({ targetChatUser, setTargetChatUser }) => {
     const defaultProfileImageUrl =
@@ -281,7 +281,6 @@ const Chat = ({ targetChatUser, setTargetChatUser }) => {
         }
     };
 
-
     const handleSearchChatUserClick = async (chatUser) => {
         const data = {
             participants: [{ userId: user._id }, { userId: chatUser._id }],
@@ -333,82 +332,152 @@ const Chat = ({ targetChatUser, setTargetChatUser }) => {
         return chatRoomMessages;
     };
 
+    // Define size and position states
+    const [size, setSize] = useState({
+        width: 384, // w-96 in Tailwind CSS (96 * 4px)
+        height: window.innerHeight * 0.65, // h-[65vh]
+    });
+
+    const [position, setPosition] = useState({ x: 0, y: 0 });
+
+    useEffect(() => {
+        const updatePositionOnResize = () => {
+            // Adjust the position so the chat box remains within window boundaries
+            setPosition((prevPosition) => {
+                const maxX = window.innerWidth - size.width;
+                const maxY = window.innerHeight - size.height;
+                return {
+                    x: Math.min(prevPosition.x, maxX),
+                    y: Math.min(prevPosition.y, maxY),
+                };
+            });
+        };
+
+        window.addEventListener("resize", updatePositionOnResize);
+
+        return () => {
+            window.removeEventListener("resize", updatePositionOnResize);
+        };
+    }, [size.width, size.height]);
+
+    useEffect(() => {
+        // Set default position when the component mounts
+        const popupWidth = size.width;
+        const popupHeight = size.height;
+        const marginRight = 40; // right-10 (10 * 4px)
+        const marginBottom = 176; // bottom-44 (44 * 4px)
+
+        setPosition({
+            x: window.innerWidth - popupWidth - marginRight,
+            y: window.innerHeight - popupHeight - marginBottom,
+        });
+    }, []); // Empty dependency array, runs once when the component mounts
+
     return (
-        <div className="fixed bottom-24 right-10">
+        <>
             {/* Chat button */}
-            <div
-                onClick={handleChatClick}
-                className="bg-blue-50 p-3 rounded-full flex justify-center cursor-pointer"
-            >
-                <FontAwesomeIcon className="z-10 h-7 text-gray-800" icon={chatIcon} />
-                {/* Unread message count */}
-                {getUnreadMessages().length > 0 && (
-                    <span className="absolute -top-1 -right-1 bg-red-600 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
-                        {getUnreadMessages().length}
-                    </span>
-                )}
+            <div className="fixed bottom-24 right-10">
+                <div
+                    onClick={handleChatClick}
+                    className="bg-gray-900 hover:bg-blue-950 p-3 rounded-full flex justify-center cursor-pointer relative"
+                >
+                    <FontAwesomeIcon className="z-10 h-7 text-blue-300" icon={chatIcon} />
+                    {/* Unread message count */}
+                    {getUnreadMessages().length > 0 && (
+                        <span className="absolute -top-1 -right-1 bg-red-600 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
+                            {getUnreadMessages().length}
+                        </span>
+                    )}
+                </div>
             </div>
 
             {/* Chat pop up */}
             {chatOpen && (
-                <div className="fixed bottom-44 right-10 w-96 h-[65vh] bg-gray-900 border-1 border-gray-400 rounded-lg shadow-xl">
-                    {/* Titlebar */}
-                    <ChatTitleBar
-                        user={user}
-                        chatUser={chatUser}
-                        TABS={TABS}
-                        currentTab={currentTab}
-                        handleSearchClose={handleSearchClose}
-                        handleSearchUser={handleSearchUser}
-                        handleChatBackClick={handleChatBackClick}
-                        setSearchInput={setSearchInput}
-                        toggleChat={toggleChat}
-                        defaultProfileImageUrl={defaultProfileImageUrl}
-                    />
-                    {/* Tab Body */}
-                    <div className="h-full pb-20">
-                        {/* Chat History Tab */}
-                        {currentTab === TABS.history && (
-                            <div className="h-full pb-1 overflow-y-auto">
-                                <ChatHistoryTab
-                                    user={user}
-                                    chatRooms={chatRooms}
-                                    lastMessages={getLastMessages()}
-                                    unreadMessages={getUnreadMessages()}
-                                    defaultProfileImageUrl={defaultProfileImageUrl}
-                                    handleChatRoomClick={handleChatRoomClick}
-                                />
-                            </div>
-                        )}
+                <Rnd
+                    size={{ width: size.width, height: size.height }}
+                    position={{ x: position.x, y: position.y }}
+                    onDragStop={(e, d) => {
+                        setPosition({ x: d.x, y: d.y });
+                    }}
+                    onResizeStop={(e, direction, ref, delta, newPosition) => {
+                        setSize({
+                            width: parseInt(ref.style.width, 10),
+                            height: parseInt(ref.style.height, 10),
+                        });
+                        setPosition(newPosition);
+                    }}
+                    minWidth={300}
+                    minHeight={200}
+                    bounds="window"
+                    enableResizing={{
+                        bottom: true,
+                        bottomRight: true,
+                        right: true,
+                    }}
+                    cancel="button, a, input, textarea, .non-draggable"
+                    className="z-50"
+                >
+                    <div className="w-full h-full bg-gray-900 border border-gray-400 rounded-lg shadow-xl flex flex-col">
+                        {/* Titlebar */}
+                        <div className="handle">
+                            <ChatTitleBar
+                                user={user}
+                                chatUser={chatUser}
+                                TABS={TABS}
+                                currentTab={currentTab}
+                                handleSearchClose={handleSearchClose}
+                                handleSearchUser={handleSearchUser}
+                                handleChatBackClick={handleChatBackClick}
+                                setSearchInput={setSearchInput}
+                                toggleChat={toggleChat}
+                                defaultProfileImageUrl={defaultProfileImageUrl}
+                            />
+                        </div>
+                        {/* Tab Body */}
+                        <div className="flex-1 pb-20 overflow-y-auto">
+                            {/* Chat History Tab */}
+                            {currentTab === TABS.history && (
+                                <div className="h-full pb-1 overflow-y-auto">
+                                    <ChatHistoryTab
+                                        user={user}
+                                        chatRooms={chatRooms}
+                                        lastMessages={getLastMessages()}
+                                        unreadMessages={getUnreadMessages()}
+                                        defaultProfileImageUrl={defaultProfileImageUrl}
+                                        handleChatRoomClick={handleChatRoomClick}
+                                    />
+                                </div>
+                            )}
 
-                        {/* Chat Tab */}
-                        {currentTab === TABS.chat && (
-                            <div className="h-full">
-                                <ChatTab
-                                    chatRoom={currentChatRoom}
-                                    chatRoomMessages={getChatRoomMessages(currentChatRoom._id)}
-                                    currentUser={user}
-                                    chatUser={chatUser}
-                                    setMessages={setMessages}
-                                />
-                            </div>
-                        )}
+                            {/* Chat Tab */}
+                            {currentTab === TABS.chat && (
+                                <div className="h-full">
+                                    <ChatTab
+                                        chatRoom={currentChatRoom}
+                                        chatRoomMessages={getChatRoomMessages(currentChatRoom._id)}
+                                        currentUser={user}
+                                        chatUser={chatUser}
+                                        setMessages={setMessages}
+                                    />
+                                </div>
+                            )}
 
-                        {/* Search Tab */}
-                        {currentTab === TABS.search && (
-                            <div className="h-full pb-1">
-                                <ChatSearchTab
-                                    currentUser={user}
-                                    searchInput={searchInput}
-                                    defaultProfileImageUrl={defaultProfileImageUrl}
-                                    handleSearchChatUserClick={handleSearchChatUserClick}
-                                />
-                            </div>
-                        )}
+                            {/* Search Tab */}
+                            {currentTab === TABS.search && (
+                                <div className="h-full pb-1">
+                                    <ChatSearchTab
+                                        currentUser={user}
+                                        searchInput={searchInput}
+                                        defaultProfileImageUrl={defaultProfileImageUrl}
+                                        handleSearchChatUserClick={handleSearchChatUserClick}
+                                    />
+                                </div>
+                            )}
+                        </div>
                     </div>
-                </div>
+                </Rnd>
             )}
-        </div>
+        </>
     );
 };
 

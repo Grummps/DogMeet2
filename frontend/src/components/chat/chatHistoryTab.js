@@ -96,7 +96,7 @@ const ChatHistoryTab = ({
                             <div className="flex ml-2 w-60">
                                 <img
                                     src={
-                                        getChatUser(chatRoom).profileImage || defaultProfileImageUrl
+                                        getChatUser(chatRoom).image || defaultProfileImageUrl
                                     }
                                     alt="Profile Image"
                                     className="h-9 w-9 rounded-full bg-white cursor-pointer my-auto"
