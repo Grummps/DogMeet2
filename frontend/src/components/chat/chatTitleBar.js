@@ -14,7 +14,7 @@ const ChatTitleBar = ({
     handleSearchClose,
     handleSearchUser,
     handleChatBackClick,
-    toogleChat,
+    toggleChat,
     defaultProfileImageUrl,
 }) => {
     const navigate = useNavigate();
@@ -23,29 +23,29 @@ const ChatTitleBar = ({
         <div>
             {/* Search Tab Title Bar*/}
             {currentTab === TABS.search && (
-                <div className="flex justify-between items-center py-1 border-b border-gray-500 dark:border-white font-title">
+                <div className="flex justify-between items-center py-1 border-b border-white font-title">
                     <input
-                        className="bg-transparent border-1 px-2 rounded font-title w-full h-10 ml-3 border-gray-500 dark:border-white"
+                        className="bg-transparent text-white border-1 px-2 rounded font-title w-full h-10 ml-3 border-white"
                         onChange={(e) => setSearchInput(e.target.value)}
-                        placeholder="Search"
+                        placeholder="Search for friends..."
                         autoFocus={true}
                     />
                     {/* Close Search pop up  */}
                     <FontAwesomeIcon
                         onClick={handleSearchClose}
-                        className="h-6 p-3 text-gray-800 hover:text-orange-500 dark:text-white cursor-pointer"
+                        className="h-6 p-3  hover:text-orange-500 text-white cursor-pointer"
                         icon={closeIcon}
                     />
                 </div>
             )}
             {/* Chat Tab Title Bar*/}
             {currentTab === TABS.chat && (
-                <div className="flex justify-start items-center p-3 border-b border-gray-500 dark:border-white font-title">
+                <div className="flex justify-start items-center p-3 border-b border-white font-title">
                     {/* Back Button  */}
                     <div className="flex justify-center">
                         <FontAwesomeIcon
                             onClick={handleChatBackClick}
-                            className="h-5 my-auto mr-5 text-gray-800 hover:text-orange-500 dark:text-white cursor-pointer"
+                            className="h-5 my-auto mr-5 hover:text-orange-500 text-white cursor-pointer"
                             icon={backIcon}
                         />
                     </div>
@@ -64,7 +64,7 @@ const ChatTitleBar = ({
                     {/* Chat Username */}
                     <a
                         href={`/publicProfilePage/${chatUser.username}`}
-                        className="font-title font-bold text-lg no-underline text-gray-900 dark:text-white hover:text-orange-500 w-60 truncate overflow-hidden whitespace-nowrap"
+                        className="font-title font-bold text-lg no-underline text-white hover:text-orange-500 w-60 truncate overflow-hidden whitespace-nowrap"
                     >
                         @{chatUser.username}
                     </a>
@@ -72,7 +72,7 @@ const ChatTitleBar = ({
             )}
             {/* Chat History Title Bar*/}
             {currentTab === TABS.history && (
-                <div className="flex justify-between items-center p-3 border-b border-gray-500 dark:border-white font-title">
+                <div className="flex justify-between items-center p-3 border-b border-gray-400 font-title">
                     {/* Chat User Profile Image */}
                     <span className="flex items-center">
                         <img
@@ -86,7 +86,7 @@ const ChatTitleBar = ({
                         {/* Username */}
                         <a
                             href={"/privateUserProfile"}
-                            className="font-title font-bold text-lg no-underline text-gray-900 dark:text-white hover:text-orange-500 w-48 truncate overflow-hidden whitespace-nowrap"
+                            className="font-title font-bold text-lg no-underline text-white hover:text-orange-500 w-48 truncate overflow-hidden whitespace-nowrap"
                         >
                             @{user.username}
                         </a>
@@ -95,19 +95,14 @@ const ChatTitleBar = ({
                         {/* Create Chat  */}
                         <FontAwesomeIcon
                             onClick={handleSearchUser}
-                            className="h-5 my-auto mr-5 text-gray-800 hover:text-orange-500 dark:text-white cursor-pointer"
+                            className="h-5 my-auto mr-5 hover:text-orange-500 text-white cursor-pointer"
                             icon={createMessageIcon}
                         />
-                        {/* Search Chat  */}
-                        <FontAwesomeIcon
-                            onClick={handleSearchUser}
-                            className="h-5 my-auto mr-5 text-gray-800 hover:text-orange-500 dark:text-white cursor-pointer"
-                            icon={searchIcon}
-                        />
+
                         {/* Close Chat pop up  */}
                         <FontAwesomeIcon
-                            onClick={toogleChat}
-                            className="h-6 text-gray-800 hover:text-orange-500 dark:text-white cursor-pointer"
+                            onClick={toggleChat}
+                            className="h-6 hover:text-orange-500 text-white cursor-pointer"
                             icon={closeIcon}
                         />
                     </div>

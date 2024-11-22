@@ -195,7 +195,7 @@ const Chat = ({ targetChatUser, setTargetChatUser }) => {
     }, []);
 
 
-    const toogleChat = () => {
+    const toggleChat = () => {
         if (setTargetChatUser) setTargetChatUser(null);
         setChatOpen(!chatOpen);
 
@@ -228,7 +228,7 @@ const Chat = ({ targetChatUser, setTargetChatUser }) => {
 
 
     const handleChatClick = () => {
-        toogleChat();
+        toggleChat();
     };
 
     const handleSearchUser = () => {
@@ -355,9 +355,9 @@ const Chat = ({ targetChatUser, setTargetChatUser }) => {
             {/* Chat button */}
             <div
                 onClick={handleChatClick}
-                className="bg-orange-500 p-3 rounded-full flex justify-center cursor-pointer"
+                className="bg-blue-50 p-3 rounded-full flex justify-center cursor-pointer"
             >
-                <FontAwesomeIcon className="z-10 h-7 text-white" icon={chatIcon} />
+                <FontAwesomeIcon className="z-10 h-7 text-gray-800" icon={chatIcon} />
                 {/* Unread message count */}
                 {getUnreadMessages().length > 0 && (
                     <span className="absolute -top-1 -right-1 bg-red-600 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
@@ -368,7 +368,7 @@ const Chat = ({ targetChatUser, setTargetChatUser }) => {
 
             {/* Chat pop up */}
             {chatOpen && (
-                <div className="fixed bottom-44 right-10 w-96 h-[65vh] bg-lightBackground dark:bg-gray-900 border-1 border-gray-500 dark:border-white rounded-lg shadow-xl">
+                <div className="fixed bottom-44 right-10 w-96 h-[65vh] bg-gray-900 border-1 border-gray-400 rounded-lg shadow-xl">
                     {/* Titlebar */}
                     <ChatTitleBar
                         user={user}
@@ -379,7 +379,7 @@ const Chat = ({ targetChatUser, setTargetChatUser }) => {
                         handleSearchUser={handleSearchUser}
                         handleChatBackClick={handleChatBackClick}
                         setSearchInput={setSearchInput}
-                        toogleChat={toogleChat}
+                        toggleChat={toggleChat}
                         defaultProfileImageUrl={defaultProfileImageUrl}
                     />
                     {/* Tab Body */}

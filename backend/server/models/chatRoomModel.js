@@ -27,6 +27,12 @@ const chatRoomSchema = new Schema(
         },
       },
     ],
+    hiddenTo: [
+      {
+        type: Schema.Types.ObjectId,
+        ref: 'users',
+      },
+    ],
     updatedAt: {
       type: Date,
       default: Date.now,

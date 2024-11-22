@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import axios from "axios";
+import apiClient from "../../utilities/apiClient";
 
 const ChatSearchTab = ({
     currentUser,
@@ -13,9 +13,7 @@ const ChatSearchTab = ({
         if (!searchInput) return;
 
         try {
-            const response = await axios.get(
-                `${process.env.REACT_APP_BACKEND_URI}/users/search/${searchInput}`
-            );
+            const response = await apiClient.get(`/users/search/${searchInput}`);
             const users = response.data;
 
             const result = users.filter(
@@ -37,7 +35,7 @@ const ChatSearchTab = ({
                 {searchUsers.map((user) => (
                     <div
                         key={user._id}
-                        className="flex p-2 mt-1 font-title hover:bg-orange-500 cursor-pointer hover:text-white"
+                        className="flex p-2 mt-1 font-title text-white hover:bg-purple-900 cursor-pointer"
                         onClick={() => handleSearchChatUserClick(user)}
                     >
                         <div className="flex ml-2 mr-2">

@@ -332,6 +332,9 @@ export default function Navbar() {
             )}
           </button>
 
+          {/* Message Icon */}
+          <Chat />
+
           {/* Dropdown Menu */}
           {showDropdown && (
             <div className="absolute top-12 right-auto w-80 bg-white border rounded shadow-lg z-50 max-h-96 overflow-y-auto">
@@ -559,8 +562,6 @@ export default function Navbar() {
           )}
         </div>
       </div>
-
-      <Chat />
 
       {/* Logout Button */}
       <div className="mb-4">

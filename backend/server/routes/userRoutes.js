@@ -325,17 +325,33 @@ router.post('/notifications/:_id/read', authenticate, async (req, res) => {
 
 // ============== Other routes ==============
 
-router.get('/search/:searchInput', async (req, res) => {
+router.get('/search/:searchInput', authenticate, async (req, res) => {
     const searchInput = req.params.searchInput;
 
     if (!searchInput) {
         return res.json({});
     }
 
-    try {
-        const users = await User.find();
+    // Replace this with how you retrieve the sender's ID from your authentication system
+    const senderId = req.user._id; // or req.session.userId, or however you store it
 
-        const results = fuzzysort.go(searchInput, users, {
+    try {
+        // Fetch the sender's document along with their friends
+        const sender = await User.findById(senderId);
+
+        if (!sender) {
+            console.log('Sender not found');
+            return res.status(404).json({ error: 'Sender not found' });
+        }
+
+        // Get the list of friends' IDs
+        const friendsIds = sender.friends; // Assuming this is an array of ObjectIds
+
+        // Fetch the friends' user documents
+        const friends = await User.find({ _id: { $in: friendsIds } });
+
+        // Perform the search within the friends list
+        const results = fuzzysort.go(searchInput, friends, {
             key: "username",
             threshold: -1000,
         });
@@ -348,6 +364,7 @@ router.get('/search/:searchInput', async (req, res) => {
         return res.status(500).json({ error: "Internal server error" });
     }
 });
+
 
 // Route to get a user by ID
 router.get('/:_id', async (req, res) => {

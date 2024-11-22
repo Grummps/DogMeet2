@@ -1,6 +1,8 @@
 import { useEffect, useState } from "react";
 import axios from "axios";
 import chatTimeFormat from "../../utilities/chatTimeFormat";
+import apiClient from "../../utilities/apiClient";
+import { TrashIcon } from "@heroicons/react/24/solid";
 
 const ChatHistoryTab = ({
     user,
@@ -46,6 +48,18 @@ const ChatHistoryTab = ({
         }
     };
 
+    const handleHideChat = async (chatRoomId) => {
+        try {
+            await apiClient.post(`chatRooms/hide/${chatRoomId}`);
+            // Update the state to remove the hidden chat room
+            setChatRoomsWithUserInfo(prevChatRooms =>
+                prevChatRooms.filter(room => room._id !== chatRoomId)
+            );
+        } catch (error) {
+            console.error("Error hiding chat room:", error);
+        }
+    };
+
     useEffect(() => {
         fetchChatRoomWithUserInfo();
     }, [chatRooms]);
@@ -68,7 +82,7 @@ const ChatHistoryTab = ({
     return (
         <div>
             {chatRoomsWithUserInfo.length === 0 ? (
-                <p className="text-center font-display mt-4 text-gray-800 dark:text-white">
+                <p className="text-center font-display mt-4 text-white">
                     No messages yet
                 </p>
             ) : (
@@ -89,10 +103,10 @@ const ChatHistoryTab = ({
                                 />
                             </div>
                             <div className="flex-col w-full">
-                                <div className="flex-1 font-title font-bold mb-1 w-56 truncate overflow-hidden whitespace-nowrap">
+                                <div className="flex-1 font-title text-white font-bold mb-1 w-56 truncate overflow-hidden whitespace-nowrap">
                                     @{getChatUser(chatRoom).username}
                                 </div>
-                                <div className="flex-1 flex font-display text-xs ml-1 text-gray-500 dark:text-gray-300 w-60  group-hover:text-white">
+                                <div className="flex-1 flex font-display text-xs ml-1 text-gray-300 w-60 group-hover:text-white">
                                     <div className="w-fit truncate overflow-hidden whitespace-nowrap">
                                         {getLastMessage(chatRoom._id).content &&
                                             getLastMessage(chatRoom._id).content}
@@ -106,20 +120,31 @@ const ChatHistoryTab = ({
                             </div>
                             <div className="flex-col w-full">
                                 <div
-                                    className={`flex-1 font-title text-xs w-16 truncate overflow-hidden whitespace-nowrap text-end ${getUnreadMessageCount(chatRoom._id) > 0
-                                            ? "font-bold text-orange-500 group-hover:text-white"
-                                            : ""
+                                    className={`flex-1 font-title text-xs w-16 truncate overflow-hidden whitespace-nowrap text-white text-end ${getUnreadMessageCount(chatRoom._id) > 0
+                                        ? "font-bold text-orange-500 group-hover:text-white"
+                                        : ""
                                         }`}
                                 >
                                     {getLastMessage(chatRoom._id).timestamp &&
                                         chatTimeFormat(getLastMessage(chatRoom._id).timestamp)}
                                 </div>
-                                <div className="flex-1 font-display text-xs text-gray-500 dark:text-gray-300 truncate overflow-hidden whitespace-nowrap w-full text-end">
+                                <div className="flex-1 font-display text-xs text-gray-300 truncate overflow-hidden whitespace-nowrap w-full text-end">
                                     {getUnreadMessageCount(chatRoom._id) > 0 && (
                                         <span className="chat-unread-chat-count">
                                             {getUnreadMessageCount(chatRoom._id)}
                                         </span>
                                     )}
+                                    {/* Add the Delete Button */}
+                                    <button
+                                        onClick={(e) => {
+                                            e.stopPropagation(); // Prevent triggering handleChatRoomClick
+                                            handleHideChat(chatRoom._id);
+                                        }}
+                                        className="text-red-500 hover:text-red-700"
+                                        title="Delete Chat Room"
+                                    >
+                                        <TrashIcon className="h-5 w-5 mt-2" />
+                                    </button>
                                 </div>
                             </div>
                         </div>

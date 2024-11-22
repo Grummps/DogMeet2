@@ -31,16 +31,28 @@ router.post("/", authenticate, async (req, res) => {
         }
     }
 
-    const chatRoom = await chatRoomModel.findOne({
+    // Find existing chat room between participants (even if hidden)
+    let chatRoom = await chatRoomModel.findOne({
         "participants.userId": { $all: participants.map((p) => p.userId) },
     });
 
-    if (chatRoom)
+    if (chatRoom) {
+        // Remove the user from hiddenTo array if present
+        const userId = req.user._id;
+        if (chatRoom.hiddenTo.includes(userId)) {
+            chatRoom.hiddenTo = chatRoom.hiddenTo.filter(
+                (id) => id.toString() !== userId.toString()
+            );
+            await chatRoom.save();
+        }
+
         return res.json({
             message: "Chat room already exists",
             chatRoom: chatRoom,
         });
+    }
 
+    // Create a new chat room
     const newChatRoom = new chatRoomModel({
         participants: participants.map((participant) => ({
             userId: participant.userId,
@@ -60,6 +72,90 @@ router.post("/", authenticate, async (req, res) => {
 });
 
 
+// POST /api/chatrooms/hide/:id
+router.post('/hide/:id', authenticate, async (req, res) => {
+    const chatRoomId = req.params.id;
+    const userId = req.user._id;
+
+    // Validate chatRoomId
+    if (!mongoose.Types.ObjectId.isValid(chatRoomId)) {
+        return res.status(400).json({ message: "Invalid chat room ID format." });
+    }
+
+    try {
+        // Fetch the chat room
+        const chatRoom = await chatRoomModel.findById(chatRoomId);
+
+        if (!chatRoom) {
+            return res.status(404).json({ message: "Chat room not found." });
+        }
+
+        // Check if the user is a participant
+        const isParticipant = chatRoom.participants.some(
+            participant => participant.userId.toString() === userId.toString()
+        );
+
+        if (!isParticipant) {
+            return res.status(403).json({ message: "You are not authorized to hide this chat room." });
+        }
+
+        // Add user to hiddenTo array if not already present
+        if (!chatRoom.hiddenTo.includes(userId)) {
+            chatRoom.hiddenTo.push(userId);
+            await chatRoom.save();
+        }
+
+        res.json({ message: "Chat room hidden successfully." });
+    } catch (err) {
+        console.error("Error hiding chat room:", err);
+        res.status(500).json({ error: "Could not hide chat room" });
+    }
+});
+
+// DELETE /api/chatrooms/:id
+router.delete('/:_id', authenticate, async (req, res) => {
+    const chatRoomId = req.params._id;
+    const userId = req.user._id; // Assuming the authenticate middleware sets req.user
+
+    // Validate chatRoomId
+    if (!mongoose.Types.ObjectId.isValid(chatRoomId)) {
+        return res.status(400).json({ message: "Invalid chat room ID format." });
+    }
+
+    try {
+        // Fetch the chat room
+        const chatRoom = await chatRoomModel.findById(chatRoomId);
+
+        if (!chatRoom) {
+            return res.status(404).json({ message: "Chat room not found." });
+        }
+
+        // Check if the user is a participant
+        const isParticipant = chatRoom.participants.some(
+            participant => participant.userId.toString() === userId.toString()
+        );
+
+        if (!isParticipant) {
+            return res.status(403).json({ message: "You are not authorized to delete this chat room." });
+        }
+
+        // If it's a group chat, only the admin can delete it
+        if (chatRoom.isGroup) {
+            if (chatRoom.groupAdmin.toString() !== userId.toString()) {
+                return res.status(403).json({ message: "Only the group admin can delete this chat room." });
+            }
+        }
+
+        // Delete the chat room
+        await chatRoomModel.findByIdAndDelete(chatRoomId);
+
+        res.json({ message: "Chat room deleted successfully." });
+    } catch (err) {
+        console.error("Error deleting chat room:", err);
+        res.status(500).json({ error: "Could not delete chat room" });
+    }
+});
+
 router.get("/getByUserId/:_id", authenticate, async (req, res) => {
     const { _id } = req.params;
 
@@ -75,10 +171,11 @@ router.get("/getByUserId/:_id", authenticate, async (req, res) => {
             return res.status(404).json({ message: `User with ID ${_id} not found.` });
         }
 
-        // Fetch chat rooms where the user is a participant
+        // Fetch chat rooms where the user is a participant and not hidden
         const chatRooms = await chatRoomModel
             .find({
-                "participants": { $elemMatch: { userId: _id } }, // Corrected query for nested structure
+                "participants": { $elemMatch: { userId: _id } },
+                hiddenTo: { $ne: _id },
             })
             .lean();
 
@@ -93,5 +190,6 @@ router.get("/getByUserId/:_id", authenticate, async (req, res) => {
         res.status(500).json({ error: "Could not fetch chat rooms" });
     }
 });
+
 
 module.exports = router;
