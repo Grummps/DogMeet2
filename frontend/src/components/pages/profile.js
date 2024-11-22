@@ -12,6 +12,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import Spinner from '../ui/spinner';
 import { ClipLoader } from 'react-spinners';
 import { io } from 'socket.io-client';
+import Chat from '../chat/chat';
 
 
 const Profile = () => {
@@ -48,10 +49,7 @@ const Profile = () => {
     const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
 
     // State variables for messaging
-    const [isChatOpen, setIsChatOpen] = useState(false);
-    const [messages, setMessages] = useState([]);
-    const [socket, setSocket] = useState(null);
-    const [messageInput, setMessageInput] = useState('');
+    const [targetChatUser, setTargetChatUser] = useState(null);
 
 
     const fetchUserData = async () => {
@@ -111,90 +109,6 @@ const Profile = () => {
         setUser({ ...user, ...updatedData });
     };
 
-    useEffect(() => {
-        if (isChatOpen && user && currentUser) {
-            // Fetch conversation history
-            const fetchMessages = async () => {
-                try {
-                    const response = await apiClient.get(`/messages/conversations/${user._id}`);
-                    setMessages(response.data);
-                } catch (error) {
-                    console.error('Error fetching messages:', error);
-                }
-            };
-
-            fetchMessages();
-            // Initialize Socket.IO client
-            const newSocket = io('http://localhost:8081', {
-                auth: {
-                    token: localStorage.getItem('accessToken'),
-                },
-            });
-
-            setSocket(newSocket);
-
-            // Listen for incoming messages
-            newSocket.on('receiveMessage', (message) => {
-                // Check if the message is from the current conversation
-                if (
-                    message.senderId === user._id ||
-                    message.receiverId === user._id
-                ) {
-                    setMessages((prevMessages) => [...prevMessages, message]);
-                }
-            });
-
-            newSocket.on('connect_error', (err) => {
-                console.error(`Connection error: ${err.message}`);
-                // Optionally, display an error message to the user
-            });
-
-            return () => {
-                newSocket.disconnect();
-            };
-        }
-    }, [isChatOpen, user, currentUser]);
-
-
-    useEffect(() => {
-        const messagesEnd = document.getElementById('messagesEnd');
-        if (messagesEnd) {
-            messagesEnd.scrollIntoView({ behavior: 'smooth' });
-        }
-    }, [messages]);
-
-    useEffect(() => {
-        if (socket) {
-            // Listen for unread messages
-            socket.on('unreadMessages', (messages) => {
-                setMessages((prevMessages) => [...prevMessages, ...messages]);
-            });
-        }
-    }, [socket]);
-
-    const sendMessage = () => {
-        if (messageInput.trim() && socket) {
-            const messageData = {
-                receiverId: user._id,
-                content: messageInput,
-                // Optionally include conversationId if you're managing conversations
-            };
-
-            socket.emit('sendMessage', messageData);
-
-            // Optimistically update UI
-            setMessages((prevMessages) => [
-                ...prevMessages,
-                {
-                    ...messageData,
-                    senderId: currentUser._id,
-                    timestamp: new Date().toISOString(),
-                },
-            ]);
-
-            setMessageInput('');
-        }
-    };
 
     const sendFriendRequest = async () => {
         try {
@@ -398,6 +312,10 @@ const Profile = () => {
         setIsHovering(false);
     };
 
+    const handleMessageBtnClick = () => {
+        setTargetChatUser(user);
+    };
+
 
     if (loading || !user || !currentUser) {
         return <div className="text-center text-lg text-gray-600">Loading...</div>;
@@ -525,8 +443,8 @@ const Profile = () => {
                                         Remove Friend
                                     </button>
                                     <button
-                                        onClick={() => setIsChatOpen(true)}
-                                        className="bg-green-500 hover:bg-green-600 text-white font-semibold py-2 mt-14 px-4 rounded"
+                                        onClick={handleMessageBtnClick}
+                                        className="bg-green-500 hover:bg-green-600 text-white font-semibold py-2 ml-4 mt-14 px-4 rounded"
                                     >
                                         Message
                                     </button>
@@ -585,54 +503,6 @@ const Profile = () => {
                 </div>
             </div>
 
-            {/* Chat Window */}
-            {isChatOpen && (
-                <div className="fixed bottom-0 right-0 w-80 h-96 bg-white shadow-lg rounded-t-lg flex flex-col">
-                    {/* Header */}
-                    <div className="bg-gray-800 text-white p-2 flex justify-between items-center">
-                        <span className="font-semibold">{user.username}</span>
-                        <button onClick={() => setIsChatOpen(false)} className="text-white">
-                            ✕
-                        </button>
-                    </div>
-                    {/* Messages */}
-                    <div className="flex-1 p-2 overflow-y-auto">
-                        {messages.map((msg, index) => (
-                            <div
-                                key={index}
-                                className={`mb-2 flex ${msg.senderId === currentUser?._id ? 'justify-end' : 'justify-start'
-                                    }`}
-                            >
-                                <div
-                                    className={`${msg.senderId === currentUser?._id ? 'bg-blue-500' : 'bg-gray-300'
-                                        } text-white p-2 rounded-lg max-w-xs`}
-                                >
-                                    {msg.content}
-                                </div>
-                            </div>
-                        ))}
-                        <div id="messagesEnd"></div>
-                    </div>
-                    {/* Input */}
-                    <div className="p-2 border-t border-gray-300 flex items-center">
-                        <input
-                            type="text"
-                            value={messageInput}
-                            onChange={(e) => setMessageInput(e.target.value)}
-                            placeholder="Type a message..."
-                            className="flex-1 p-2 border border-gray-300 rounded-l-lg focus:outline-none"
-                        />
-                        <button
-                            onClick={sendMessage}
-                            className="bg-blue-500 hover:bg-blue-600 text-white p-2 rounded-r-lg"
-                        >
-                            Send
-                        </button>
-                    </div>
-                </div>
-            )}
-
-
             {/* Modals */}
             <FriendsModal isOpen={isFriendsModalOpen} onClose={closeFriendsModal} />
             <EventsModal isOpen={isEventsModalOpen} onClose={closeEventsModal} />
@@ -652,6 +522,11 @@ const Profile = () => {
                 message="Are you sure you want to delete your profile picture?"
                 onConfirm={handleDeleteProfilePicture}
                 onCancel={() => setIsDeleteModalOpen(false)}
+            />
+
+            <Chat
+                targetChatUser={targetChatUser}
+                setTargetChatUser={setTargetChatUser}
             />
         </div>
     );

@@ -1,5 +1,3 @@
-// src/components/chat/ChatTab.js
-
 import React, { useState, useEffect, useRef } from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faPaperPlane as sendIcon } from "@fortawesome/free-solid-svg-icons";
@@ -74,7 +72,6 @@ const ChatTab = ({
 
         scrollToBottom(scrollEffect);
     };
-
 
     const getChatHistoryStr = () => {
         let chatHistory = "";

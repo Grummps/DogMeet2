@@ -140,7 +140,7 @@ const ChatHistoryTab = ({
                                             e.stopPropagation(); // Prevent triggering handleChatRoomClick
                                             handleHideChat(chatRoom._id);
                                         }}
-                                        className="scale-0 group-hover:scale-100 transition-transform duration-200 text-red-500 hover:text-red-700 ml-1"
+                                        className="scale-0 group-hover:scale-100 transition-transform duration-200 text-gray-900 hover:text-red-800 ml-1"
                                         title="Delete Chat Room"
                                     >
                                         <TrashIcon className="h-5 w-5 mt-2" />
