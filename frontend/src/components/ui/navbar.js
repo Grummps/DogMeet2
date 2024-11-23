@@ -12,7 +12,6 @@ import apiClient from "../../utilities/apiClient";
 import Alert from "./alert"; // Ensure this path is correct
 import { UserContext } from "../contexts/userContext";
 import socket, { connectSocket } from "../../utilities/socket"; // Import the socket directly
-import Chat from "../chat/chat";
 
 export default function Navbar() {
   const { user, setUser } = useContext(UserContext);
@@ -40,7 +39,7 @@ export default function Navbar() {
     socket.disconnect(); // Disconnect the socket
     navigate("/login");
   };
-  
+
   // Fetch notifications when the component mounts
   useEffect(() => {
     const fetchData = async () => {
@@ -331,9 +330,6 @@ export default function Navbar() {
               </span>
             )}
           </button>
-
-          {/* Message Icon */}
-          <Chat />
 
           {/* Dropdown Menu */}
           {showDropdown && (

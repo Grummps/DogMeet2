@@ -14,6 +14,7 @@ import ProtectedRoute from "./components/ui/protectedRoute";
 import ParksList from "./components/pages/parkList";
 import ParkDetail from "./components/pages/parkDetail";
 import useRefreshTokenOnActivity from "./components/hooks/refreshTokenOnActivity";
+import Chat from "./components/chat/chat";
 
 import L from 'leaflet';
 import markerIcon2x from 'leaflet/dist/images/marker-icon-2x.png';
@@ -37,6 +38,7 @@ const App = () => {
   return (
     <div className="bg-blue-50">
 
+      <Chat />
       <Navbar />
       <Routes>
         <Route exact path="/home" element={<HomePage />} />

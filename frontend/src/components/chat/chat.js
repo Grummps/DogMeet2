@@ -11,27 +11,41 @@ import axios from "axios";
 import apiClient from "../../utilities/apiClient";
 import socket from "../../utilities/socket";
 import { connectSocket } from "../../utilities/socket";
-const ChatNotificationSound = "/ChatNotificationSound.mp3";
+import { useLocation } from "react-router-dom";
 
 const Chat = ({ targetChatUser, setTargetChatUser }) => {
     const defaultProfileImageUrl =
         "https://ssusocial.s3.amazonaws.com/profilepictures/ProfileIcon.png";
-    const chatNotificationAudioRef = useRef(null);
 
     const TABS = { history: "history", search: "search", chat: "chat" };
     const [currentTab, setCurrentTab] = useState(TABS.history);
     const [chatOpen, setChatOpen] = useState(false);
     const [searchInput, setSearchInput] = useState("");
+    const [user, setUser] = useState(getUserInfo());
+    const [chatUser, setChatUser] = useState({});
+    const [chatRooms, setChatRooms] = useState([]);
+    const [currentChatRoom, setCurrentChatRoom] = useState({});
+    const [messages, setMessages] = useState([]);
+
+    // Refs
     const chatOpenRef = useRef(chatOpen);
     const currentTabRef = useRef(currentTab);
+    const currentChatRoomRef = useRef(currentChatRoom);
+    const handlerAttachedRef = useRef(false);
+    const chatRoomsRef = useRef(chatRooms);
+
+    const location = useLocation();
+
 
     useEffect(() => {
         chatOpenRef.current = chatOpen;
     }, [chatOpen]);
 
+
     useEffect(() => {
         currentTabRef.current = currentTab;
     }, [currentTab]);
+
 
     useEffect(() => {
         if (targetChatUser) {
@@ -40,17 +54,16 @@ const Chat = ({ targetChatUser, setTargetChatUser }) => {
         }
     }, [targetChatUser]);
 
-    const [user, setUser] = useState(getUserInfo());
-    const [chatUser, setChatUser] = useState({});
-    const [chatRooms, setChatRooms] = useState([]);
-    const [currentChatRoom, setCurrentChatRoom] = useState({});
-    const currentChatRoomRef = useRef(currentChatRoom);
-    const [messages, setMessages] = useState([]);
-    const handlerAttachedRef = useRef(false);
 
     useEffect(() => {
         currentChatRoomRef.current = currentChatRoom;
     }, [currentChatRoom]);
+
+
+    useEffect(() => {
+        chatRoomsRef.current = chatRooms;
+    }, [chatRooms]);
+
 
     const fetchUser = async () => {
         const tokenUser = getUserInfo();
@@ -81,7 +94,7 @@ const Chat = ({ targetChatUser, setTargetChatUser }) => {
 
 
     const fetchChatRooms = async () => {
-        if (!user._id) {
+        if (!user || !user._id) {
             return;
         }
 
@@ -97,8 +110,9 @@ const Chat = ({ targetChatUser, setTargetChatUser }) => {
         }
     };
 
+
     const fetchMessages = async () => {
-        if (!user._id) {
+        if (!user || !user._id) {
             return;
         }
 
@@ -110,26 +124,13 @@ const Chat = ({ targetChatUser, setTargetChatUser }) => {
                 setMessages(messages);
             }
         } catch (error) {
-            console.error("Error fetching unread message count:", error);
+            console.error("Error fetching messages:", error);
         }
     };
 
-    const playChatNotificationSound = () => {
-        if (chatNotificationAudioRef.current) {
-            chatNotificationAudioRef.current.currentTime = 0;
-            chatNotificationAudioRef.current
-                .play()
-                .catch((error) =>
-                    console.error("Error playing notification sound:", error)
-                );
-        }
-    };
 
-    const chatRoomsRef = useRef(chatRooms);
 
-    useEffect(() => {
-        chatRoomsRef.current = chatRooms;
-    }, [chatRooms]);
+
 
     useEffect(() => {
         const initializeChat = async () => {
@@ -139,9 +140,6 @@ const Chat = ({ targetChatUser, setTargetChatUser }) => {
 
             const user = getUserInfo();
             connectSocket(user._id); // Connect socket after fetching user
-
-            chatNotificationAudioRef.current = new Audio(ChatNotificationSound);
-            chatNotificationAudioRef.current.preload = "auto";
 
             if (!handlerAttachedRef.current) {
                 // Listen for new messages
@@ -177,9 +175,6 @@ const Chat = ({ targetChatUser, setTargetChatUser }) => {
                         }
 
                         const isUserReceivedMessage = data.receiverId === user._id;
-                        if (isUserReceivedMessage) {
-                            playChatNotificationSound();
-                        }
 
                         setMessages((prevMessages) => [...prevMessages, newMessage]);
                     }
@@ -373,7 +368,7 @@ const Chat = ({ targetChatUser, setTargetChatUser }) => {
         const popupWidth = size.width;
         const popupHeight = size.height;
         const marginRight = 70; // right-10 (10 * 4px)
-        const marginBottom = 450; // bottom-44 (44 * 4px)
+        const marginBottom = 200; // bottom-44 (44 * 4px)
 
         setPosition({
             x: window.innerWidth - popupWidth - marginRight,
@@ -381,10 +376,20 @@ const Chat = ({ targetChatUser, setTargetChatUser }) => {
         });
     }, []); // Empty dependency array, runs once when the component mounts
 
+    // Don't show Navbar on login or signup pages
+    if (location.pathname === "/login" || location.pathname === "/signup") {
+        return null;
+    }
+
+    // Render Nothing if User is Not Authenticated
+    if (!user) {
+        return null;
+    }
+
     return (
         <>
             {/* Chat button */}
-            <div className="fixed bottom-24 right-10">
+            <div className="fixed bottom-24 right-10 z-50">
                 <div
                     onClick={handleChatClick}
                     className="bg-gray-900 hover:bg-blue-950 p-3 rounded-full flex justify-center cursor-pointer relative"
