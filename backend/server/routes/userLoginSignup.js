@@ -44,8 +44,9 @@ router.post('/login', async (req, res) => {
     res.cookie('refreshToken', refreshToken, {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production', // Set to true in production
-      sameSite: 'Lax',
+      sameSite: 'None',
       maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days in milliseconds
+      path: '/', // Ensure the cookie is accessible across the entire site
     });
 
     // Send the access token in the response
@@ -105,8 +106,9 @@ router.post('/signup', async (req, res) => {
     res.cookie('refreshToken', refreshToken, {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
-      sameSite: 'Lax',
+      sameSite: 'None',
       maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
+      path: '/', // Ensure the cookie is accessible across the entire site
     });
 
     // Send the access token in the response
@@ -123,7 +125,7 @@ router.post('/logout', (req, res) => {
   res.clearCookie('refreshToken', {
     httpOnly: true,
     secure: process.env.NODE_ENV === 'production', // Set to true in production
-    sameSite: 'Lax',
+    sameSite: 'None',
   });
   res.status(200).send({ message: 'Logged out successfully' });
 });
