@@ -11,7 +11,7 @@ const generateAccessToken = (user) => {
       isAdmin: user.isAdmin 
     },
     process.env.ACCESS_TOKEN_SECRET,
-    { expiresIn: '20s' } // Access token valid for 60 minutes
+    { expiresIn: '5m' } // Access token valid for 60 minutes
   );
 };
 
