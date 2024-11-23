@@ -4,8 +4,8 @@ import { faPaperPlane as sendIcon } from "@fortawesome/free-solid-svg-icons";
 import { faWandMagicSparkles as AIIcon } from "@fortawesome/free-solid-svg-icons";
 import apiClient from "../../utilities/apiClient";
 import chatTimeFormat from "../../utilities/chatTimeFormat";
-import EmojiPicker from "../chat/emojiPickerButton"; // Ensure correct import path
-import socket from "../../utilities/socket"; // Import socket instance
+import EmojiPicker from "../chat/emojiPickerButton";
+import socket from "../../utilities/socket";
 
 let scrollEffect = "smooth";
 
@@ -14,12 +14,14 @@ const ChatTab = ({
     chatRoomMessages,
     currentUser,
     chatUser,
-    setMessages, // Receive setMessages as a prop
+    setMessages,
 }) => {
     const [newMessage, setNewMessage] = useState("");
     const newMessageRef = useRef(null);
     const messagesEndRef = useRef(null);
     const messageDayRef = useRef(null);
+
+    const maxCharacters = 2000; // Maximum character limit
 
     const scrollToBottom = (effect) => {
         messagesEndRef.current?.scrollIntoView({ behavior: effect });
@@ -65,6 +67,18 @@ const ChatTab = ({
             setNewMessage(message);
             return;
         }
+
+        // Check for duplicates before adding
+        setMessages((prevMessages) => {
+            const messageExists = prevMessages.some(
+                (msg) => msg._id === savedMessage._id
+            );
+            if (!messageExists) {
+                return [...prevMessages, savedMessage];
+            } else {
+                return prevMessages;
+            }
+        });
 
         socket.emit("sendMessage", savedMessage);
 
@@ -188,44 +202,56 @@ const ChatTab = ({
             </div>
 
             {/* Input Area */}
-            <div className="px-2 pt-2 pb-2 flex items-center bg-gray-900">
-                <textarea
-                    type="text"
-                    value={newMessage}
-                    ref={newMessageRef}
-                    onChange={(e) => setNewMessage(e.target.value)}
-                    placeholder="Type a message..."
-                    className="flex-1 p-2 border rounded-lg outline-none font-display text-white bg-gray-800 h-12 max-h-80 min-h-12 resize-none"
-                    autoFocus={true}
-                    onKeyDown={handleKeyDown}
-                />
-                {/* AI button */}
-                <button
-                    onClick={handleAIButtonClick}
-                    className="ml-3 text-white rounded-full font-menu"
-                >
-                    <FontAwesomeIcon
-                        className="text-white text-lg hover:text-orange-500"
-                        icon={AIIcon}
-                    />
-                </button>
-                {/* Emoji Picker button */}
-                <div className="ml-2">
-                    <EmojiPicker
-                        onEmojiSelect={onEmojiSelect}
-                        pickerPosition="-285px"
-                        size="2xl"
-                    />
+            <div className="px-2 pt-2 pb-2 flex flex-col bg-gray-900">
+                {/* Character Counter */}
+                <div className="text-right text-xs text-gray-400 mb-1">
+                    {newMessage.length}/{maxCharacters} characters
                 </div>
-                {/* Send button */}
-                <button
-                    onClick={handleSendMessage}
-                    className="ml-2 p-2 bg-blue-500 text-white rounded-lg hover:bg-blue-800 font-menu"
-                >
-                    <FontAwesomeIcon className="text-white text-2xl" icon={sendIcon} />
-                </button>
+                <div className="flex items-center">
+                    <textarea
+                        type="text"
+                        value={newMessage}
+                        ref={newMessageRef}
+                        onChange={(e) => {
+                            if (e.target.value.length <= maxCharacters) {
+                                setNewMessage(e.target.value);
+                            }
+                        }}
+                        placeholder="Type a message..."
+                        className="flex-1 p-2 border rounded-lg outline-none font-display text-white bg-gray-800 h-12 max-h-80 min-h-12 resize-none"
+                        autoFocus={true}
+                        onKeyDown={handleKeyDown}
+                        maxLength={maxCharacters} // Add maxLength attribute
+                    />
+                    {/* AI button */}
+                    <button
+                        onClick={handleAIButtonClick}
+                        className="ml-3 text-white rounded-full font-menu"
+                    >
+                        <FontAwesomeIcon
+                            className="text-white text-lg hover:text-orange-500"
+                            icon={AIIcon}
+                        />
+                    </button>
+                    {/* Emoji Picker button */}
+                    <div className="ml-2">
+                        <EmojiPicker
+                            onEmojiSelect={onEmojiSelect}
+                            pickerPosition="-285px"
+                            size="2xl"
+                        />
+                    </div>
+                    {/* Send button */}
+                    <button
+                        onClick={handleSendMessage}
+                        className="ml-2 p-2 bg-blue-500 text-white rounded-lg hover:bg-blue-800 font-menu"
+                    >
+                        <FontAwesomeIcon className="text-white text-2xl" icon={sendIcon} />
+                    </button>
+                </div>
             </div>
         </div>
     );
 };
+
 export default ChatTab;
