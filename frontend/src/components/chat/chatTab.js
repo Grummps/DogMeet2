@@ -139,40 +139,46 @@ const ChatTab = ({
     return (
         <div className="h-full flex flex-col">
             {/* Chat Window */}
-            <div className="flex-1 overflow-y-auto p-3 bg-lightBackground bg-gray-900 space-y-2">
+            <div className="flex-1 overflow-y-auto p-3 bg-gray-900 space-y-2">
                 {chatRoomMessages.map((message) => (
                     <React.Fragment key={message._id}>
-                        <div className="text-center text-sm text-white font-display my-3">
-                            {chatTimeFormat(message.timestamp) !== messageDayRef.current &&
-                                getAndUpdateMessageDay(message.timestamp)}
-                        </div>
+                        {/* Date Separator */}
+                        {chatTimeFormat(message.timestamp) !== messageDayRef.current && (
+                            <div className="text-center text-sm text-white font-display my-3">
+                                {getAndUpdateMessageDay(message.timestamp)}
+                            </div>
+                        )}
+                        {/* Message Bubble */}
                         <div
-                            className={`flex p-2 font-display text-sm rounded-lg break-words ${message.senderId === currentUser._id
-                                ? "bg-blue-500 text-white self-end ml-40"
-                                : "bg-gray-300 text-gray-900 self-start mr-40"
+                            className={`flex ${message.senderId === currentUser._id
+                                ? 'justify-end'
+                                : 'justify-start'
                                 }`}
                         >
-                            <div className="w-40">
-                                {message.content.split("\n").map((line, lineIndex) => (
-                                    <span key={lineIndex}>
-                                        {line.split("\t").map((tabbedText, tabIndex) => (
-                                            <span key={tabIndex}>
-                                                {tabbedText}
-                                                {tabIndex < line.split("\t").length - 1 && (
-                                                    <span
-                                                        className="inline-block"
-                                                        style={{ width: "2ch" }}
-                                                    />
-                                                )}
-                                            </span>
-                                        ))}
-                                        <br />
-                                    </span>
-                                ))}
-                            </div>
-                            <div className="flex justify-end items-end w-3">
-                                {message.isRead && (
-                                    <div className="text-xs font-bold">{"✔"}</div>
+                            <div
+                                className={`relative p-3 font-display text-sm rounded-xl break-words ${message.senderId === currentUser._id
+                                    ? 'bg-blue-500 text-white'
+                                    : 'bg-gray-300 text-gray-900'
+                                    }`}
+                                style={{
+                                    maxWidth: '80%',
+                                    minWidth: '20%',
+                                    wordBreak: 'break-word',
+                                }}
+                            >
+                                {/* Message Content */}
+                                <div>
+                                    {message.content.split('\n').map((line, lineIndex) => (
+                                        <p key={lineIndex} className="mb-1">
+                                            {line}
+                                        </p>
+                                    ))}
+                                </div>
+                                {/* Read Receipt */}
+                                {message.isRead && message.senderId === currentUser._id && (
+                                    <div className="absolute bottom-1 right-2 text-xs font-bold">
+                                        ✔
+                                    </div>
                                 )}
                             </div>
                         </div>
@@ -182,14 +188,14 @@ const ChatTab = ({
             </div>
 
             {/* Input Area */}
-            <div className="px-2 pt-2 flex items-center">
+            <div className="px-2 pt-2 pb-2 flex items-center bg-gray-900">
                 <textarea
                     type="text"
                     value={newMessage}
                     ref={newMessageRef}
                     onChange={(e) => setNewMessage(e.target.value)}
                     placeholder="Type a message..."
-                    className="flex-1 p-2 border rounded-lg outline-none font-display w-30 text-white bg-transparent h-12 max-h-80 min-h-12"
+                    className="flex-1 p-2 border rounded-lg outline-none font-display text-white bg-gray-800 h-12 max-h-80 min-h-12 resize-none"
                     autoFocus={true}
                     onKeyDown={handleKeyDown}
                 />
@@ -199,7 +205,7 @@ const ChatTab = ({
                     className="ml-3 text-white rounded-full font-menu"
                 >
                     <FontAwesomeIcon
-                        className="text-white-500 text-lg hover:text-orange-500"
+                        className="text-white text-lg hover:text-orange-500"
                         icon={AIIcon}
                     />
                 </button>
@@ -216,15 +222,10 @@ const ChatTab = ({
                     onClick={handleSendMessage}
                     className="ml-2 p-2 bg-blue-500 text-white rounded-lg hover:bg-blue-800 font-menu"
                 >
-                    <FontAwesomeIcon
-                        className="text-white-500 text-2xl"
-                        icon={sendIcon}
-                    />
+                    <FontAwesomeIcon className="text-white text-2xl" icon={sendIcon} />
                 </button>
             </div>
         </div>
     );
-
 };
-
 export default ChatTab;

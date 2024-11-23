@@ -364,8 +364,8 @@ const Chat = ({ targetChatUser, setTargetChatUser }) => {
         // Set default position when the component mounts
         const popupWidth = size.width;
         const popupHeight = size.height;
-        const marginRight = 40; // right-10 (10 * 4px)
-        const marginBottom = 176; // bottom-44 (44 * 4px)
+        const marginRight = 70; // right-10 (10 * 4px)
+        const marginBottom = 450; // bottom-44 (44 * 4px)
 
         setPosition({
             x: window.innerWidth - popupWidth - marginRight,
@@ -414,12 +414,13 @@ const Chat = ({ targetChatUser, setTargetChatUser }) => {
                         bottomRight: true,
                         right: true,
                     }}
-                    cancel="button, a, input, textarea, .non-draggable"
+                    handle=".drag-handle"
+                    cancel="button, a, input, p, textarea, .non-draggable"
                     className="z-50"
                 >
                     <div className="w-full h-full bg-gray-900 border border-gray-400 rounded-lg shadow-xl flex flex-col">
                         {/* Titlebar */}
-                        <div className="handle">
+                        <div className="drag-handle">
                             <ChatTitleBar
                                 user={user}
                                 chatUser={chatUser}
@@ -434,7 +435,7 @@ const Chat = ({ targetChatUser, setTargetChatUser }) => {
                             />
                         </div>
                         {/* Tab Body */}
-                        <div className="flex-1 pb-20 overflow-y-auto">
+                        <div className="flex-1 pb-20 overflow-y-auto non-draggable cursor-auto">
                             {/* Chat History Tab */}
                             {currentTab === TABS.history && (
                                 <div className="h-full pb-1 overflow-y-auto">
