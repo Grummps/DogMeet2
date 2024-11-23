@@ -1,8 +1,8 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useContext } from "react";
 import { Rnd } from "react-rnd";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faMessage as chatIcon } from "@fortawesome/free-regular-svg-icons";
-import getUserInfo from "../../utilities/decodeJwt";
+// Removed import of getUserInfo
 import ChatSearchTab from "./chatSearchTab";
 import ChatHistoryTab from "./chatHistoryTab";
 import ChatTitleBar from "./chatTitleBar";
@@ -12,6 +12,7 @@ import apiClient from "../../utilities/apiClient";
 import socket from "../../utilities/socket";
 import { connectSocket } from "../../utilities/socket";
 import { useLocation } from "react-router-dom";
+import { UserContext } from "../contexts/userContext"; // Import UserContext
 
 const Chat = ({ targetChatUser, setTargetChatUser }) => {
     const defaultProfileImageUrl =
@@ -21,11 +22,13 @@ const Chat = ({ targetChatUser, setTargetChatUser }) => {
     const [currentTab, setCurrentTab] = useState(TABS.history);
     const [chatOpen, setChatOpen] = useState(false);
     const [searchInput, setSearchInput] = useState("");
-    const [user, setUser] = useState(getUserInfo());
+    // Use user from context
+    const { user, setUser } = useContext(UserContext);
     const [chatUser, setChatUser] = useState({});
     const [chatRooms, setChatRooms] = useState([]);
     const [currentChatRoom, setCurrentChatRoom] = useState({});
     const [messages, setMessages] = useState([]);
+    const [loading, setLoading] = useState(true);
 
     // Refs
     const chatOpenRef = useRef(chatOpen);
@@ -36,16 +39,13 @@ const Chat = ({ targetChatUser, setTargetChatUser }) => {
 
     const location = useLocation();
 
-
     useEffect(() => {
         chatOpenRef.current = chatOpen;
     }, [chatOpen]);
 
-
     useEffect(() => {
         currentTabRef.current = currentTab;
     }, [currentTab]);
-
 
     useEffect(() => {
         if (targetChatUser) {
@@ -54,44 +54,13 @@ const Chat = ({ targetChatUser, setTargetChatUser }) => {
         }
     }, [targetChatUser]);
 
-
     useEffect(() => {
         currentChatRoomRef.current = currentChatRoom;
     }, [currentChatRoom]);
 
-
     useEffect(() => {
         chatRoomsRef.current = chatRooms;
     }, [chatRooms]);
-
-
-    const fetchUser = async () => {
-        const tokenUser = getUserInfo();
-
-        if (!tokenUser) {
-            console.error("No user token found. User might not be authenticated.");
-            // Handle unauthenticated state (e.g., redirect to login, show a message)
-            return;
-        }
-
-        const username = tokenUser.username;
-
-        try {
-            const response = await axios.get(
-                `${process.env.REACT_APP_BACKEND_URI}/users/getUserByUsername/${username}`
-            );
-
-            if (response.data) {
-                setUser(response.data);
-            } else {
-                setUser(tokenUser);
-            }
-        } catch (error) {
-            console.error("Error fetching User:", error);
-            setUser(tokenUser);
-        }
-    };
-
 
     const fetchChatRooms = async () => {
         if (!user || !user._id) {
@@ -100,16 +69,15 @@ const Chat = ({ targetChatUser, setTargetChatUser }) => {
 
         try {
             const response = await apiClient.get(`/chatRooms/getByUserId/${user._id}`);
-            const chatRooms = response.data.chatRooms;
+            const fetchedChatRooms = response.data.chatRooms;
 
-            if (chatRooms) {
-                setChatRooms(chatRooms);
+            if (fetchedChatRooms) {
+                setChatRooms(fetchedChatRooms);
             }
         } catch (error) {
             console.error("Error fetching chat rooms:", error);
         }
     };
-
 
     const fetchMessages = async () => {
         if (!user || !user._id) {
@@ -118,28 +86,35 @@ const Chat = ({ targetChatUser, setTargetChatUser }) => {
 
         try {
             const response = await apiClient.get(`/messages/getByUserId/${user._id}`);
-            const messages = response.data.data;
+            const fetchedMessages = response.data.data;
 
-            if (messages) {
-                setMessages(messages);
+            if (fetchedMessages) {
+                setMessages(fetchedMessages);
             }
         } catch (error) {
             console.error("Error fetching messages:", error);
         }
     };
 
-
-
-
-
     useEffect(() => {
         const initializeChat = async () => {
-            await fetchUser();
-            await fetchChatRooms();
-            await fetchMessages();
+            if (!user) {
+                // If user is not available yet, wait
+                setLoading(true);
+                return;
+            }
 
-            const user = getUserInfo();
-            connectSocket(user._id); // Connect socket after fetching user
+            setLoading(true);
+
+            try {
+                await fetchChatRooms();
+                await fetchMessages();
+                connectSocket(user._id); // Connect socket after fetching user
+            } catch (error) {
+                console.error("Error initializing chat:", error);
+            } finally {
+                setLoading(false);
+            }
 
             if (!handlerAttachedRef.current) {
                 // Listen for new messages
@@ -174,8 +149,6 @@ const Chat = ({ targetChatUser, setTargetChatUser }) => {
                             markMessagesAsReadInDb([newMessage._id]);
                         }
 
-                        const isUserReceivedMessage = data.receiverId === user._id;
-
                         setMessages((prevMessages) => [...prevMessages, newMessage]);
                     }
                 });
@@ -200,7 +173,7 @@ const Chat = ({ targetChatUser, setTargetChatUser }) => {
             socket.off("messageRead");
             handlerAttachedRef.current = false;
         };
-    }, []);
+    }, [user]); // Dependency on user
 
     const toggleChat = () => {
         if (setTargetChatUser) setTargetChatUser(null);
@@ -269,9 +242,9 @@ const Chat = ({ targetChatUser, setTargetChatUser }) => {
             const response = await axios.get(
                 `${process.env.REACT_APP_BACKEND_URI}/users/${chatUserId}`
             );
-            const chatUser = response.data;
+            const fetchedChatUser = response.data;
 
-            setChatUser(chatUser);
+            setChatUser(fetchedChatUser);
             setCurrentChatRoom(chatRoom);
             setCurrentTab(TABS.chat);
             markMessagesAsReadByChatRoomId(chatRoom._id);
@@ -291,18 +264,18 @@ const Chat = ({ targetChatUser, setTargetChatUser }) => {
 
         try {
             const response = await apiClient.post("/chatRooms", data);
-            const chatRoom = response.data.chatRoom;
+            const createdChatRoom = response.data.chatRoom;
 
-            const isChatRoomExists = chatRooms.some((chatRoom) =>
-                chatRoom.participants.every((participant) =>
+            const isChatRoomExists = chatRooms.some((existingChatRoom) =>
+                existingChatRoom.participants.every((participant) =>
                     data.participants.some((p) => p.userId === participant.userId)
                 )
             );
             if (!isChatRoomExists) {
-                setChatRooms([chatRoom, ...chatRooms]);
+                setChatRooms([createdChatRoom, ...chatRooms]);
             }
 
-            handleChatRoomClick(chatRoom);
+            handleChatRoomClick(createdChatRoom);
         } catch (error) {
             console.error("Error creating chat room:", error);
         }
@@ -381,31 +354,34 @@ const Chat = ({ targetChatUser, setTargetChatUser }) => {
         return null;
     }
 
-    // Render Nothing if User is Not Authenticated
-    if (!user) {
-        return null;
+    
+    // Rely on user context to determine if chat button should be shown
+    if (loading) {
+        return <div className="text-center text-lg text-gray-600">Loading...</div>;
     }
 
     return (
         <>
             {/* Chat button */}
-            <div className="fixed bottom-24 right-10 z-50">
-                <div
-                    onClick={handleChatClick}
-                    className="bg-gray-900 hover:bg-blue-950 p-3 rounded-full flex justify-center cursor-pointer relative"
-                >
-                    <FontAwesomeIcon className="z-10 h-7 text-blue-300" icon={chatIcon} />
-                    {/* Unread message count */}
-                    {getUnreadMessages().length > 0 && (
-                        <span className="absolute -top-1 -right-1 bg-red-600 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
-                            {getUnreadMessages().length}
-                        </span>
-                    )}
+            {user && (
+                <div className="fixed bottom-24 right-10 z-50">
+                    <div
+                        onClick={handleChatClick}
+                        className="bg-gray-900 hover:bg-blue-950 p-3 rounded-full flex justify-center cursor-pointer relative"
+                    >
+                        <FontAwesomeIcon className="z-10 h-7 text-blue-300" icon={chatIcon} />
+                        {/* Unread message count */}
+                        {getUnreadMessages().length > 0 && (
+                            <span className="absolute -top-1 -right-1 bg-red-600 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
+                                {getUnreadMessages().length}
+                            </span>
+                        )}
+                    </div>
                 </div>
-            </div>
+            )}
 
             {/* Chat pop up */}
-            {chatOpen && (
+            {chatOpen && user && (
                 <Rnd
                     size={{ width: size.width, height: size.height }}
                     position={{ x: position.x, y: position.y }}
