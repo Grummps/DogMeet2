@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import apiClient from '../../utilities/apiClient';
 import ConfirmationModal from './confirmationModal';
 import Alert from './alert';
@@ -15,6 +15,8 @@ const FriendsModal = ({ isOpen, onClose }) => {
     const [isConfirmationModalOpen, setIsConfirmationModalOpen] = useState(false);
     const [feedbackMessage, setFeedbackMessage] = useState('');
     const [feedbackType, setFeedbackType] = useState('');
+    const navigate = useNavigate(); // Initialize navigate function
+
 
     useEffect(() => {
         if (isOpen) {
@@ -55,6 +57,12 @@ const FriendsModal = ({ isOpen, onClose }) => {
         }
     };
 
+    const handleFriendClick = (friendId) => {
+        onClose(); // Close the modal
+        navigate(`/profile/${friendId}`); // Navigate to friend's profile
+    };
+
+
     if (!isOpen) return null;
 
     return (
@@ -79,9 +87,13 @@ const FriendsModal = ({ isOpen, onClose }) => {
                         <ul className="space-y-4">
                             {friends.map((friend) => (
                                 <li key={friend._id} className="flex justify-between items-center">
-                                    <Link to={`/profile/${friend._id}`} className="text-blue-500 hover:underline">
+                                    {/* Update Link to use handleFriendClick */}
+                                    <button
+                                        onClick={() => handleFriendClick(friend._id)}
+                                        className="text-blue-500 hover:underline"
+                                    >
                                         {friend.username}
-                                    </Link>
+                                    </button>
                                     <button
                                         onClick={() => openRemoveFriendModal(friend)}
                                         className="bg-red-500 hover:bg-red-600 text-white font-semibold py-1 px-3 rounded"
