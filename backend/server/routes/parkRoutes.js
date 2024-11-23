@@ -313,6 +313,115 @@ router.post('/:_id/check-out', authenticate, async (req, res) => {
   }
 });
 
+/**
+ * @route   GET /parks/:_id/events/expired
+ * @desc    Get all expired events for a specific park
+ * @access  Admin Only
+ */
+router.get('/:_id/events/expired', authenticate, authorizeAdmin, async (req, res) => {
+  const parkId = req.params._id;
+  const now = new Date();
+
+  // Validate park ID
+  if (!mongoose.Types.ObjectId.isValid(parkId)) {
+    return res.status(400).json({ message: 'Invalid park ID.' });
+  }
+
+  try {
+    // Find expired events for the specified park
+    const expiredEvents = await Event.find({
+      parkId: parkId,
+      expiresAt: { $lt: now },
+    })
+      .populate('userId', 'username email') // Populate user details if needed
+      .populate('dogs', 'dogName size image'); // Populate dog details if needed
+
+    res.status(200).json(expiredEvents);
+  } catch (error) {
+    console.error('Error fetching expired events:', error);
+    res.status(500).json({ message: 'Error fetching expired events.' });
+  }
+});
+
+/**
+ * @route   GET /parks/:_id/events
+ * @desc    Get all events, expired or not, for a specific park
+ * @access  Admin Only
+ */
+router.get('/:_id/events', authenticate, authorizeAdmin, async (req, res) => {
+  const parkId = req.params._id;
+  const now = new Date();
+
+  // Validate park ID
+  if (!mongoose.Types.ObjectId.isValid(parkId)) {
+    return res.status(400).json({ message: 'Invalid park ID.' });
+  }
+
+  try {
+    // Find expired events for the specified park
+    const parkEvents = await Event.find({
+      parkId: parkId,
+    })
+      .populate('userId', 'username email') // Populate user details if needed
+      .populate('dogs', 'dogName size image'); // Populate dog details if needed
+
+    res.status(200).json(parkEvents);
+  } catch (error) {
+    console.error('Error fetching expired events:', error);
+    res.status(500).json({ message: 'Error fetching expired events.' });
+  }
+});
+
+/**
+* @route   DELETE /parks/:_id/events/expired
+* @desc    Delete all expired events for a specific park
+* @access  Admin Only
+*/
+router.delete('/:_id/events/expired', authenticate, authorizeAdmin, async (req, res) => {
+  const parkId = req.params._id;
+  const now = new Date();
+
+  // Validate park ID
+  if (!mongoose.Types.ObjectId.isValid(parkId)) {
+    return res.status(400).json({ message: 'Invalid park ID.' });
+  }
+
+  try {
+    // Find all expired events for the specified park
+    const expiredEvents = await Event.find({
+      parkId: parkId,
+      expiresAt: { $lt: now },
+    });
+
+    if (expiredEvents.length === 0) {
+      return res.status(200).json({ message: 'No expired events to delete.' });
+    }
+
+    // Extract event IDs
+    const expiredEventIds = expiredEvents.map(event => event._id);
+
+    // Delete expired events
+    await Event.deleteMany({
+      _id: { $in: expiredEventIds },
+    });
+
+    // Remove event references from the Park document
+    await Park.findByIdAndUpdate(parkId, {
+      $pull: { eventId: { $in: expiredEventIds } },
+    });
+
+    // Remove event references from Users who created these events
+    await User.updateMany(
+      { eventId: { $in: expiredEventIds } },
+      { $pull: { eventId: { $in: expiredEventIds } } }
+    );
+
+    res.status(200).json({ message: 'Expired events deleted successfully.', deletedCount: expiredEvents.length });
+  } catch (error) {
+    console.error('Error deleting expired events:', error);
+    res.status(500).json({ message: 'Error deleting expired events.' });
+  }
+});
 
 
 module.exports = router;

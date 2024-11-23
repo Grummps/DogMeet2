@@ -4,6 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import { MapContainer, TileLayer, Marker, useMap, useMapEvents } from 'react-leaflet';
 import L from 'leaflet';
 import getUserInfo from '../../utilities/decodeJwt'; // Adjust the path as necessary
+import apiClient from '../../utilities/apiClient';
 
 // Fix Leaflet's default icon paths
 delete L.Icon.Default.prototype._getIconUrl;
@@ -145,21 +146,11 @@ const AddPark = () => {
           type: 'Point',
           coordinates: [longitude, latitude], // [lng, lat]
         },
-        // occupants and eventId will be handled automatically or later
       };
 
       const token = localStorage.getItem('accessToken');
 
-      const response = await axios.post(
-        `${process.env.REACT_APP_BACKEND_URI}/parks/create`,
-        payload,
-        {
-          headers: {
-            'Content-Type': 'application/json',
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
+      const response = await apiClient.post(`/parks/create`, payload);
 
       setSuccess('Park added successfully!');
       setFormData({
@@ -184,7 +175,7 @@ const AddPark = () => {
   };
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center bg-gray-100 p-4">
+    <div className="min-h-screen flex flex-col items-center p-4">
       <div className="w-full max-w-lg bg-white p-8 rounded-lg shadow-md">
         <h2 className="text-2xl font-bold mb-6 text-center">Add New Park</h2>
 
