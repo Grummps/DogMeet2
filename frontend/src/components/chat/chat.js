@@ -354,31 +354,30 @@ const Chat = ({ targetChatUser, setTargetChatUser }) => {
         return null;
     }
 
-    
-    // Rely on user context to determine if chat button should be shown
-    if (loading) {
-        return <div className="text-center text-lg text-gray-600">Loading...</div>;
-    }
 
     return (
         <>
-            {/* Chat button */}
-            {user && (
-                <div className="fixed bottom-24 right-10 z-50">
-                    <div
-                        onClick={handleChatClick}
-                        className="bg-gray-900 hover:bg-blue-950 p-3 rounded-full flex justify-center cursor-pointer relative"
-                    >
-                        <FontAwesomeIcon className="z-10 h-7 text-blue-300" icon={chatIcon} />
-                        {/* Unread message count */}
-                        {getUnreadMessages().length > 0 && (
-                            <span className="absolute -top-1 -right-1 bg-red-600 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
-                                {getUnreadMessages().length}
-                            </span>
-                        )}
-                    </div>
+            {/* Fixed container for the chat button */}
+            <div className="fixed bottom-24 right-12 z-50 transition-transform duration-300">
+                <div
+                    onClick={loading ? null : handleChatClick}
+                    className={`bg-gray-900 ${loading ? "scale-0 opacity-50 cursor-default" : "scale-100 opacity-100 cursor-pointer hover:bg-blue-950"
+                        } p-3 rounded-full flex justify-center relative transition-all duration-500`}
+                >
+                    <FontAwesomeIcon
+                        className={`z-10 h-7 ${loading ? "animate-spin text-gray-400" : "text-blue-300"
+                            } transition-colors duration-300`}
+                        icon={chatIcon}
+                    />
+                    {/* Unread message count */}
+                    {!loading && getUnreadMessages().length > 0 && (
+                        <span className="absolute -top-1 -right-1 bg-red-600 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
+                            {getUnreadMessages().length}
+                        </span>
+                    )}
                 </div>
-            )}
+            </div>
+
 
             {/* Chat pop up */}
             {chatOpen && user && (

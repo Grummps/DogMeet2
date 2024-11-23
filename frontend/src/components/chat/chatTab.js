@@ -68,17 +68,6 @@ const ChatTab = ({
             return;
         }
 
-        // Check for duplicates before adding
-        setMessages((prevMessages) => {
-            const messageExists = prevMessages.some(
-                (msg) => msg._id === savedMessage._id
-            );
-            if (!messageExists) {
-                return [...prevMessages, savedMessage];
-            } else {
-                return prevMessages;
-            }
-        });
 
         socket.emit("sendMessage", savedMessage);
 
