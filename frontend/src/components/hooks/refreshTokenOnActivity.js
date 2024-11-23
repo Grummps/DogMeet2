@@ -6,7 +6,7 @@ import { useLocation } from "react-router-dom";
 import { TokenRefreshContext } from "../contexts/tokenRefreshContext";
 import throttle from "lodash/throttle";
 
-const TOKEN_REFRESH_INTERVAL = 4 * 1000; // 45 minutes
+const TOKEN_REFRESH_INTERVAL = 45 * 60 * 1000; // 45 minutes
 
 const useRefreshTokenOnActivity = () => {
     const location = useLocation();
