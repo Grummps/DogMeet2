@@ -279,9 +279,6 @@ export default function Navbar() {
   const eventNotifications = notificationList.filter(
     (n) => n.type === "event_created"
   );
-  const messageNotifications = notificationList.filter(
-    (n) => n.type === "message_received"
-  );
 
   return (
     <div className="fixed top-0 left-0 h-screen w-36 qhd:w-36 bg-gray-900 flex flex-col items-center py-4 z-50">
@@ -349,8 +346,8 @@ export default function Navbar() {
               <div className="flex border-b">
                 <button
                   className={`flex-1 py-2 ${activeTab === "friend_requests"
-                    ? "border-b-2 border-blue-500 text-blue-500"
-                    : "text-gray-500"
+                      ? "border-b-2 border-blue-500 text-blue-500"
+                      : "text-gray-500"
                     }`}
                   onClick={() => setActiveTab("friend_requests")}
                 >
@@ -358,21 +355,12 @@ export default function Navbar() {
                 </button>
                 <button
                   className={`flex-1 py-2 ${activeTab === "event_notifications"
-                    ? "border-b-2 border-blue-500 text-blue-500"
-                    : "text-gray-500"
+                      ? "border-b-2 border-blue-500 text-blue-500"
+                      : "text-gray-500"
                     }`}
                   onClick={() => setActiveTab("event_notifications")}
                 >
                   Events
-                </button>
-                <button
-                  className={`flex-1 py-2 ${activeTab === "message_notifications"
-                    ? "border-b-2 border-blue-500 text-blue-500"
-                    : "text-gray-500"
-                    }`}
-                  onClick={() => setActiveTab("message_notifications")}
-                >
-                  Messages
                 </button>
               </div>
 
@@ -503,46 +491,7 @@ export default function Navbar() {
                       </div>
                     )}
                   </div>
-                ) : (
-                  // Message Notifications Tab
-                  <div>
-                    {messageNotifications.length > 0 ? (
-                      <ul>
-                        {messageNotifications.map((notification) => (
-                          <li
-                            key={notification._id}
-                            className="px-2 py-1 border-b"
-                          >
-                            <div className="flex items-center justify-between">
-                              <Link
-                                to={`/profile/${notification.sender._id}`}
-                                className="text-blue-600 no-underline"
-                                onClick={() =>
-                                  markNotificationAsRead(notification._id)
-                                }
-                              >
-                                {notification.sender.username} sent you a
-                                message.
-                              </Link>
-                              {/* Delete Button */}
-                              <button
-                                onClick={() =>
-                                  deleteNotification(notification._id)
-                                }
-                                className="text-gray-500 hover:text-gray-700"
-                                title="Delete Notification"
-                              >
-                                <TrashIcon className="h-5 w-5" />
-                              </button>
-                            </div>
-                          </li>
-                        ))}
-                      </ul>
-                    ) : (
-                      <div className="text-gray-500">No new messages.</div>
-                    )}
-                  </div>
-                )}
+                ) : null}
               </div>
 
               {/* Optional: Button to Mark All as Read */}
