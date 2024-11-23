@@ -394,7 +394,7 @@ router.get('/:_id', async (req, res) => {
 });
 
 // Get user by username
-router.get('/getUserByUsername/:username', async (req, res) => {
+router.get('/getUserByUsername/:username', authenticate, async (req, res) => {
     const { username } = req.params;
 
     try {

@@ -23,7 +23,6 @@ router.post('/refresh-token', async (req, res) => {
     try {
         // Verify the refresh token
         const decoded = await verifyRefreshToken(refreshToken);
-        console.log('Refresh token decoded:', decoded);
 
         // Check if the required fields are present in the decoded token
         const { _id, email, username, isAdmin } = decoded;
@@ -45,7 +44,6 @@ router.post('/refresh-token', async (req, res) => {
         });
 
         res.json({ accessToken: newAccessToken });
-        console.log('Tokens successfully refreshed');
     } catch (error) {
         console.error('Error in refresh-token route:', error.message);
         res.status(403).json({ message: error.message });

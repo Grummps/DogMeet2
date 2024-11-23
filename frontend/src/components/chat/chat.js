@@ -96,6 +96,20 @@ const Chat = ({ targetChatUser, setTargetChatUser }) => {
         }
     };
 
+    const fetchUserImage = async () => {
+        const username = user.username;
+        try {
+            const response = await apiClient.get(`/users/getUserByUsername/${username}`);
+            
+            if (response.data) {
+                return user.image = response.data.image;
+            } 
+        } catch (error) {
+            console.error("Error fetching User:", error);
+            
+        }
+    };
+
     useEffect(() => {
         const initializeChat = async () => {
             if (!user) {
@@ -107,6 +121,7 @@ const Chat = ({ targetChatUser, setTargetChatUser }) => {
             setLoading(true);
 
             try {
+                await fetchUserImage();
                 await fetchChatRooms();
                 await fetchMessages();
                 connectSocket(user._id); // Connect socket after fetching user

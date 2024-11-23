@@ -15,13 +15,11 @@ const useRefreshTokenOnActivity = () => {
 
     const handleTokenRefresh = useCallback(async () => {
         if (!user) {
-            console.log("No user available. Skipping token refresh.");
             return;
         }
 
         const now = Date.now();
         if (now - lastRefreshTime >= TOKEN_REFRESH_INTERVAL) {
-            console.log("TOKEN_REFRESH_INTERVAL elapsed. Refreshing token.");
             try {
                 const newAccessToken = await refreshAccessToken();
                 if (newAccessToken) {
@@ -32,7 +30,6 @@ const useRefreshTokenOnActivity = () => {
                     if (setUser) {
                         setUser(decodedAccessToken);
                     }
-                    console.log("Token refreshed at", new Date(now).toLocaleTimeString());
                 } else {
                     throw new Error("Invalid token response");
                 }
@@ -58,15 +55,12 @@ const useRefreshTokenOnActivity = () => {
         document.addEventListener("scroll", throttledHandleTokenRefresh);
         document.addEventListener("mousemove", throttledHandleTokenRefresh);
 
-        console.log("Event listeners for user activity added.");
-
         return () => {
             document.removeEventListener("click", throttledHandleTokenRefresh);
             document.removeEventListener("scroll", throttledHandleTokenRefresh);
             document.removeEventListener("mousemove", throttledHandleTokenRefresh);
 
             throttledHandleTokenRefresh.cancel();
-            console.log("Event listeners for user activity removed.");
         };
     }, [throttledHandleTokenRefresh]);
 
