@@ -54,6 +54,13 @@ const Chat = ({ targetChatUser, setTargetChatUser }) => {
 
     const fetchUser = async () => {
         const tokenUser = getUserInfo();
+
+        if (!tokenUser) {
+            console.error("No user token found. User might not be authenticated.");
+            // Handle unauthenticated state (e.g., redirect to login, show a message)
+            return;
+        }
+
         const username = tokenUser.username;
 
         try {
@@ -71,6 +78,7 @@ const Chat = ({ targetChatUser, setTargetChatUser }) => {
             setUser(tokenUser);
         }
     };
+
 
     const fetchChatRooms = async () => {
         if (!user._id) {
