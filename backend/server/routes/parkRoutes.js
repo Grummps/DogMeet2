@@ -62,7 +62,7 @@ router.get('/nearby', async (req, res) => {
           near: userLocation,
           distanceField: 'distance',
           spherical: true,
-          maxDistance: 5000, // Adjust as needed
+          maxDistance: 20000, // Adjust as needed
         },
       },
     ]);

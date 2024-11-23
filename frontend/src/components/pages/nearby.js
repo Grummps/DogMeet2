@@ -49,7 +49,6 @@ const HomePage = () => {
             navigator.geolocation.getCurrentPosition(
                 position => {
                     const { latitude, longitude } = position.coords;
-                    console.log('User Location:', { latitude, longitude }); // For debugging
                     setUserLocation({ latitude, longitude });
                 },
                 err => {
@@ -322,7 +321,7 @@ const HomePage = () => {
                                         <p>Distance: {convertDistance(park.distance / 1000)} {unit}</p>
 
                                         {/* Directions Map */}
-                                        <div className="mt-4">
+                                        <div className="mt-4 shadow-md">
                                             {userLocation && park.location.coordinates && (
                                                 <MapWithDirections
                                                     parkName={park.parkName}
