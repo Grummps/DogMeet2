@@ -49,6 +49,21 @@ router.post("/", authenticate, async (req, res) => {
 
         const savedMessage = await newMessage.save();
 
+        // Fetch the chat room
+        const chatRoom = await chatRoomModel.findById(chatRoomId);
+
+        if (!chatRoom) {
+            return res.status(404).json({ message: "Chat room not found." });
+        }
+
+        // Remover receiver from hiddenTo array if they are in it
+        if (chatRoom.hiddenTo.includes(receiverId)) {
+            chatRoom.hiddenTo = chatRoom.hiddenTo.filter(
+                (id) => id.toString() !== receiverId.toString()
+            );
+            await chatRoom.save();
+        }
+
         // Emit the message via Socket.IO
         const io = getIo();
         io.to(chatRoomId.toString()).emit('newMessage', savedMessage);
