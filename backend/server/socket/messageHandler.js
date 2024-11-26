@@ -8,5 +8,8 @@ module.exports = (io, socket, onlineUsers) => {
         io.emit('messageRead', messageIds);
     });
 
+    socket.on('newMessage', async (messageData) => {
+        io.emit('newMessage', messageData);
+    });
     // Additional message-related events can be handled here
 };
