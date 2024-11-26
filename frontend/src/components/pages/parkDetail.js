@@ -112,8 +112,6 @@ const ParkDetail = () => {
             const eventsResponse = await axios.get(`${process.env.REACT_APP_BACKEND_URI}/parks/${parkId}/events/active`);
             const activeEvents = eventsResponse.data;
 
-            console.log("Event: ", activeEvents);
-
             // Extract dogs from active events
             const dogs = activeEvents.reduce((acc, event) => {
                 return acc.concat(event.dogs.map(dog => ({

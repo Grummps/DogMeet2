@@ -5,13 +5,10 @@ import DogForm from '../ui/dogForm';
 import apiClient from '../../utilities/apiClient';
 import DogList from '../ui/dogList';
 import ConfirmationModal from '../ui/confirmationModal';
-import Alert from '../ui/alert';
 import FriendsModal from '../ui/friendList';
 import EventsModal from '../ui/eventList';
 import { motion, AnimatePresence } from 'framer-motion';
-import Spinner from '../ui/spinner';
 import { ClipLoader } from 'react-spinners';
-import { io } from 'socket.io-client';
 import Chat from '../chat/chat';
 
 

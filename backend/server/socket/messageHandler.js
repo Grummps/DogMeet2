@@ -4,5 +4,9 @@ module.exports = (io, socket, onlineUsers) => {
         io.emit('sendMessage', messageData);
     });
 
+    socket.on('messageRead', async (messageIds) => {
+        io.emit('messageRead', messageIds);
+    });
+
     // Additional message-related events can be handled here
 };
