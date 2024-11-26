@@ -61,8 +61,6 @@ const ChatTab = ({
         const response = await saveMessage(message);
         const savedMessage = response.data;
 
-        console.log("Sent message via socket:", message);
-
         if (!savedMessage) {
             setNewMessage(message);
             return;
@@ -70,6 +68,7 @@ const ChatTab = ({
 
 
         socket.emit("sendMessage", savedMessage);
+        socket.emit("newMessage", savedMessage);
 
         scrollEffect = "smooth";
 
