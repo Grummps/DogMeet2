@@ -3,7 +3,7 @@ import { Route, Routes } from "react-router-dom";
 
 // Importing all necessary components
 import Navbar from "./components/ui/navbar";
-import HomePage from "./components/pages/nearby";
+import Nearby from "./components/pages/nearby";
 import Login from "./components/pages/login";
 import Signup from "./components/pages/register";
 import Profile from "./components/pages/profile";
@@ -41,7 +41,7 @@ const App = () => {
       <Chat />
       <Navbar />
       <Routes>
-        <Route exact path="/home" element={<HomePage />} />
+        <Route exact path="/nearby" element={<Nearby />} />
         <Route exact path="/login" element={<Login />} />
         <Route exact path="/signup" element={<Signup />} />
         <Route path="/profile/:_id?" element={<Profile />} />

@@ -44,7 +44,7 @@ const Login = () => {
       console.log("User state updated with new token:", decodedUser);
 
       // Navigate to the home page after successful login
-      navigate("/home");
+      navigate("/profile");
     } catch (error) {
       if (
         error.response &&

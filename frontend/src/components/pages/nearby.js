@@ -11,7 +11,7 @@ import 'react-toastify/dist/ReactToastify.css';
 import { generateCacheKey } from '../../utilities/coordinateUtils';
 import { kmToMiles, milesToKm } from '../../utilities/distanceUtils';
 
-const HomePage = () => {
+const Nearby = () => {
     const navigate = useNavigate();
     const [userLocation, setUserLocation] = useState(null);
     const [nearbyParks, setNearbyParks] = useState([]);
@@ -376,4 +376,4 @@ const HomePage = () => {
     );
 };
 
-export default HomePage;
+export default Nearby;

@@ -293,7 +293,7 @@ export default function Navbar() {
         </Link>
 
         {/* Home Icon */}
-        <Link to="/home" className="flex items-center no-underline">
+        <Link to="/nearby" className="flex items-center no-underline">
           <HomeIcon className="h-6 w-6 fill-white hover:fill-blue-500 cursor-pointer" />
           <span className="ml-4 text-white text-lg hidden md:inline">
             Nearby

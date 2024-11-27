@@ -7,7 +7,7 @@ const socket = io(process.env.REACT_APP_BACKEND_URI, {
     token: localStorage.getItem('accessToken'), // Include authentication token if required
   },
   transports: ['websocket'], // Explicitly specify transports
-  autoConnect: false, // Prevent automatic connection
+  // autoConnect: false, // Prevent automatic connection
 });
 
 let isConnected = false;
