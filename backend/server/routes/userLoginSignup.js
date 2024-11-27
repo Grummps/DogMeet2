@@ -40,17 +40,8 @@ router.post('/login', async (req, res) => {
     const accessToken = generateAccessToken(user);
     const refreshToken = generateRefreshToken(user);
 
-    // Set refresh token as HTTP-only cookie
-    res.cookie('refreshToken', refreshToken, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === 'production', // Set to true in production
-      sameSite: 'None',
-      maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days in milliseconds
-      path: '/', // Ensure the cookie is accessible across the entire site
-    });
-
     // Send the access token in the response
-    res.status(200).send({ accessToken });
+    res.status(200).send({ accessToken, refreshToken });
   } catch (err) {
     console.error('Login error:', err);
     res.status(500).send({ message: "Internal server error." });
@@ -102,17 +93,8 @@ router.post('/signup', async (req, res) => {
     const accessToken = generateAccessToken(savedUser);
     const refreshToken = generateRefreshToken(savedUser);
 
-    // Set the refresh token as an HTTP-only cookie
-    res.cookie('refreshToken', refreshToken, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'None',
-      maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
-      path: '/', // Ensure the cookie is accessible across the entire site
-    });
-
     // Send the access token in the response
-    res.status(201).send({ accessToken });
+    res.status(201).send({ accessToken, refreshToken });
   } catch (error) {
     console.error('Signup error:', error);
     res.status(500).send({ message: "Internal server error." });
@@ -122,11 +104,6 @@ router.post('/signup', async (req, res) => {
 
 // In userLoginSignup.js or a separate route file
 router.post('/logout', (req, res) => {
-  res.clearCookie('refreshToken', {
-    httpOnly: true,
-    secure: process.env.NODE_ENV === 'production', // Set to true in production
-    sameSite: 'None',
-  });
   res.status(200).send({ message: 'Logged out successfully' });
 });
 

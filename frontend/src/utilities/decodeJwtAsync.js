@@ -6,23 +6,35 @@ const backendRefreshTokenURL = `${process.env.REACT_APP_BACKEND_URI}/auth/refres
 
 const refreshAccessToken = async () => {
   try {
-    const response = await axios.post(
-      backendRefreshTokenURL, 
-      {},
-      { withCredentials: true }
-    );
+    // Retrieve the refresh token from localStorage
+    const refreshToken = localStorage.getItem("refreshToken");
 
-    const { accessToken } = response.data;
+    if (!refreshToken) {
+      throw new Error("No refresh token found");
+    }
+
+    // Send the refresh token in the request body
+    const response = await axios.post(backendRefreshTokenURL, { refreshToken });
+
+    const { accessToken, refreshToken: newRefreshToken } = response.data;
+
     if (accessToken) {
-      localStorage.setItem("accessToken", accessToken); // Store the new access token
+      // Store the new access and refresh tokens in localStorage
+      localStorage.setItem("accessToken", accessToken);
+      if (newRefreshToken) {
+        localStorage.setItem("refreshToken", newRefreshToken);
+      }
+
       return accessToken; // Return the new access token
     }
+
     throw new Error("No access token returned");
   } catch (error) {
     console.error("Failed to refresh access token:", error);
-    throw error; // Propagate error to handle in calling function
+    throw error; // Propagate error to handle in the calling function
   }
 };
+
 
 
 const getUserInfoAsync = async () => {

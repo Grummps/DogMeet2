@@ -35,6 +35,7 @@ export default function Navbar() {
   const handleLogout = (e) => {
     e.preventDefault();
     localStorage.removeItem("accessToken");
+    localStorage.removeItem("refreshToken");
     setUser(null);
     socket.disconnect(); // Disconnect the socket
     navigate("/login");

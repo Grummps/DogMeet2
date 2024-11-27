@@ -26,15 +26,13 @@ const Login = () => {
     try {
       // Send login request to the backend
       const { data: res } = await axios.post(
-        `${process.env.REACT_APP_BACKEND_URI}/users/login`,
-        data,
-        { withCredentials: true } // Ensure cookies are sent
-      );
+        `${process.env.REACT_APP_BACKEND_URI}/users/login`, data);
 
-      const { accessToken } = res;
+      const { accessToken, refreshToken } = res;
 
       // Store the access token in localStorage
       localStorage.setItem("accessToken", accessToken);
+      localStorage.setItem("refreshToken", refreshToken);
 
       // Decode the access token to get user information
       const decodedUser = getUserInfo(accessToken);

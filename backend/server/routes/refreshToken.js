@@ -13,7 +13,7 @@ const verifyRefreshToken = (token) => {
 };
 
 router.post('/refresh-token', async (req, res) => {
-    const refreshToken = req.cookies.refreshToken;
+    const refreshToken = req.body.refreshToken; // Expect refreshToken in the request body
 
     if (!refreshToken) {
         console.log('No refresh token provided');
@@ -21,33 +21,25 @@ router.post('/refresh-token', async (req, res) => {
     }
 
     try {
-        // Verify the refresh token
         const decoded = await verifyRefreshToken(refreshToken);
-
-        // Check if the required fields are present in the decoded token
         const { _id, email, username, isAdmin } = decoded;
+
         if (!_id) throw new Error('Decoded token missing user ID');
 
         const user = { _id, email, username, isAdmin };
 
-        // Generate new tokens
         const newAccessToken = generateAccessToken(user);
         const newRefreshToken = generateRefreshToken(user);
 
-        // Set the new refresh token in the cookie, overwriting the old one
-        res.cookie('refreshToken', newRefreshToken, {
-            httpOnly: true,
-            secure: process.env.NODE_ENV === 'production', // Ensure HTTPS in production
-            sameSite: 'None', 
-            maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
-            path: '/', // Ensure the cookie is accessible across the entire site
+        res.json({
+            accessToken: newAccessToken,
+            refreshToken: newRefreshToken
         });
-
-        res.json({ accessToken: newAccessToken });
     } catch (error) {
         console.error('Error in refresh-token route:', error.message);
         res.status(403).json({ message: error.message });
     }
 });
+
 
 module.exports = router;
