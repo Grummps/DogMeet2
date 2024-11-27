@@ -178,7 +178,6 @@ const Chat = ({ targetChatUser, setTargetChatUser }) => {
         };
     }, [user, handleNewMessage, handleMessageRead]);
 
-    // Initialize chat (fetch data and connect socket)
     useEffect(() => {
         const initializeChat = async () => {
             if (!user) {
@@ -192,7 +191,7 @@ const Chat = ({ targetChatUser, setTargetChatUser }) => {
                 await fetchUserImage();
                 await fetchChatRooms();
                 await fetchMessages();
-                connectSocket(user._id); // Ensure this is handled properly
+                connectSocket(user._id); // Always connect and emit 'userConnected'
             } catch (error) {
                 console.error("Error initializing chat:", error);
             } finally {
@@ -202,9 +201,11 @@ const Chat = ({ targetChatUser, setTargetChatUser }) => {
 
         initializeChat();
 
+        // Disconnect socket when user logs out
         return () => {
-            // Optional: disconnect socket if needed
-            // disconnectSocket();
+            if (socket.connected) {
+                socket.disconnect();
+            }
         };
     }, [user]);
 

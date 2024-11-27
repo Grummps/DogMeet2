@@ -66,7 +66,6 @@ const ChatTab = ({
             return;
         }
 
-
         socket.emit("sendMessage", savedMessage);
 
         scrollEffect = "smooth";

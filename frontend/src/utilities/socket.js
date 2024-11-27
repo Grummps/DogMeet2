@@ -1,24 +1,17 @@
 import { io } from 'socket.io-client';
 
-localStorage.debug = 'socket.io-client:*';
-
 const socket = io(process.env.REACT_APP_BACKEND_URI, {
   auth: {
-    token: localStorage.getItem('accessToken'), // Include authentication token if required
+    token: localStorage.getItem('accessToken'),
   },
-  transports: ['websocket'], // Explicitly specify transports
-  // autoConnect: false, // Prevent automatic connection
+  transports: ['websocket'],
 });
 
-let isConnected = false;
-
 export const connectSocket = (userId) => {
-  if (!isConnected) {
+  if (socket.disconnected) {
     socket.connect();
-    isConnected = true;
-    // Identify the user to the server
-    socket.emit('userConnected', userId);
   }
+  socket.emit('userConnected', userId);
 };
 
 export default socket;
