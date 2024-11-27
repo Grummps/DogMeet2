@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useContext } from "react";
+import React, { useState, useEffect, useRef, useContext, useCallback } from "react";
 import { Rnd } from "react-rnd";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faMessage as chatIcon } from "@fortawesome/free-regular-svg-icons";
@@ -100,20 +100,88 @@ const Chat = ({ targetChatUser, setTargetChatUser }) => {
         const username = user.username;
         try {
             const response = await apiClient.get(`/users/getUserByUsername/${username}`);
-            
+
             if (response.data) {
                 return user.image = response.data.image;
-            } 
+            }
         } catch (error) {
             console.error("Error fetching User:", error);
-            
+
         }
     };
 
+    // Define event handlers with useCallback to prevent unnecessary re-creations
+    const handleNewMessage = useCallback((data) => {
+        console.log("Received newMessage:", data);
+
+        const isUserReceivedMessage = data.receiverId === user._id;
+        if (isUserReceivedMessage) {
+            const chatRoomExists = chatRooms.some(
+                (chatRoom) => chatRoom._id === data.chatRoomId
+            );
+
+            if (!chatRoomExists) {
+                fetchChatRooms();
+            }
+        }
+
+        const isUserSendOrReceivedMessage =
+            data.receiverId === user._id || data.senderId === user._id;
+        if (isUserSendOrReceivedMessage) {
+            const newMessage = data;
+
+            const isUserReceivedMessageAndChatWindowOpenInChatTabWithSameChatRoomId =
+                data.receiverId === user._id &&
+                data.chatRoomId === currentChatRoomRef.current._id &&
+                chatOpenRef.current &&
+                currentTabRef.current === TABS.chat;
+
+            if (
+                isUserReceivedMessageAndChatWindowOpenInChatTabWithSameChatRoomId
+            ) {
+                newMessage.isRead = true;
+                markMessagesAsReadInDb([newMessage._id]);
+            }
+
+            setMessages((prevMessages) => {
+                const messageExists = prevMessages.some(
+                    (msg) => msg._id === newMessage._id
+                );
+                if (messageExists) {
+                    return prevMessages;
+                } else {
+                    return [...prevMessages, newMessage];
+                }
+            });
+        }
+    }, [user, chatRooms, currentChatRoomRef, chatOpenRef, currentTabRef]);
+
+    const handleMessageRead = useCallback((readMessageIds) => {
+        console.log("Received messageRead:", readMessageIds);
+        setMessages((prevMessages) =>
+            prevMessages.map((m) =>
+                readMessageIds.includes(m._id) ? { ...m, isRead: true } : m
+            )
+        );
+    }, []);
+
+    // Attach event listeners once
+    useEffect(() => {
+        if (!user) return;
+
+        socket.on("newMessage", handleNewMessage);
+        socket.on("messageRead", handleMessageRead);
+
+        return () => {
+            socket.off("newMessage", handleNewMessage);
+            socket.off("messageRead", handleMessageRead);
+        };
+    }, [user, handleNewMessage, handleMessageRead]);
+
+    // Initialize chat (fetch data and connect socket)
     useEffect(() => {
         const initializeChat = async () => {
             if (!user) {
-                // If user is not available yet, wait
                 setLoading(true);
                 return;
             }
@@ -124,71 +192,22 @@ const Chat = ({ targetChatUser, setTargetChatUser }) => {
                 await fetchUserImage();
                 await fetchChatRooms();
                 await fetchMessages();
-                connectSocket(user._id); // Connect socket after fetching user
+                connectSocket(user._id); // Ensure this is handled properly
             } catch (error) {
                 console.error("Error initializing chat:", error);
             } finally {
                 setLoading(false);
-            }
-
-            if (!handlerAttachedRef.current) {
-                // Listen for new messages
-                socket.on("newMessage", (data) => {
-                    console.log("Received newMessage:", data);
-                    const isUserReceivedMessage = data.receiverId === user._id;
-                    if (isUserReceivedMessage) {
-                        const chatRoomExists = chatRooms.some(
-                            (chatRoom) => chatRoom._id === data.chatRoomId
-                        );
-
-                        if (!chatRoomExists) {
-                            fetchChatRooms();
-                        }
-                    }
-
-                    const isUserSendOrReceivedMessage =
-                        data.receiverId === user._id || data.senderId === user._id;
-                    if (isUserSendOrReceivedMessage) {
-                        const newMessage = data;
-
-                        const isUserReceivedMessageAndChatWindowOpenInChatTabWithSameChatRoomId =
-                            data.receiverId === user._id &&
-                            data.chatRoomId === currentChatRoomRef.current._id &&
-                            chatOpenRef.current &&
-                            currentTabRef.current === TABS.chat;
-
-                        if (
-                            isUserReceivedMessageAndChatWindowOpenInChatTabWithSameChatRoomId
-                        ) {
-                            newMessage.isRead = true;
-                            markMessagesAsReadInDb([newMessage._id]);
-                        }
-
-                        setMessages((prevMessages) => [...prevMessages, newMessage]);
-                    }
-                });
-
-                // Listen for message read events
-                socket.on("messageRead", (readMessageIds) => {
-                    console.log("Received messageRead:", readMessageIds);
-                    setMessages((prevMessages) =>
-                        prevMessages.map((m) =>
-                            readMessageIds.includes(m._id) ? { ...m, isRead: true } : m
-                        )
-                    );
-                });
-                handlerAttachedRef.current = true;
             }
         };
 
         initializeChat();
 
         return () => {
-            socket.off("newMessage");
-            socket.off("messageRead");
-            handlerAttachedRef.current = false;
+            // Optional: disconnect socket if needed
+            // disconnectSocket();
         };
-    }, [user]); // Dependency on user
+    }, [user]);
+
 
     const toggleChat = () => {
         if (setTargetChatUser) setTargetChatUser(null);
