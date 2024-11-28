@@ -13,6 +13,9 @@ const Login = () => {
   // State to manage password visibility
   const [showPassword, setShowPassword] = useState(false);
 
+  // State to manage loading spinner
+  const [isLoading, setIsLoading] = useState(false);
+
   const navigate = useNavigate();
 
   // Handle input changes
@@ -23,6 +26,8 @@ const Login = () => {
   // Handle form submission
   const handleSubmit = async (e) => {
     e.preventDefault();
+    setIsLoading(true); // Start loading
+    setError(""); // Reset error state
     try {
       // Send login request to the backend
       const { data: res } = await axios.post(
@@ -41,7 +46,7 @@ const Login = () => {
       setUser(decodedUser);
       console.log("User state updated with new token:", decodedUser);
 
-      // Navigate to the home page after successful login
+      // Navigate to the profile page after successful login
       navigate("/profile");
     } catch (error) {
       if (
@@ -53,6 +58,8 @@ const Login = () => {
       } else {
         setError("An unexpected error occurred. Please try again.");
       }
+    } finally {
+      setIsLoading(false); // Stop loading
     }
   };
 
@@ -113,9 +120,33 @@ const Login = () => {
 
           <button
             type="submit"
-            className="w-full py-3 bg-gray-400 text-gray-950 rounded-md shadow-lg hover:bg-gray-600 transition-colors duration-300 transform font-bold"
+            className={`w-full py-3 bg-gray-400 text-gray-950 rounded-md shadow-lg hover:bg-gray-600 transition-colors duration-300 transform font-bold flex items-center justify-center ${isLoading ? "cursor-not-allowed opacity-50" : ""
+              }`}
+            disabled={isLoading}
           >
-            LOGIN
+            {isLoading && (
+              <svg
+                className="animate-spin h-5 w-5 mr-3 text-gray-950"
+                xmlns="http://www.w3.org/2000/svg"
+                fill="none"
+                viewBox="0 0 24 24"
+              >
+                <circle
+                  className="opacity-25"
+                  cx="12"
+                  cy="12"
+                  r="10"
+                  stroke="currentColor"
+                  strokeWidth="4"
+                ></circle>
+                <path
+                  className="opacity-75"
+                  fill="currentColor"
+                  d="M4 12a8 8 0 018-8v8H4z"
+                ></path>
+              </svg>
+            )}
+            {isLoading ? "Logging in..." : "LOGIN"}
           </button>
 
           <div className="flex justify-center items-center">

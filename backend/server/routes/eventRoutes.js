@@ -119,13 +119,6 @@ router.post("/create", authenticate, async (req, res) => {
                     io.to(recipientSocketId).emit('newNotification', populatedNotification);
                 }
             }
-
-            // Update each friend's notifications
-           /* const friendIds = userFriends.map(friend => friend._id);
-            await User.updateMany(
-                { _id: { $in: friendIds } },
-                { $push: { notifications: { $each: savedNotifications.map(n => n._id) } } }
-            ); */
         }
 
         // Respond with the saved event
