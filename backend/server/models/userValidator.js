@@ -25,6 +25,7 @@ const partialUserValidation = data => {
     dogId: z.string().optional(),
     friends: z.array(z.string()).optional(),
     eventId: z.string().optional(),
+    isAdmin: z.boolean().optional(),
   });
 
   return partialValidationSchema.safeParse(data);

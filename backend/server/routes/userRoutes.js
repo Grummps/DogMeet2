@@ -530,7 +530,7 @@ router.put('/editUser/:_id', authenticate, async (req, res) => {
     }
 
     const _id = req.params._id;
-    const { username, email, password, parkId, dogId, friends, eventId } = req.body;
+    const { username, email, isAdmin, parkId, dogId, friends, eventId } = req.body;
 
     if (username) {
         const user = await User.findOne({ username });
@@ -539,16 +539,10 @@ router.put('/editUser/:_id', authenticate, async (req, res) => {
         }
     }
 
-    let hashPassword;
-    if (password) {
-        const generateHash = await bcrypt.genSalt(Number(10));
-        hashPassword = await bcrypt.hash(password, generateHash);
-    }
-
     const updateFields = {};
     if (username) updateFields.username = username;
     if (email) updateFields.email = email;
-    if (password) updateFields.password = hashPassword;
+    if (isAdmin) updateFields.isAdmin = isAdmin;
     if (parkId) updateFields.parkId = parkId;
     if (eventId) updateFields.eventId = eventId;
 
@@ -573,7 +567,7 @@ router.put('/editUser/:_id', authenticate, async (req, res) => {
                 console.log("Error updating user:", err);
                 return res.status(500).send({ message: 'Error updating user.' });
             } else {
-                const accessToken = generateAccessToken(updatedUser._id, updatedUser.email, updatedUser.username, updatedUser.password);
+                const accessToken = generateAccessToken(updatedUser._id, updatedUser.email, updatedUser.username, updatedUser.isAdmin);
                 res.header('Authorization', accessToken).send({ accessToken });
             }
         }
