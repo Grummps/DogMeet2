@@ -4,6 +4,7 @@ import getUserInfo from '../../utilities/decodeJwt';  // Import getUserInfo
 import apiClient from '../../utilities/apiClient';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faDog } from '@fortawesome/free-solid-svg-icons';
+import Spinner from './spinner';
 
 const DogForm = ({ updateUser, userId }) => {
     const [dogName, setDogName] = useState('');
@@ -14,11 +15,13 @@ const DogForm = ({ updateUser, userId }) => {
     const [success, setSuccess] = useState(null);  // For success message
     const [dogs, setDogs] = useState([]); // State for user's dogs
     const [showModal, setShowModal] = useState(false);  // State for toggling modal visibility
+    const [listLoading, setListLoading] = useState(true);
 
     // Fetch user's dogs when the component mounts
     useEffect(() => {
         const userInfo = getUserInfo();  // Get the logged-in user's info from the JWT
-
+        setListLoading(true);
+        
         const fetchDogs = async () => {
             try {
                 const response = await axios.get(`${process.env.REACT_APP_BACKEND_URI}/users/${userInfo._id}`);
@@ -29,6 +32,8 @@ const DogForm = ({ updateUser, userId }) => {
             } catch (error) {
                 console.error('Error fetching dogs:', error);
                 setError('Failed to fetch dogs.');
+            } finally {
+                setListLoading(false);
             }
         };
 
@@ -143,7 +148,9 @@ const DogForm = ({ updateUser, userId }) => {
             <div className={`relative mt-20 ${dogs.length === 0 ? '' : ''}`}>
                 {error && <p className="text-red-500">{error}</p>} {/* Display error message if any */}
 
-                {dogs.length === 0 ? (
+                {listLoading ? (
+                    <Spinner />
+                ) : dogs.length === 0 ? (
                     <div className="text-center text-gray-500 p-10">
                         <p>No dogs have been added yet.</p>
                     </div>
