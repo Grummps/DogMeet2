@@ -325,7 +325,8 @@ router.post('/notifications/:_id/read', authenticate, async (req, res) => {
 
 // ============== Other routes ==============
 
-router.get('/search/:searchInput', authenticate, async (req, res) => {
+// Search for all users request
+router.get('/searchAll/:searchInput', authenticate, async (req, res) => {
     const searchInput = req.params.searchInput;
 
     if (!searchInput) {
@@ -333,7 +334,38 @@ router.get('/search/:searchInput', authenticate, async (req, res) => {
     }
 
     // Replace this with how you retrieve the sender's ID from your authentication system
-    const senderId = req.user._id; // or req.session.userId, or however you store it
+    const senderId = req.user._id;
+
+    try {
+        if (!senderId) {
+            console.error("Not authorized to use this function", error);
+        }
+        const users = await User.find();
+
+        const results = fuzzysort.go(searchInput, users, {
+            key: "username",
+            threshold: -1000,
+        });
+
+        const matchedUsers = results.map((result) => result.obj);
+
+        return res.json(matchedUsers);
+    } catch (error) {
+        console.error("Error searching for users:", error);
+        return res.status(500).json({ error: "Internal server error" });
+    }
+});
+
+// Search for friends request
+router.get('/searchFriends/:searchInput', authenticate, async (req, res) => {
+    const searchInput = req.params.searchInput;
+
+    if (!searchInput) {
+        return res.json({});
+    }
+
+    // Replace this with how you retrieve the sender's ID from your authentication system
+    const senderId = req.user._id;
 
     try {
         // Fetch the sender's document along with their friends

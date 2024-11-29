@@ -13,7 +13,7 @@ const ChatSearchTab = ({
         if (!searchInput) return;
 
         try {
-            const response = await apiClient.get(`/users/search/${searchInput}`);
+            const response = await apiClient.get(`/users/searchFriends/${searchInput}`);
             const users = response.data;
 
             const result = users.filter(
