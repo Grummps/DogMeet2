@@ -3,6 +3,7 @@ import axios from "axios";
 import chatTimeFormat from "../../utilities/chatTimeFormat";
 import apiClient from "../../utilities/apiClient";
 import { TrashIcon } from "@heroicons/react/24/solid";
+import Spinner from "../ui/spinner";
 
 const ChatHistoryTab = ({
     user,
@@ -13,6 +14,7 @@ const ChatHistoryTab = ({
     handleChatRoomClick,
 }) => {
     const [chatRoomsWithUserInfo, setChatRoomsWithUserInfo] = useState([]);
+    const [loading, setLoading] = useState(true);
 
     const fetchChatRoomWithUserInfo = async () => {
         try {
@@ -45,6 +47,8 @@ const ChatHistoryTab = ({
             setChatRoomsWithUserInfo(newRoomsWIthUserInfo);
         } catch (error) {
             console.error("Error fetching chat room users:", error);
+        } finally {
+            setLoading(false);
         }
     };
 
@@ -61,6 +65,7 @@ const ChatHistoryTab = ({
     };
 
     useEffect(() => {
+        setLoading(true);
         fetchChatRoomWithUserInfo();
     }, [chatRooms]);
 
@@ -81,7 +86,9 @@ const ChatHistoryTab = ({
 
     return (
         <div className="h-full">
-            {chatRoomsWithUserInfo.length === 0 ? (
+            {loading ? (
+                <Spinner />
+            ) : chatRoomsWithUserInfo.length === 0 ? (
                 <p className="text-center font-display mt-4 text-white">
                     No messages yet
                 </p>
