@@ -305,7 +305,7 @@ const Nearby = () => {
             )}
 
             {permissionStatus === 'granted' && !userLocation && (
-                <div>Loading your location...</div>
+                <div className="ml-40">Loading your location...</div>
             )}
 
             {userLocation && (
