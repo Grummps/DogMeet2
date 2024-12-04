@@ -209,16 +209,6 @@ const ChatTab = ({
                         onKeyDown={handleKeyDown}
                         maxLength={maxCharacters} // Add maxLength attribute
                     />
-                    {/* AI button */}
-                    <button
-                        onClick={handleAIButtonClick}
-                        className="ml-3 text-white rounded-full font-menu"
-                    >
-                        <FontAwesomeIcon
-                            className="text-white text-lg hover:text-orange-500"
-                            icon={AIIcon}
-                        />
-                    </button>
                     {/* Emoji Picker button */}
                     <div className="ml-2">
                         <EmojiPicker
