@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import AddPark from '../ui/addPark'; // Adjust the path as necessary
-import ExpiredEvents from '../ui/expiredEvents'; // Adjust the path as necessary
+import AddPark from '../ui/addPark';
+import ExpiredEvents from '../ui/expiredEvents';
+import AdminUserList from '../ui/userList';
 import apiClient from '../../utilities/apiClient';
 
 const AdminDashboard = () => {
@@ -98,6 +99,10 @@ const AdminDashboard = () => {
                             </div>
                         </div>
                     </div>
+                </div>
+                {/* Second row: AdminUserList */}
+                <div className="flex flex-col">
+                    <AdminUserList />
                 </div>
             </div>
         </div>

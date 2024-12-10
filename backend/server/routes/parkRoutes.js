@@ -104,7 +104,18 @@ router.put('/update/:_id', authenticate, authorizeAdmin, getPark, async (req, re
 // Delete a park by _id (Admin Only)
 router.delete('/delete/:_id', authenticate, authorizeAdmin, getPark, async (req, res) => {
   try {
-    await req.park.remove();
+    const parkId = req.params._id;
+
+    const deletedPark = await Park.findByIdAndDelete(parkId);
+
+    Event.deleteMany({
+      parkId : parkId,
+    });
+
+    if (!deletedPark) {
+      return res.status(404).json({ message: "Park not found" });
+    }
+
     res.status(200).json({ message: 'Park deleted successfully.' });
   } catch (error) {
     console.error('Error deleting park:', error);

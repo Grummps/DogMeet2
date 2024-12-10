@@ -199,7 +199,7 @@ const AddPark = () => {
           </div>
 
           {/* Address Search */}
-          <div>
+          {/* <div>
             <label htmlFor="address" className="block text-gray-700 font-semibold mb-2">
               Search Address (street name, city, state, country)
             </label>
@@ -224,7 +224,7 @@ const AddPark = () => {
               </button>
             </form>
           </div>
-
+            */ } 
           {/* Leaflet Map for Location Selection */}
           <div>
             <label className="block text-gray-700 font-semibold mb-2">

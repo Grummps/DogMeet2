@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import apiClient from '../../utilities/apiClient';
-import { ArrowRightIcon, ArrowLeftIcon } from '@heroicons/react/24/solid'; // Importing Heroicons
+import { ArrowRightIcon, ArrowLeftIcon } from '@heroicons/react/24/solid';
 
 const AdminExpiredEvents = ({ parkId }) => {
     const [expiredEvents, setExpiredEvents] = useState([]);
@@ -86,6 +86,23 @@ const AdminExpiredEvents = ({ parkId }) => {
         }
     };
 
+    // Function to delete the park
+    const deletePark = async () => {
+        const confirmDeletePark = window.confirm('Are you sure you want to delete this park? This action cannot be undone.');
+        if (!confirmDeletePark) return;
+
+        try {
+            const response = await apiClient.delete(`/parks/delete/${parkId}`);
+            alert(response.data.message || 'Park deleted successfully.');
+
+            // After deletion, you might want to redirect, clear park data, or refresh a parent component.
+            // For now, we just show an alert. You can add additional logic here as needed.
+        } catch (err) {
+            console.error('Error deleting park:', err);
+            alert(err.response?.data?.message || 'Failed to delete the park.');
+        }
+    };
+
     // Toggle view between 'expired' and 'all'
     const toggleView = () => {
         setView((prevView) => (prevView === 'expired' ? 'all' : 'expired'));
@@ -120,12 +137,21 @@ const AdminExpiredEvents = ({ parkId }) => {
                 </button>
             </div>
 
-            {/* Error and Success Messages */}
+            {/* Error Messages */}
             {error && <div className="mb-4 text-red-500 text-center">{error}</div>}
 
-            {/* Button to delete all expired events (only visible in 'expired' view) */}
-            {isExpiredView && (
-                <div className="flex justify-end mb-4">
+            {/* Actions Section */}
+            <div className="flex justify-end space-x-4 mb-4">
+                {/* Delete Park button */}
+                <button
+                    onClick={deletePark}
+                    className="px-4 py-2 bg-red-700 text-white rounded-md hover:bg-red-800 transition-colors duration-300"
+                >
+                    Delete Park
+                </button>
+
+                {/* Delete all expired events button (only visible in 'expired' view) */}
+                {isExpiredView && (
                     <button
                         onClick={deleteAllExpiredEvents}
                         disabled={expiredEvents.length === 0}
@@ -134,8 +160,8 @@ const AdminExpiredEvents = ({ parkId }) => {
                     >
                         Delete All Expired Events
                     </button>
-                </div>
-            )}
+                )}
+            </div>
 
             {/* Display loading, error, or events */}
             {loading ? (
@@ -197,7 +223,6 @@ const AdminExpiredEvents = ({ parkId }) => {
             )}
         </div>
     );
-
 };
 
 export default AdminExpiredEvents;

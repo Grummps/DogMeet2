@@ -6,6 +6,7 @@ const User = require('../models/userModel');
 const { newUserValidation, partialUserValidation } = require('../models/userValidator');
 const { generateAccessToken } = require('../utilities/generateToken');
 const authenticate = require("../middleware/auth");
+const authorizeAdmin = require("../middleware/authAdmin");
 const Notification = require("../models/notificationModel");
 const upload = require('../config/multerConfig');  // Import the Multer configuration
 const s3 = require('../config/s3Config');  // Import the S3 configuration
@@ -493,6 +494,27 @@ router.post('/:_id/remove-friend', authenticate, async (req, res) => {
         res.status(500).json({ error: 'Server error' });
     }
 });
+
+
+// Route to delete a user by ID (Admin only)
+router.delete('/deleteUser/:_id', authenticate, authorizeAdmin, async (req, res) => {
+    try {
+        const userId = req.params._id;
+
+        // Find and delete the user
+        const deletedUser = await User.findByIdAndDelete(userId);
+
+        if (!deletedUser) {
+            return res.status(404).json({ message: "User not found." });
+        }
+
+        res.json({ message: "User deleted successfully." });
+    } catch (error) {
+        console.error("Error deleting user:", error);
+        res.status(500).json({ message: "Server error." });
+    }
+});
+
 
 // Route to remove a dog from the user's dogId array
 router.delete('/removeDog/:_id/:dogId', async (req, res) => {
