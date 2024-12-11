@@ -48,22 +48,22 @@ const CreateEventForm = ({ parkId, onSuccess, isCheckedIn, currentCheckInEvent }
     setSuccess('');
     setIsSubmitting(true); // Optional: Start submission
 
-    // Removed the check that prevents form submission if the user is checked in
-    // Allow form submission and rely on backend validations
-
     if (selectedDogs.length === 0) {
       setError('Please select at least one dog.');
       setIsSubmitting(false);
       return;
     }
 
+    const localDateTime = new Date(`${date}T${time}:00`);
+    const utcString = localDateTime.toISOString();
+    
     try {
       const response = await apiClient.post(`/events/create`, {
         userId,
         parkId,
         dogs: selectedDogs,
         time,
-        date,
+        date: utcString,
         duration,
       });
 

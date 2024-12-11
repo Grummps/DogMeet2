@@ -32,7 +32,7 @@ router.post("/create", authenticate, async (req, res) => {
         }
 
         // Parse the date and time into a Date object
-        const eventStartTime = new Date(`${date}T${time}:00`);
+        const eventStartTime = new Date(date);
         if (isNaN(eventStartTime)) {
             return res.status(400).json({ message: "Invalid date or time format." });
         }

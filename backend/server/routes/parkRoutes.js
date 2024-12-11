@@ -109,7 +109,7 @@ router.delete('/delete/:_id', authenticate, authorizeAdmin, getPark, async (req,
     const deletedPark = await Park.findByIdAndDelete(parkId);
 
     await Event.deleteMany({
-      parkId : parkId,
+      parkId: parkId,
     });
 
     if (!deletedPark) {
