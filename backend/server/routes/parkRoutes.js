@@ -108,7 +108,7 @@ router.delete('/delete/:_id', authenticate, authorizeAdmin, getPark, async (req,
 
     const deletedPark = await Park.findByIdAndDelete(parkId);
 
-    Event.deleteMany({
+    await Event.deleteMany({
       parkId : parkId,
     });
 
@@ -130,7 +130,7 @@ router.get('/:_id/events/upcoming', async (req, res) => {
     const now = new Date();
 
     // Step 1: Delete events that have no associated dogs
-    Event.deleteMany({
+    await Event.deleteMany({
       parkId: parkId,
       date: { $gte: now },
       dogs: { $size: 0 }, // Assumes 'dogs' is an array field in the Event model
